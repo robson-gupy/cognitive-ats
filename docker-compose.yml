@@ -1,0 +1,86 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: cognitive-ats-postgres
+    environment:
+      POSTGRES_DB: cognitive_ats
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+  # Backend NestJS
+  back:
+    build:
+      context: ./back
+      dockerfile: Dockerfile.dev
+    container_name: cognitive-ats-backend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=cognitive_ats
+      - DB_DATABASE=cognitive_ats
+      - AI_SERVICE_URL=http://ai-service:8000
+    volumes:
+      - ./back:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - ai-service
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+  # Frontend React (Desenvolvimento)
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile.dev
+    container_name: cognitive-ats-frontend-dev
+    ports:
+      - "8080:5173"
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    depends_on:
+      - back
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+  # AI Service (FastAPI)
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: cognitive-ats-ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DEFAULT_AI_PROVIDER=openai
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./ai-service:/app
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  cognitive-ats-network:
+    driver: bridge 
