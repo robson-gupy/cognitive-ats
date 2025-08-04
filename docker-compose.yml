@@ -15,12 +15,12 @@ services:
       - cognitive-ats-network
     restart: unless-stopped
 
-  # Backend NestJS
-  back:
+  # Backend NestJS - Companies Service
+  companies-backend:
     build:
-      context: ./back
+      context: ./companies-service/backend
       dockerfile: Dockerfile.dev
-    container_name: cognitive-ats-backend-dev
+    container_name: cognitive-ats-companies-backend-dev
     ports:
       - "3000:3000"
     environment:
@@ -34,7 +34,7 @@ services:
       - DB_DATABASE=cognitive_ats
       - AI_SERVICE_URL=http://ai-service:8000
     volumes:
-      - ./back:/app
+      - ./companies-service/backend:/app
       - /app/node_modules
     depends_on:
       - postgres
@@ -43,19 +43,19 @@ services:
       - cognitive-ats-network
     restart: unless-stopped
 
-  # Frontend React (Desenvolvimento)
-  front:
+  # Frontend React - Companies Service (Desenvolvimento)
+  companies-frontend:
     build:
-      context: ./front
+      context: ./companies-service/frontend
       dockerfile: Dockerfile.dev
-    container_name: cognitive-ats-frontend-dev
+    container_name: cognitive-ats-companies-frontend-dev
     ports:
       - "8080:5173"
     volumes:
-      - ./front:/app
+      - ./companies-service/frontend:/app
       - /app/node_modules
     depends_on:
-      - back
+      - companies-backend
     networks:
       - cognitive-ats-network
     restart: unless-stopped
