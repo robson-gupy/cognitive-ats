@@ -26,6 +26,7 @@ Serviço dedicado à gestão de empresas, usuários, departamentos e vagas.
   - Gestão de usuários e perfis
   - Gestão de departamentos
   - Criação e gestão de vagas
+  - Upload de currículos (S3 via LocalStack)
   - Integração com IA para criação de vagas
 
 ### AI Service
@@ -48,10 +49,14 @@ Serviço de inteligência artificial para auxiliar na criação de vagas e proce
 # Executar todos os serviços
 docker-compose up -d
 
+# Configurar LocalStack (primeira execução)
+./scripts/setup-localstack.sh
+
 # Acessar os serviços:
 # - Frontend: http://localhost:8080
 # - Backend: http://localhost:3000
 # - AI Service: http://localhost:8000
+# - LocalStack: http://localhost:4566
 ```
 
 ### Desenvolvimento Local
