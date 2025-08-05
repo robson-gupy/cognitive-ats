@@ -8,6 +8,11 @@ import { JobQuestion } from './src/jobs/entities/job-question.entity';
 import { JobStage } from './src/jobs/entities/job-stage.entity';
 import { JobLog } from './src/jobs/entities/job-log.entity';
 import { Application } from './src/jobs/entities/application.entity';
+import { Resume } from './src/jobs/entities/resume.entity';
+import { ResumeProfessionalExperience } from './src/jobs/entities/resume-professional-experience.entity';
+import { ResumeAcademicFormation } from './src/jobs/entities/resume-academic-formation.entity';
+import { ResumeAchievement } from './src/jobs/entities/resume-achievement.entity';
+import { ResumeLanguage } from './src/jobs/entities/resume-language.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -16,7 +21,22 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_DATABASE || process.env.DB_NAME || 'cognitive_ats',
-  entities: [User, Company, Department, Role, Job, JobQuestion, JobStage, JobLog, Application],
+  entities: [
+    User, 
+    Company, 
+    Department, 
+    Role, 
+    Job, 
+    JobQuestion, 
+    JobStage, 
+    JobLog, 
+    Application,
+    Resume,
+    ResumeProfessionalExperience,
+    ResumeAcademicFormation,
+    ResumeAchievement,
+    ResumeLanguage,
+  ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false, // Desabilitar synchronize em produção
   logging: process.env.NODE_ENV !== 'production',

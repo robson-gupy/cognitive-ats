@@ -6,6 +6,11 @@ import { Job } from './entities/job.entity';
 import { JobQuestion } from './entities/job-question.entity';
 import { JobStage } from './entities/job-stage.entity';
 import { JobLog } from './entities/job-log.entity';
+import { Resume } from './entities/resume.entity';
+import { ResumeProfessionalExperience } from './entities/resume-professional-experience.entity';
+import { ResumeAcademicFormation } from './entities/resume-academic-formation.entity';
+import { ResumeAchievement } from './entities/resume-achievement.entity';
+import { ResumeLanguage } from './entities/resume-language.entity';
 import { AuthModule } from '../auth/auth.module';
 import { JwtConfigModule } from '../auth/jwt.module';
 import { AiServiceClient } from './ai-service.client';
@@ -13,7 +18,17 @@ import { ApplicationsModule } from './applications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Job, JobQuestion, JobStage, JobLog]),
+    TypeOrmModule.forFeature([
+      Job, 
+      JobQuestion, 
+      JobStage, 
+      JobLog,
+      Resume,
+          ResumeProfessionalExperience,
+    ResumeAcademicFormation,
+    ResumeAchievement,
+    ResumeLanguage,
+    ]),
     AuthModule,
     JwtConfigModule,
     ApplicationsModule,

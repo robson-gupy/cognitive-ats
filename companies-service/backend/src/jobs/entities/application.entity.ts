@@ -6,10 +6,12 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToOne,
   Index,
 } from 'typeorm';
 import { Job } from './job.entity';
 import { Company } from '../../companies/entities/company.entity';
+import { Resume } from './resume.entity';
 
 @Entity('applications')
 @Index(['jobId'])
@@ -64,4 +66,9 @@ export class Application {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @OneToOne(() => Resume, (resume) => resume.application, {
+    cascade: true,
+  })
+  resume: Resume;
 }
