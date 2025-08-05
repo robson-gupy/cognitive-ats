@@ -10,6 +10,7 @@ import { Application } from './entities/application.entity';
 import { Job } from './entities/job.entity';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
+import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
 
 @Injectable()
 export class ApplicationsService {
@@ -113,5 +114,16 @@ export class ApplicationsService {
       where: { jobId, companyId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async updateAiScore(
+    id: string,
+    updateScoreDto: UpdateApplicationScoreDto,
+    companyId: string,
+  ): Promise<Application> {
+    const application = await this.findOne(id, companyId);
+
+    Object.assign(application, updateScoreDto);
+    return this.applicationsRepository.save(application);
   }
 }

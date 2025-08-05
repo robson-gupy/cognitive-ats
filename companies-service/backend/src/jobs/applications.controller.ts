@@ -14,6 +14,7 @@ import {
 import { ApplicationsService } from './applications.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
+import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
 
@@ -65,5 +66,16 @@ export class ApplicationsController {
   async remove(@Param('id') id: string, @Request() req) {
     const companyId = req.user.companyId;
     return this.applicationsService.remove(id, companyId);
+  }
+
+  @Patch(':id/ai-score')
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
+  async updateAiScore(
+    @Param('id') id: string,
+    @Body() updateScoreDto: UpdateApplicationScoreDto,
+    @Request() req,
+  ) {
+    const companyId = req.user.companyId;
+    return this.applicationsService.updateAiScore(id, updateScoreDto, companyId);
   }
 }

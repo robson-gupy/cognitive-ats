@@ -5,6 +5,7 @@ import { ApplicationsService } from './applications.service';
 import { Application } from './entities/application.entity';
 import { Job } from './entities/job.entity';
 import { CreateApplicationDto } from './dto/create-application.dto';
+import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('ApplicationsService', () => {
@@ -139,6 +140,55 @@ describe('ApplicationsService', () => {
 
       await expect(service.create(createDto)).rejects.toThrow(
         BadRequestException,
+      );
+    });
+  });
+
+  describe('updateAiScore', () => {
+    it('should update ai score successfully', async () => {
+      const updateScoreDto: UpdateApplicationScoreDto = {
+        aiScore: 85.5,
+      };
+
+      const mockApplication = {
+        id: 'app-uuid',
+        jobId: 'job-uuid',
+        companyId: 'company-uuid',
+        firstName: 'João',
+        lastName: 'Silva',
+        email: 'joao@email.com',
+        aiScore: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const updatedApplication = {
+        ...mockApplication,
+        aiScore: 85.5,
+      };
+
+      mockApplicationsRepository.findOne.mockResolvedValue(mockApplication);
+      mockApplicationsRepository.save.mockResolvedValue(updatedApplication);
+
+      const result = await service.updateAiScore('app-uuid', updateScoreDto, 'company-uuid');
+
+      expect(result).toEqual(updatedApplication);
+      expect(mockApplicationsRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'app-uuid', companyId: 'company-uuid' },
+        relations: ['job'],
+      });
+      expect(mockApplicationsRepository.save).toHaveBeenCalledWith(updatedApplication);
+    });
+
+    it('should throw NotFoundException when application does not exist', async () => {
+      const updateScoreDto: UpdateApplicationScoreDto = {
+        aiScore: 85.5,
+      };
+
+      mockApplicationsRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.updateAiScore('non-existent-app', updateScoreDto, 'company-uuid')).rejects.toThrow(
+        NotFoundException,
       );
     });
   });
