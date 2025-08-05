@@ -11,14 +11,37 @@ import { Job } from './entities/job.entity';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
+import { S3ClientService } from '../shared/services/s3-client.service';
+import * as fs from 'fs';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class ApplicationsService {
+  /**
+   * Gera um nome de arquivo aleatório e seguro para evitar enumeração
+   * @param originalName Nome original do arquivo
+   * @returns Nome de arquivo aleatório com extensão preservada
+   */
+  private generateSecureFileName(originalName: string): string {
+    // Gerar 32 bytes aleatórios (256 bits) e converter para hex
+    const randomBytes = crypto.randomBytes(32).toString('hex');
+
+    // Extrair a extensão do arquivo original
+    const extension = originalName.includes('.')
+      ? originalName.substring(originalName.lastIndexOf('.'))
+      : '';
+
+    // Combinar timestamp, bytes aleatórios e extensão
+    const timestamp = Date.now();
+    return `resume_${timestamp}_${randomBytes}${extension}`;
+  }
+
   constructor(
     @InjectRepository(Application)
     private applicationsRepository: Repository<Application>,
     @InjectRepository(Job)
     private jobsRepository: Repository<Job>,
+    private s3ClientService: S3ClientService,
   ) {}
 
   async create(
@@ -48,19 +71,30 @@ export class ApplicationsService {
     // Verificar se já existe uma inscrição com o mesmo email ou phone para esta vaga
     const existingApplication = await this.applicationsRepository.findOne({
       where: [
-        { jobId: createApplicationDto.jobId, email: createApplicationDto.email },
-        { jobId: createApplicationDto.jobId, phone: createApplicationDto.phone },
-      ].filter(condition => 
-        (condition.email && createApplicationDto.email) || 
-        (condition.phone && createApplicationDto.phone)
+        {
+          jobId: createApplicationDto.jobId,
+          email: createApplicationDto.email,
+        },
+        {
+          jobId: createApplicationDto.jobId,
+          phone: createApplicationDto.phone,
+        },
+      ].filter(
+        (condition) =>
+          (condition.email && createApplicationDto.email) ||
+          (condition.phone && createApplicationDto.phone),
       ),
     });
 
     if (existingApplication) {
       if (existingApplication.email === createApplicationDto.email) {
-        throw new BadRequestException('Este email já foi utilizado para se inscrever nesta vaga');
+        throw new BadRequestException(
+          'Este email já foi utilizado para se inscrever nesta vaga',
+        );
       } else {
-        throw new BadRequestException('Este telefone já foi utilizado para se inscrever nesta vaga');
+        throw new BadRequestException(
+          'Este telefone já foi utilizado para se inscrever nesta vaga',
+        );
       }
     }
 
@@ -70,6 +104,103 @@ export class ApplicationsService {
     });
 
     return this.applicationsRepository.save(application);
+  }
+
+  async createWithResume(
+    createApplicationDto: CreateApplicationDto,
+    resumeFile: any,
+  ): Promise<Application> {
+    // Buscar a job para obter o companyId
+    const job = await this.jobsRepository.findOne({
+      where: { id: createApplicationDto.jobId },
+      select: ['id', 'companyId', 'status'],
+    });
+
+    if (!job) {
+      throw new NotFoundException('Vaga não encontrada');
+    }
+
+    if (job.status !== 'PUBLISHED') {
+      throw new BadRequestException(
+        'Apenas vagas publicadas podem receber inscrições',
+      );
+    }
+
+    // Validar que pelo menos email ou phone foi fornecido
+    if (!createApplicationDto.email && !createApplicationDto.phone) {
+      throw new BadRequestException('Email ou telefone deve ser fornecido');
+    }
+
+    // Verificar se já existe uma inscrição com o mesmo email ou phone para esta vaga
+    const existingApplication = await this.applicationsRepository.findOne({
+      where: [
+        {
+          jobId: createApplicationDto.jobId,
+          email: createApplicationDto.email,
+        },
+        {
+          jobId: createApplicationDto.jobId,
+          phone: createApplicationDto.phone,
+        },
+      ].filter(
+        (condition) =>
+          (condition.email && createApplicationDto.email) ||
+          (condition.phone && createApplicationDto.phone),
+      ),
+    });
+
+    if (existingApplication) {
+      if (existingApplication.email === createApplicationDto.email) {
+        throw new BadRequestException(
+          'Este email já foi utilizado para se inscrever nesta vaga',
+        );
+      } else {
+        throw new BadRequestException(
+          'Este telefone já foi utilizado para se inscrever nesta vaga',
+        );
+      }
+    }
+
+    // Validar arquivo PDF
+    if (!resumeFile) {
+      throw new BadRequestException('Arquivo de currículo é obrigatório');
+    }
+
+    if (resumeFile.mimetype !== 'application/pdf') {
+      throw new BadRequestException('Apenas arquivos PDF são aceitos');
+    }
+
+    // Upload do arquivo para S3
+    const bucketName = process.env.RESUMES_BUCKET_NAME || 'resumes';
+    const fileName = this.generateSecureFileName(resumeFile.originalname);
+
+    // Salvar arquivo temporariamente
+    const tempFilePath = `/tmp/${fileName}`;
+    fs.writeFileSync(tempFilePath, resumeFile.buffer);
+
+    try {
+      const resumeUrl = await this.s3ClientService.uploadFile(
+        tempFilePath,
+        bucketName,
+        fileName,
+      );
+      // Remover arquivo temporário
+      fs.unlinkSync(tempFilePath);
+
+      const application = this.applicationsRepository.create({
+        ...createApplicationDto,
+        companyId: job.companyId,
+        resumeUrl,
+      });
+
+      return this.applicationsRepository.save(application);
+    } catch (error) {
+      // Remover arquivo temporário em caso de erro
+      if (fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath);
+      }
+      throw error;
+    }
   }
 
   async findAll(companyId: string): Promise<Application[]> {

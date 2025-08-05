@@ -58,6 +58,7 @@ export class S3ClientService {
         Key: s3Key,
         Body: fileContent,
         ContentType: contentType,
+        ACL: 'public-read', // Torna o arquivo público
       };
 
       // Faz o upload
@@ -67,10 +68,42 @@ export class S3ClientService {
         `Arquivo ${filePath} enviado com sucesso para ${bucketName}/${s3Key}`,
       );
 
-      return result.Location;
+      // Retorna a URL pública do arquivo
+      const publicUrl = `${process.env.ENDPOINT_URL}/${bucketName}/${s3Key}`;
+      return publicUrl;
     } catch (error) {
       this.logger.error(`Erro ao fazer upload do arquivo ${filePath}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * Configura política pública para um bucket
+   * @param bucketName - Nome do bucket
+   */
+  private async setBucketPublicPolicy(bucketName: string): Promise<void> {
+    try {
+      const bucketPolicy = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Sid: 'PublicReadGetObject',
+            Effect: 'Allow',
+            Principal: '*',
+            Action: 's3:GetObject',
+            Resource: `arn:aws:s3:::${bucketName}/*`,
+          },
+        ],
+      };
+      
+      await this.s3.putBucketPolicy({
+        Bucket: bucketName,
+        Policy: JSON.stringify(bucketPolicy),
+      }).promise();
+      
+      this.logger.log(`Política pública configurada para o bucket ${bucketName}`);
+    } catch (error) {
+      this.logger.warn(`Não foi possível configurar política pública para ${bucketName}:`, error);
     }
   }
 
@@ -83,12 +116,18 @@ export class S3ClientService {
       // Verifica se o bucket existe
       await this.s3.headBucket({ Bucket: bucketName }).promise();
       this.logger.log(`Bucket ${bucketName} já existe`);
+      
+      // Garante que o bucket tenha política pública
+      await this.setBucketPublicPolicy(bucketName);
     } catch (error) {
       if (error.statusCode === 404) {
         // Bucket não existe, cria ele
         try {
           await this.s3.createBucket({ Bucket: bucketName }).promise();
           this.logger.log(`Bucket ${bucketName} criado com sucesso`);
+          
+          // Configura política pública para o bucket
+          await this.setBucketPublicPolicy(bucketName);
         } catch (createError) {
           this.logger.error(`Erro ao criar bucket ${bucketName}:`, createError);
           throw createError;

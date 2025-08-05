@@ -10,11 +10,15 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicationsService } from './applications.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
+import { UploadResumeDto } from './dto/upload-resume.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
 
@@ -26,6 +30,16 @@ export class ApplicationsController {
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createApplicationDto: CreateApplicationDto) {
     return this.applicationsService.create(createApplicationDto);
+  }
+
+  @Post('upload-resume')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FileInterceptor('resume'))
+  async createWithResume(
+    @Body() uploadResumeDto: UploadResumeDto,
+    @UploadedFile() resumeFile: any,
+  ) {
+    return this.applicationsService.createWithResume(uploadResumeDto, resumeFile);
   }
 
   @Get()

@@ -1,6 +1,6 @@
-import { IsUUID, IsString, IsEmail, IsOptional, ValidateIf, IsUrl } from 'class-validator';
+import { IsUUID, IsString, IsEmail, IsOptional, ValidateIf } from 'class-validator';
 
-export class CreateApplicationDto {
+export class UploadResumeDto {
   @IsUUID()
   jobId: string;
 
@@ -19,8 +19,4 @@ export class CreateApplicationDto {
   @IsString()
   @ValidateIf((o) => !o.email)
   phone?: string;
-
-  @IsOptional()
-  @IsUrl()
-  resumeUrl?: string;
 } 
