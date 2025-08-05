@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   UseGuards,
-  Query,
 } from '@nestjs/common';
 import { ResumeService } from './resume.service';
 import { CreateResumeDto } from './dto/create-resume.dto';
@@ -54,4 +53,4 @@ export class ResumeController {
   remove(@Param('applicationId') applicationId: string) {
     return this.resumeService.remove(applicationId);
   }
-} 
+}

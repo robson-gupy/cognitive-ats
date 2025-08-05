@@ -37,7 +37,9 @@ services:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
       - RESUMES_BUCKET_NAME=cognitive-ats-uploads
+      - APPLICATIONS_SQS_QUEUE_NAME=applications-queue
     volumes:
       - ./companies-service/backend:/app
       - /app/node_modules
@@ -83,7 +85,7 @@ services:
     networks:
       - cognitive-ats-network
     restart: unless-stopped
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
 
   # LocalStack (AWS Services Simulator)
   localstack:

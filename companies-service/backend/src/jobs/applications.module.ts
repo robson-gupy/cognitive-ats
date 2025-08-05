@@ -14,6 +14,7 @@ import { ResumeLanguage } from './entities/resume-language.entity';
 import { AuthModule } from '../auth/auth.module';
 import { JwtConfigModule } from '../auth/jwt.module';
 import { S3Module } from '../shared/services/s3.module';
+import { SqsModule } from '../shared/services/sqs.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { S3Module } from '../shared/services/s3.module';
     AuthModule,
     JwtConfigModule,
     S3Module,
+    SqsModule,
   ],
   controllers: [ApplicationsController, ResumeController],
   providers: [ApplicationsService, ResumeService],

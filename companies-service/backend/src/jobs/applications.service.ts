@@ -12,6 +12,7 @@ import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
 import { S3ClientService } from '../shared/services/s3-client.service';
+import { SqsClientService } from '../shared/services/sqs-client.service';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 
@@ -42,6 +43,7 @@ export class ApplicationsService {
     @InjectRepository(Job)
     private jobsRepository: Repository<Job>,
     private s3ClientService: S3ClientService,
+    private sqsClientService: SqsClientService,
   ) {}
 
   async create(
@@ -103,7 +105,8 @@ export class ApplicationsService {
       companyId: job.companyId,
     });
 
-    const savedApplication = await this.applicationsRepository.save(application);
+    const savedApplication =
+      await this.applicationsRepository.save(application);
 
     return savedApplication;
   }
@@ -195,7 +198,19 @@ export class ApplicationsService {
         resumeUrl,
       });
 
-      const savedApplication = await this.applicationsRepository.save(application);
+      const savedApplication =
+        await this.applicationsRepository.save(application);
+
+      // Enviar mensagem para SQS após criar a application
+      try {
+        await this.sqsClientService.sendApplicationCreatedMessage(
+          savedApplication.id,
+          savedApplication.resumeUrl,
+        );
+      } catch (error) {
+        // Log do erro mas não falhar a criação da application
+        console.error('Erro ao enviar mensagem para SQS:', error);
+      }
 
       return savedApplication;
     } catch (error) {
@@ -215,11 +230,13 @@ export class ApplicationsService {
     });
   }
 
-  async findAllWithQuestionResponses(companyId: string): Promise<Application[]> {
+  async findAllWithQuestionResponses(
+    companyId: string,
+  ): Promise<Application[]> {
     return this.applicationsRepository.find({
       where: { companyId },
       relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
-      order: { 
+      order: {
         createdAt: 'DESC',
         questionResponses: {
           createdAt: 'ASC',
@@ -269,11 +286,14 @@ export class ApplicationsService {
     });
   }
 
-  async findByJobIdWithQuestionResponses(jobId: string, companyId: string): Promise<Application[]> {
+  async findByJobIdWithQuestionResponses(
+    jobId: string,
+    companyId: string,
+  ): Promise<Application[]> {
     return this.applicationsRepository.find({
       where: { jobId, companyId },
       relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
-      order: { 
+      order: {
         createdAt: 'DESC',
         questionResponses: {
           createdAt: 'ASC',
@@ -282,7 +302,11 @@ export class ApplicationsService {
     });
   }
 
-  async findOneByJobId(id: string, jobId: string, companyId: string): Promise<Application> {
+  async findOneByJobId(
+    id: string,
+    jobId: string,
+    companyId: string,
+  ): Promise<Application> {
     const application = await this.applicationsRepository.findOne({
       where: { id, jobId, companyId },
       relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
@@ -312,7 +336,11 @@ export class ApplicationsService {
     return this.applicationsRepository.save(application);
   }
 
-  async removeByJobId(id: string, jobId: string, companyId: string): Promise<void> {
+  async removeByJobId(
+    id: string,
+    jobId: string,
+    companyId: string,
+  ): Promise<void> {
     const application = await this.findOneByJobId(id, jobId, companyId);
     await this.applicationsRepository.remove(application);
   }
