@@ -8,6 +8,7 @@ import {
   JoinColumn,
   OneToMany,
   OneToOne,
+  Index,
 } from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
 import { User } from '../../users/entities/user.entity';
@@ -24,6 +25,13 @@ export enum JobStatus {
 }
 
 @Entity('jobs')
+@Index(['companyId'])
+@Index(['status'])
+@Index(['companyId', 'publishedAt'])
+@Index(['companyId', 'closedAt'])
+@Index(['companyId', 'status'])
+@Index(['companyId', 'departmentId'])
+@Index(['companyId','status', 'publishedAt'])
 export class Job {
   @PrimaryGeneratedColumn('uuid')
   id: string;
