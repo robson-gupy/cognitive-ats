@@ -9,12 +9,14 @@ import { JobLog } from './entities/job-log.entity';
 import { AuthModule } from '../auth/auth.module';
 import { JwtConfigModule } from '../auth/jwt.module';
 import { AiServiceClient } from './ai-service.client';
+import { ApplicationsModule } from './applications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Job, JobQuestion, JobStage, JobLog]),
     AuthModule,
     JwtConfigModule,
+    ApplicationsModule,
   ],
   controllers: [JobsController],
   providers: [JobsService, AiServiceClient],

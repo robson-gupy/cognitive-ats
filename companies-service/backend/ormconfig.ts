@@ -7,6 +7,7 @@ import { Job } from './src/jobs/entities/job.entity';
 import { JobQuestion } from './src/jobs/entities/job-question.entity';
 import { JobStage } from './src/jobs/entities/job-stage.entity';
 import { JobLog } from './src/jobs/entities/job-log.entity';
+import { Application } from './src/jobs/entities/application.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -15,7 +16,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_DATABASE || process.env.DB_NAME || 'cognitive_ats',
-  entities: [User, Company, Department, Role, Job, JobQuestion, JobStage, JobLog],
+  entities: [User, Company, Department, Role, Job, JobQuestion, JobStage, JobLog, Application],
   migrations: ['src/migrations/*.ts'],
   synchronize: false, // Desabilitar synchronize em produção
   logging: process.env.NODE_ENV !== 'production',
