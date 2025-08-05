@@ -7,11 +7,13 @@ import {
   ManyToOne,
   JoinColumn,
   OneToOne,
+  OneToMany,
   Index,
 } from 'typeorm';
 import { Job } from './job.entity';
 import { Company } from '../../companies/entities/company.entity';
 import { Resume } from './resume.entity';
+import { ApplicationQuestionResponse } from './application-question-response.entity';
 
 @Entity('applications')
 @Index(['jobId'])
@@ -71,4 +73,13 @@ export class Application {
     cascade: true,
   })
   resume: Resume;
+
+  @OneToMany(
+    () => ApplicationQuestionResponse,
+    (response) => response.application,
+    {
+      cascade: true,
+    },
+  )
+  questionResponses: ApplicationQuestionResponse[];
 }

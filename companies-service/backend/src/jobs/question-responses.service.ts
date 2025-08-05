@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { ApplicationQuestionResponse } from './entities/application-question-response.entity';
 import { JobQuestion } from './entities/job-question.entity';
 import { Application } from './entities/application.entity';
 import { CreateQuestionResponseDto } from './dto/create-question-response.dto';
+import { CreateMultipleQuestionResponsesDto } from './dto/create-multiple-question-responses.dto';
 import { UpdateQuestionResponseDto } from './dto/update-question-response.dto';
 
 @Injectable()
@@ -68,6 +69,103 @@ export class QuestionResponsesService {
     });
 
     return this.questionResponseRepository.save(questionResponse);
+  }
+
+  async createMultiple(
+    applicationId: string,
+    createMultipleQuestionResponsesDto: CreateMultipleQuestionResponsesDto,
+  ): Promise<ApplicationQuestionResponse[]> {
+    // Buscar a aplicação para obter jobId e companyId
+    const application = await this.applicationRepository.findOne({
+      where: { id: applicationId },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    // Buscar todas as perguntas do job de uma vez
+    const jobQuestionIds = createMultipleQuestionResponsesDto.responses.map(
+      (response) => response.jobQuestionId,
+    );
+    
+    const jobQuestions = await this.jobQuestionRepository.find({
+      where: { id: In(jobQuestionIds) },
+    });
+
+    // Criar um mapa para facilitar a busca
+    const jobQuestionsMap = new Map(
+      jobQuestions.map((question) => [question.id, question]),
+    );
+
+    // Verificar se todas as perguntas existem
+    const missingQuestions = jobQuestionIds.filter(
+      (id) => !jobQuestionsMap.has(id),
+    );
+    
+    if (missingQuestions.length > 0) {
+      throw new NotFoundException(
+        `Job questions not found: ${missingQuestions.join(', ')}`,
+      );
+    }
+
+    // Verificar se todas as perguntas pertencem ao job da aplicação
+    const invalidQuestions = jobQuestions.filter(
+      (question) => question.jobId !== application.jobId,
+    );
+    
+    if (invalidQuestions.length > 0) {
+      throw new BadRequestException(
+        `Job questions do not belong to the job of this application: ${invalidQuestions
+          .map((q) => q.id)
+          .join(', ')}`,
+      );
+    }
+
+    // Verificar respostas duplicadas na requisição
+    const questionIdsInRequest = createMultipleQuestionResponsesDto.responses.map(
+      (response) => response.jobQuestionId,
+    );
+    const uniqueQuestionIds = new Set(questionIdsInRequest);
+    
+    if (uniqueQuestionIds.size !== questionIdsInRequest.length) {
+      throw new BadRequestException('Duplicate job question IDs in request');
+    }
+
+    // Verificar se já existem respostas para estas perguntas nesta aplicação
+    const existingResponses = await this.questionResponseRepository.find({
+      where: {
+        applicationId,
+        jobQuestionId: In(jobQuestionIds),
+      },
+    });
+
+    if (existingResponses.length > 0) {
+      const existingQuestionIds = existingResponses.map((r) => r.jobQuestionId);
+      throw new BadRequestException(
+        `Responses already exist for these questions: ${existingQuestionIds.join(', ')}`,
+      );
+    }
+
+    // Criar todas as respostas
+    const questionResponses = createMultipleQuestionResponsesDto.responses.map(
+      (responseDto) => {
+        const jobQuestion = jobQuestionsMap.get(responseDto.jobQuestionId);
+        if (!jobQuestion) {
+          throw new NotFoundException(`Job question not found: ${responseDto.jobQuestionId}`);
+        }
+        return this.questionResponseRepository.create({
+          applicationId,
+          jobId: application.jobId,
+          companyId: application.companyId,
+          jobQuestionId: responseDto.jobQuestionId,
+          question: jobQuestion.question,
+          answer: responseDto.answer,
+        });
+      },
+    );
+
+    return this.questionResponseRepository.save(questionResponses);
   }
 
   async findAllByApplication(applicationId: string): Promise<ApplicationQuestionResponse[]> {

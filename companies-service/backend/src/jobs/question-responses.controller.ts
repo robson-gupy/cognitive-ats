@@ -10,10 +10,11 @@ import {
 } from '@nestjs/common';
 import { QuestionResponsesService } from './question-responses.service';
 import { CreateQuestionResponseDto } from './dto/create-question-response.dto';
+import { CreateMultipleQuestionResponsesDto } from './dto/create-multiple-question-responses.dto';
 import { UpdateQuestionResponseDto } from './dto/update-question-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('applications/:applicationId/question-responses')
+@Controller('jobs/:jobId/applications/:applicationId/question-responses')
 export class QuestionResponsesController {
   constructor(
     private readonly questionResponsesService: QuestionResponsesService,
@@ -21,6 +22,7 @@ export class QuestionResponsesController {
 
   @Post()
   create(
+    @Param('jobId') jobId: string,
     @Param('applicationId') applicationId: string,
     @Body() createQuestionResponseDto: CreateQuestionResponseDto,
   ) {
@@ -30,21 +32,40 @@ export class QuestionResponsesController {
     );
   }
 
+  @Post('multiple')
+  createMultiple(
+    @Param('jobId') jobId: string,
+    @Param('applicationId') applicationId: string,
+    @Body() createMultipleQuestionResponsesDto: CreateMultipleQuestionResponsesDto,
+  ) {
+    return this.questionResponsesService.createMultiple(
+      applicationId,
+      createMultipleQuestionResponsesDto,
+    );
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll(@Param('applicationId') applicationId: string) {
+  findAll(
+    @Param('jobId') jobId: string,
+    @Param('applicationId') applicationId: string,
+  ) {
     return this.questionResponsesService.findAllByApplication(applicationId);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
+  findOne(
+    @Param('jobId') jobId: string,
+    @Param('id') id: string,
+  ) {
     return this.questionResponsesService.findOne(id);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   update(
+    @Param('jobId') jobId: string,
     @Param('id') id: string,
     @Body() updateQuestionResponseDto: UpdateQuestionResponseDto,
   ) {
@@ -53,7 +74,10 @@ export class QuestionResponsesController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  remove(@Param('id') id: string) {
+  remove(
+    @Param('jobId') jobId: string,
+    @Param('id') id: string,
+  ) {
     return this.questionResponsesService.remove(id);
   }
 }

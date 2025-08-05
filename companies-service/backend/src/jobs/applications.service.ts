@@ -233,10 +233,28 @@ export class ApplicationsService {
     });
   }
 
+  async findAllWithQuestionResponses(companyId: string): Promise<Application[]> {
+    return this.applicationsRepository.find({
+      where: { companyId },
+      relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
+      order: { 
+        createdAt: 'DESC',
+        questionResponses: {
+          createdAt: 'ASC',
+        },
+      },
+    });
+  }
+
   async findOne(id: string, companyId: string): Promise<Application> {
     const application = await this.applicationsRepository.findOne({
       where: { id, companyId },
-      relations: ['job'],
+      relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
+      order: {
+        questionResponses: {
+          createdAt: 'ASC',
+        },
+      },
     });
 
     if (!application) {
@@ -267,6 +285,66 @@ export class ApplicationsService {
       where: { jobId, companyId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findByJobIdWithQuestionResponses(jobId: string, companyId: string): Promise<Application[]> {
+    return this.applicationsRepository.find({
+      where: { jobId, companyId },
+      relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
+      order: { 
+        createdAt: 'DESC',
+        questionResponses: {
+          createdAt: 'ASC',
+        },
+      },
+    });
+  }
+
+  async findOneByJobId(id: string, jobId: string, companyId: string): Promise<Application> {
+    const application = await this.applicationsRepository.findOne({
+      where: { id, jobId, companyId },
+      relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
+      order: {
+        questionResponses: {
+          createdAt: 'ASC',
+        },
+      },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Inscrição não encontrada');
+    }
+
+    return application;
+  }
+
+  async updateByJobId(
+    id: string,
+    jobId: string,
+    updateApplicationDto: UpdateApplicationDto,
+    companyId: string,
+  ): Promise<Application> {
+    const application = await this.findOneByJobId(id, jobId, companyId);
+
+    Object.assign(application, updateApplicationDto);
+    return this.applicationsRepository.save(application);
+  }
+
+  async removeByJobId(id: string, jobId: string, companyId: string): Promise<void> {
+    const application = await this.findOneByJobId(id, jobId, companyId);
+    await this.applicationsRepository.remove(application);
+  }
+
+  async updateAiScoreByJobId(
+    id: string,
+    jobId: string,
+    updateScoreDto: UpdateApplicationScoreDto,
+    companyId: string,
+  ): Promise<Application> {
+    const application = await this.findOneByJobId(id, jobId, companyId);
+
+    Object.assign(application, updateScoreDto);
+    return this.applicationsRepository.save(application);
   }
 
   async updateAiScore(
