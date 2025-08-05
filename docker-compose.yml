@@ -36,6 +36,7 @@ services:
       - ENDPOINT_URL=http://minio:9000
       - AWS_ACCESS_KEY_ID=minioadmin
       - AWS_SECRET_ACCESS_KEY=minioadmin
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
     volumes:
       - ./companies-service/backend:/app
       - /app/node_modules
@@ -43,6 +44,7 @@ services:
       - postgres
       - ai-service
       - minio
+      - rabbitmq
     networks:
       - cognitive-ats-network
     restart: unless-stopped
@@ -99,9 +101,26 @@ services:
       - cognitive-ats-network
     restart: unless-stopped
 
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: cognitive-ats-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   minio_data:
+  rabbitmq_data:
 
 networks:
   cognitive-ats-network:

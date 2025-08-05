@@ -12,6 +12,7 @@ import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
 import { S3ClientService } from '../shared/services/s3-client.service';
+import { RabbitMQService } from '../shared/services/rabbitmq.service';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 
@@ -42,6 +43,7 @@ export class ApplicationsService {
     @InjectRepository(Job)
     private jobsRepository: Repository<Job>,
     private s3ClientService: S3ClientService,
+    private rabbitMQService: RabbitMQService,
   ) {}
 
   async create(
@@ -103,7 +105,17 @@ export class ApplicationsService {
       companyId: job.companyId,
     });
 
-    return this.applicationsRepository.save(application);
+    const savedApplication = await this.applicationsRepository.save(application);
+
+    // Enviar mensagem para o RabbitMQ
+    try {
+      await this.rabbitMQService.publishApplicationNew(savedApplication);
+    } catch (error) {
+      console.error('Erro ao enviar mensagem para RabbitMQ:', error);
+      // Não falhar a criação da aplicação se o RabbitMQ falhar
+    }
+
+    return savedApplication;
   }
 
   async createWithResume(
@@ -193,7 +205,17 @@ export class ApplicationsService {
         resumeUrl,
       });
 
-      return this.applicationsRepository.save(application);
+      const savedApplication = await this.applicationsRepository.save(application);
+
+      // Enviar mensagem para o RabbitMQ
+      try {
+        await this.rabbitMQService.publishApplicationNew(savedApplication);
+      } catch (error) {
+        console.error('Erro ao enviar mensagem para RabbitMQ:', error);
+        // Não falhar a criação da aplicação se o RabbitMQ falhar
+      }
+
+      return savedApplication;
     } catch (error) {
       // Remover arquivo temporário em caso de erro
       if (fs.existsSync(tempFilePath)) {

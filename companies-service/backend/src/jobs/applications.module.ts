@@ -7,6 +7,7 @@ import { Job } from './entities/job.entity';
 import { AuthModule } from '../auth/auth.module';
 import { JwtConfigModule } from '../auth/jwt.module';
 import { S3Module } from '../shared/services/s3.module';
+import { RabbitMQModule } from '../shared/services/rabbitmq.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { S3Module } from '../shared/services/s3.module';
     AuthModule,
     JwtConfigModule,
     S3Module,
+    RabbitMQModule,
   ],
   controllers: [ApplicationsController],
   providers: [ApplicationsService],

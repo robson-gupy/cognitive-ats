@@ -47,15 +47,21 @@ export class Application {
   @Column({ length: 20, nullable: true })
   phone: string;
 
+  @Column({
+    name: 'ai_score',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  aiScore: number;
+
+  @Column({ name: 'resume_url', length: 500, nullable: true })
+  resumeUrl: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-
-  @Column({ name: 'ai_score', type: 'decimal', precision: 5, scale: 2, nullable: true })
-  aiScore: number;
-
-  @Column({ name: 'resume_url', length: 500, nullable: true })
-  resumeUrl: string;
-} 
+}
