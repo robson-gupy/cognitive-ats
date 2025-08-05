@@ -1,4 +1,13 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Patch, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Get,
+  Patch,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
@@ -56,7 +65,7 @@ export class AuthController {
 
     const user = await this.usersService.create(userData);
     const { password, ...result } = user;
-    
+
     return {
       message: 'Empresa e usuário registrados com sucesso!',
       company,
@@ -74,45 +83,55 @@ export class AuthController {
   async getProfile(@Request() req) {
     // Validar se temos os dados necessários do usuário
     if (!req.user || !req.user.sub || !req.user.companyId) {
-      throw new UnauthorizedException('Token inválido - dados do usuário ausentes');
+      throw new UnauthorizedException(
+        'Token inválido - dados do usuário ausentes',
+      );
     }
-    
+
     // Buscar dados completos do usuário
-    const user = await this.usersService.findOne(req.user.sub, req.user.companyId);
-    
+    const user = await this.usersService.findOne(
+      req.user.sub,
+      req.user.companyId,
+    );
+
     // Validar se o email do usuário encontrado corresponde ao email no token
     if (user.email !== req.user.email) {
       throw new UnauthorizedException('Token inválido - email não corresponde');
     }
-    
+
     const { password, ...result } = user;
-    
+
     // Adicionar roleCode para compatibilidade com o frontend
     const response = {
       ...result,
       roleCode: result.role?.code,
     };
-    
+
     return response;
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
-  async updateProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
+  async updateProfile(
+    @Request() req,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
     // Validar se temos os dados necessários do usuário
     if (!req.user || !req.user.sub || !req.user.companyId) {
-      throw new UnauthorizedException('Token inválido - dados do usuário ausentes');
+      throw new UnauthorizedException(
+        'Token inválido - dados do usuário ausentes',
+      );
     }
 
     // Atualizar perfil do usuário
     const updatedUser = await this.usersService.updateOwnProfile(
       req.user.sub,
       req.user.companyId,
-      updateProfileDto
+      updateProfileDto,
     );
 
     const { password, ...result } = updatedUser;
-    
+
     return {
       ...result,
       roleCode: result.role?.code,
@@ -121,10 +140,15 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
-  async changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
+  async changePassword(
+    @Request() req,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
     // Validar se temos os dados necessários do usuário
     if (!req.user || !req.user.sub || !req.user.companyId) {
-      throw new UnauthorizedException('Token inválido - dados do usuário ausentes');
+      throw new UnauthorizedException(
+        'Token inválido - dados do usuário ausentes',
+      );
     }
 
     // Alterar senha do usuário
@@ -132,9 +156,9 @@ export class AuthController {
       req.user.sub,
       req.user.companyId,
       changePasswordDto.currentPassword,
-      changePasswordDto.newPassword
+      changePasswordDto.newPassword,
     );
 
     return { message: 'Senha alterada com sucesso!' };
   }
-} 
+}

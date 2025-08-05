@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateCompanyDto } from './dto/create-company.dto';
@@ -17,7 +21,7 @@ export class CompaniesService {
     const existingCompany = await this.companiesRepository.findOne({
       where: { cnpj: createCompanyDto.cnpj },
     });
-    
+
     if (existingCompany) {
       throw new ConflictException('CNPJ já está cadastrado');
     }
@@ -35,11 +39,11 @@ export class CompaniesService {
       where: { id },
       relations: ['users'],
     });
-    
+
     if (!company) {
       throw new NotFoundException('Empresa não encontrada');
     }
-    
+
     return company;
   }
 
@@ -49,7 +53,10 @@ export class CompaniesService {
     });
   }
 
-  async update(id: string, updateCompanyDto: UpdateCompanyDto): Promise<Company> {
+  async update(
+    id: string,
+    updateCompanyDto: UpdateCompanyDto,
+  ): Promise<Company> {
     const company = await this.findOne(id);
 
     // Se o CNPJ estiver sendo atualizado, verificar se já existe
@@ -57,7 +64,7 @@ export class CompaniesService {
       const existingCompany = await this.companiesRepository.findOne({
         where: { cnpj: updateCompanyDto.cnpj },
       });
-      
+
       if (existingCompany) {
         throw new ConflictException('CNPJ já está cadastrado');
       }
@@ -71,4 +78,4 @@ export class CompaniesService {
     const company = await this.findOne(id);
     await this.companiesRepository.remove(company);
   }
-} 
+}

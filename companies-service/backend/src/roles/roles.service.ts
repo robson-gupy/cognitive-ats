@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role, RoleType } from './entities/role.entity';
@@ -15,7 +19,7 @@ export class RolesService {
   async create(createRoleDto: CreateRoleDto): Promise<Role> {
     // Verificar se já existe um role com o mesmo código
     const existingRole = await this.rolesRepository.findOne({
-      where: { code: createRoleDto.code }
+      where: { code: createRoleDto.code },
     });
 
     if (existingRole) {
@@ -28,21 +32,21 @@ export class RolesService {
 
   async findAll(): Promise<Role[]> {
     return await this.rolesRepository.find({
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
   async findActive(): Promise<Role[]> {
     return await this.rolesRepository.find({
       where: { isActive: true },
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
   async findOne(id: string): Promise<Role> {
     const role = await this.rolesRepository.findOne({
       where: { id },
-      relations: ['users']
+      relations: ['users'],
     });
 
     if (!role) {
@@ -54,7 +58,7 @@ export class RolesService {
 
   async findByCode(code: string): Promise<Role | null> {
     return await this.rolesRepository.findOne({
-      where: { code, isActive: true }
+      where: { code, isActive: true },
     });
   }
 
@@ -64,7 +68,7 @@ export class RolesService {
     // Se estiver atualizando o código, verificar se já existe outro com o mesmo código
     if (updateRoleDto.code && updateRoleDto.code !== role.code) {
       const existingRole = await this.rolesRepository.findOne({
-        where: { code: updateRoleDto.code }
+        where: { code: updateRoleDto.code },
       });
 
       if (existingRole) {
@@ -78,10 +82,12 @@ export class RolesService {
 
   async remove(id: string): Promise<void> {
     const role = await this.findOne(id);
-    
+
     // Verificar se há usuários associados ao role
     if (role.users && role.users.length > 0) {
-      throw new ConflictException('Não é possível excluir um role que possui usuários associados');
+      throw new ConflictException(
+        'Não é possível excluir um role que possui usuários associados',
+      );
     }
 
     await this.rolesRepository.remove(role);
@@ -99,18 +105,18 @@ export class RolesService {
       {
         name: 'Administrador',
         code: RoleType.ADMIN,
-        description: 'Acesso completo ao sistema'
+        description: 'Acesso completo ao sistema',
       },
       {
         name: 'Recrutador',
         code: RoleType.RECRUITER,
-        description: 'Acesso para gerenciar candidatos e vagas'
+        description: 'Acesso para gerenciar candidatos e vagas',
       },
       {
         name: 'Gestor',
         code: RoleType.MANAGER,
-        description: 'Acesso para gerenciar equipes e processos'
-      }
+        description: 'Acesso para gerenciar equipes e processos',
+      },
     ];
 
     for (const roleData of defaultRoles) {
@@ -120,4 +126,4 @@ export class RolesService {
       }
     }
   }
-} 
+}

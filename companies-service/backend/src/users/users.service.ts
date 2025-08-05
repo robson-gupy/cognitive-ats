@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -19,7 +26,6 @@ export class UsersService {
     const existingUser = await this.usersRepository.findOne({
       where: { email: createUserDto.email },
     });
-    
     if (existingUser) {
       throw new ConflictException('Email já está em uso');
     }
@@ -31,7 +37,6 @@ export class UsersService {
       ...createUserDto,
       password: hashedPassword,
     });
-    
     return await this.usersRepository.save(user);
   }
 
@@ -47,38 +52,58 @@ export class UsersService {
     if (!id || id === 'undefined' || id === 'null') {
       throw new UnauthorizedException('ID do usuário inválido');
     }
-    
+
     // Validar se o companyId é válido
-    if (!userCompanyId || userCompanyId === 'undefined' || userCompanyId === 'null') {
+    if (
+      !userCompanyId ||
+      userCompanyId === 'undefined' ||
+      userCompanyId === 'null'
+    ) {
       throw new UnauthorizedException('CompanyId inválido');
     }
-    
+
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ['company', 'role'],
     });
-    
+
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
     }
 
     // Verificar se o usuário pertence à mesma empresa
     if (user.companyId !== userCompanyId) {
-      throw new ForbiddenException('Acesso negado: usuário não pertence à sua empresa');
+      throw new ForbiddenException(
+        'Acesso negado: usuário não pertence à sua empresa',
+      );
     }
-    
+
     return user;
   }
 
   async findByEmail(email: string): Promise<User | null> {
     return await this.usersRepository.findOne({
       where: { email },
-      select: ['id', 'firstName', 'lastName', 'email', 'password', 'companyId', 'roleId', 'createdAt', 'updatedAt'],
+      select: [
+        'id',
+        'firstName',
+        'lastName',
+        'email',
+        'password',
+        'companyId',
+        'roleId',
+        'createdAt',
+        'updatedAt',
+      ],
       relations: ['company', 'role'],
     });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto, userCompanyId: string): Promise<User> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    userCompanyId: string,
+  ): Promise<User> {
     const user = await this.findOne(id, userCompanyId);
 
     // Verificar se o email já existe (se estiver sendo atualizado)
@@ -86,7 +111,7 @@ export class UsersService {
       const existingUser = await this.usersRepository.findOne({
         where: { email: updateUserDto.email },
       });
-      
+
       if (existingUser && existingUser.id !== id) {
         throw new ConflictException('Email já está em uso');
       }
@@ -101,7 +126,11 @@ export class UsersService {
     return await this.usersRepository.save(user);
   }
 
-  async updateOwnProfile(userId: string, userCompanyId: string, updateProfileDto: UpdateProfileDto): Promise<User> {
+  async updateOwnProfile(
+    userId: string,
+    userCompanyId: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<User> {
     const user = await this.findOne(userId, userCompanyId);
 
     // Verificar se o email já existe (se estiver sendo atualizado)
@@ -109,7 +138,7 @@ export class UsersService {
       const existingUser = await this.usersRepository.findOne({
         where: { email: updateProfileDto.email },
       });
-      
+
       if (existingUser && existingUser.id !== userId) {
         throw new ConflictException('Email já está em uso');
       }
@@ -123,11 +152,19 @@ export class UsersService {
     return await this.usersRepository.save(user);
   }
 
-  async changePassword(userId: string, userCompanyId: string, currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    userId: string,
+    userCompanyId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     const user = await this.findOne(userId, userCompanyId);
 
     // Verificar se a senha atual está correta
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
     if (!isCurrentPasswordValid) {
       throw new BadRequestException('Senha atual incorreta');
     }
@@ -135,7 +172,9 @@ export class UsersService {
     // Verificar se a nova senha é diferente da atual
     const isNewPasswordSame = await bcrypt.compare(newPassword, user.password);
     if (isNewPasswordSame) {
-      throw new BadRequestException('A nova senha deve ser diferente da senha atual');
+      throw new BadRequestException(
+        'A nova senha deve ser diferente da senha atual',
+      );
     }
 
     // Hash da nova senha
@@ -149,4 +188,4 @@ export class UsersService {
     const user = await this.findOne(id, userCompanyId);
     await this.usersRepository.remove(user);
   }
-} 
+}

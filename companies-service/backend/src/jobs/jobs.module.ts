@@ -20,4 +20,4 @@ import { AiServiceClient } from './ai-service.client';
   providers: [JobsService, AiServiceClient],
   exports: [JobsService],
 })
-export class JobsModule {} 
+export class JobsModule {}

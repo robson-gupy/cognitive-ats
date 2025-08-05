@@ -22,9 +22,9 @@ import { AuthLoggingInterceptor } from './auth.interceptor';
   ],
   controllers: [AuthController],
   providers: [
-    AuthService, 
-    JwtStrategy, 
-    LocalStrategy, 
+    AuthService,
+    JwtStrategy,
+    LocalStrategy,
     AdminAuthGuard,
     {
       provide: APP_INTERCEPTOR,
@@ -33,4 +33,4 @@ import { AuthLoggingInterceptor } from './auth.interceptor';
   ],
   exports: [AuthService, AdminAuthGuard],
 })
-export class AuthModule {} 
+export class AuthModule {}

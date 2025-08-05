@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,7 +42,11 @@ export class UsersController {
 
   @Patch(':id')
   @UseGuards(AdminAuthGuard)
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Request() req) {
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
+  ) {
     const userCompanyId = req.user.companyId;
     return this.usersService.update(id, updateUserDto, userCompanyId);
   }
@@ -44,4 +58,4 @@ export class UsersController {
     await this.usersService.remove(id, userCompanyId);
     return { message: 'Usuário excluído com sucesso' };
   }
-} 
+}

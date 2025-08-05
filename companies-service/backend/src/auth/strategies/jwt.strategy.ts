@@ -16,13 +16,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     try {
       // Usar UsersService para buscar usuário (inclui validação de empresa)
-      const user = await this.usersService.findOne(payload.sub, payload.companyId);
-      
+      const user = await this.usersService.findOne(
+        payload.sub,
+        payload.companyId,
+      );
+
       // Validar se o email no payload corresponde ao usuário
       if (payload.email !== user.email) {
-        throw new UnauthorizedException('Token inválido - email não corresponde');
+        throw new UnauthorizedException(
+          'Token inválido - email não corresponde',
+        );
       }
-      
+
       return {
         id: user.id,
         sub: user.id, // Adicionar 'sub' para compatibilidade
@@ -35,4 +40,4 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Token inválido');
     }
   }
-} 
+}

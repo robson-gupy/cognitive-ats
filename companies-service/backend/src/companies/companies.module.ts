@@ -7,9 +7,13 @@ import { AuthModule } from '../auth/auth.module';
 import { JwtConfigModule } from '../auth/jwt.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Company]), forwardRef(() => AuthModule), JwtConfigModule],
+  imports: [
+    TypeOrmModule.forFeature([Company]),
+    forwardRef(() => AuthModule),
+    JwtConfigModule,
+  ],
   controllers: [CompaniesController],
   providers: [CompaniesService],
   exports: [CompaniesService],
 })
-export class CompaniesModule {} 
+export class CompaniesModule {}

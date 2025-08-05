@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, Min, Max, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
+  MinLength,
+} from 'class-validator';
 
 export class CreateJobWithAiDto {
   @IsString()
@@ -17,4 +25,4 @@ export class CreateJobWithAiDto {
   @Min(1)
   @Max(5)
   maxStages?: number;
-} 
+}

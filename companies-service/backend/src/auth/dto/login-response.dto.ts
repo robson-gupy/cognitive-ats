@@ -9,4 +9,4 @@ export class LoginResponseDto {
     roleId?: string;
     roleCode?: string;
   };
-} 
+}

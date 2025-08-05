@@ -11,9 +11,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     // Validar se o usuário tem os dados mínimos necessários
     if (!user.id || !user.email || !user.companyId) {
-      throw new UnauthorizedException('Token inválido - dados do usuário incompletos');
+      throw new UnauthorizedException(
+        'Token inválido - dados do usuário incompletos',
+      );
     }
 
     return user;
   }
-} 
+}

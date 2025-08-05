@@ -37,7 +37,9 @@ export class AiServiceClient {
     this.aiServiceUrl = process.env.AI_SERVICE_URL || 'http://ai-service:8000';
   }
 
-  async createJobFromPrompt(request: JobCreationRequest): Promise<JobCreationResponse> {
+  async createJobFromPrompt(
+    request: JobCreationRequest,
+  ): Promise<JobCreationResponse> {
     try {
       const response = await axios.post(
         `${this.aiServiceUrl}/jobs/create-from-prompt`,
@@ -47,16 +49,25 @@ export class AiServiceClient {
           headers: {
             'Content-Type': 'application/json',
           },
-        }
+        },
       );
 
       return response.data as JobCreationResponse;
     } catch (error: any) {
       if (error.response) {
-        const message = error.response?.data?.detail || error.message || 'Erro ao comunicar com o AI Service';
-        throw new HttpException(message, error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR);
+        const message =
+          error.response?.data?.detail ||
+          error.message ||
+          'Erro ao comunicar com o AI Service';
+        throw new HttpException(
+          message,
+          error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
       }
-      throw new HttpException('Erro interno do servidor', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Erro interno do servidor',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
-} 
+}

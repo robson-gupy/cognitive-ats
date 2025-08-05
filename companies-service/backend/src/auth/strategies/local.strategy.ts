@@ -24,4 +24,4 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     const { password: _, ...result } = user;
     return result;
   }
-} 
+}

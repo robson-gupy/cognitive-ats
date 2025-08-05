@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Department } from './entities/department.entity';
@@ -15,7 +19,7 @@ export class DepartmentsService {
   async create(createDepartmentDto: CreateDepartmentDto): Promise<Department> {
     // Verificar se já existe um departamento com o mesmo código
     const existingDepartment = await this.departmentsRepository.findOne({
-      where: { code: createDepartmentDto.code }
+      where: { code: createDepartmentDto.code },
     });
 
     if (existingDepartment) {
@@ -29,7 +33,7 @@ export class DepartmentsService {
   async findAll(): Promise<Department[]> {
     return await this.departmentsRepository.find({
       relations: ['company'],
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
@@ -37,14 +41,14 @@ export class DepartmentsService {
     return await this.departmentsRepository.find({
       where: { companyId, isActive: true },
       relations: ['company'],
-      order: { name: 'ASC' }
+      order: { name: 'ASC' },
     });
   }
 
   async findOne(id: string): Promise<Department> {
     const department = await this.departmentsRepository.findOne({
       where: { id },
-      relations: ['company', 'users']
+      relations: ['company', 'users'],
     });
 
     if (!department) {
@@ -54,17 +58,25 @@ export class DepartmentsService {
     return department;
   }
 
-  async update(id: string, updateDepartmentDto: UpdateDepartmentDto): Promise<Department> {
+  async update(
+    id: string,
+    updateDepartmentDto: UpdateDepartmentDto,
+  ): Promise<Department> {
     const department = await this.findOne(id);
 
     // Se estiver atualizando o código, verificar se já existe outro com o mesmo código
-    if (updateDepartmentDto.code && updateDepartmentDto.code !== department.code) {
+    if (
+      updateDepartmentDto.code &&
+      updateDepartmentDto.code !== department.code
+    ) {
       const existingDepartment = await this.departmentsRepository.findOne({
-        where: { code: updateDepartmentDto.code }
+        where: { code: updateDepartmentDto.code },
       });
 
       if (existingDepartment) {
-        throw new ConflictException('Já existe um departamento com este código');
+        throw new ConflictException(
+          'Já existe um departamento com este código',
+        );
       }
     }
 
@@ -74,10 +86,12 @@ export class DepartmentsService {
 
   async remove(id: string): Promise<void> {
     const department = await this.findOne(id);
-    
+
     // Verificar se há usuários associados ao departamento
     if (department.users && department.users.length > 0) {
-      throw new ConflictException('Não é possível excluir um departamento que possui usuários associados');
+      throw new ConflictException(
+        'Não é possível excluir um departamento que possui usuários associados',
+      );
     }
 
     await this.departmentsRepository.remove(department);
@@ -88,4 +102,4 @@ export class DepartmentsService {
     department.isActive = false;
     return await this.departmentsRepository.save(department);
   }
-} 
+}

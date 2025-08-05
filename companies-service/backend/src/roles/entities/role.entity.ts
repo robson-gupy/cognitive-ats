@@ -1,10 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 export enum RoleType {
   ADMIN = 'ADMIN',
   RECRUITER = 'RECRUITER',
-  MANAGER = 'MANAGER'
+  MANAGER = 'MANAGER',
 }
 
 @Entity('roles')
@@ -30,6 +37,6 @@ export class Role {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @OneToMany(() => User, user => user.role)
+  @OneToMany(() => User, (user) => user.role)
   users: User[];
-} 
+}

@@ -222,17 +222,39 @@ export class InitialSchema1700000000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover foreign keys
-    await queryRunner.query(`ALTER TABLE job_logs DROP CONSTRAINT IF EXISTS fk_job_logs_user`);
-    await queryRunner.query(`ALTER TABLE job_logs DROP CONSTRAINT IF EXISTS fk_job_logs_job`);
-    await queryRunner.query(`ALTER TABLE job_stages DROP CONSTRAINT IF EXISTS fk_job_stages_job`);
-    await queryRunner.query(`ALTER TABLE job_questions DROP CONSTRAINT IF EXISTS fk_job_questions_job`);
-    await queryRunner.query(`ALTER TABLE jobs DROP CONSTRAINT IF EXISTS fk_jobs_created_by`);
-    await queryRunner.query(`ALTER TABLE jobs DROP CONSTRAINT IF EXISTS fk_jobs_department`);
-    await queryRunner.query(`ALTER TABLE jobs DROP CONSTRAINT IF EXISTS fk_jobs_company`);
-    await queryRunner.query(`ALTER TABLE departments DROP CONSTRAINT IF EXISTS fk_departments_company`);
-    await queryRunner.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_role`);
-    await queryRunner.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_department`);
-    await queryRunner.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_company`);
+    await queryRunner.query(
+      `ALTER TABLE job_logs DROP CONSTRAINT IF EXISTS fk_job_logs_user`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE job_logs DROP CONSTRAINT IF EXISTS fk_job_logs_job`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE job_stages DROP CONSTRAINT IF EXISTS fk_job_stages_job`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE job_questions DROP CONSTRAINT IF EXISTS fk_job_questions_job`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE jobs DROP CONSTRAINT IF EXISTS fk_jobs_created_by`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE jobs DROP CONSTRAINT IF EXISTS fk_jobs_department`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE jobs DROP CONSTRAINT IF EXISTS fk_jobs_company`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE departments DROP CONSTRAINT IF EXISTS fk_departments_company`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_role`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_department`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_company`,
+    );
 
     // Remover tabelas
     await queryRunner.query(`DROP TABLE IF EXISTS job_logs`);
@@ -244,4 +266,4 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS companies`);
     await queryRunner.query(`DROP TABLE IF EXISTS users`);
   }
-} 
+}

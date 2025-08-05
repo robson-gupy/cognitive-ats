@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
 import { User } from '../../users/entities/user.entity';
 import { Job } from '../../jobs/entities/job.entity';
@@ -23,11 +32,11 @@ export class Department {
   @Column({ name: 'company_id', type: 'uuid' })
   companyId: string;
 
-  @ManyToOne(() => Company, company => company.departments)
+  @ManyToOne(() => Company, (company) => company.departments)
   @JoinColumn({ name: 'company_id' })
   company: Company;
 
-  @OneToMany(() => User, user => user.department)
+  @OneToMany(() => User, (user) => user.department)
   users: User[];
 
   @CreateDateColumn({ name: 'created_at' })
@@ -35,4 +44,4 @@ export class Department {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-} 
+}

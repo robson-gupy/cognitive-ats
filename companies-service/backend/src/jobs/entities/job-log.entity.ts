@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Job } from './job.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -22,7 +29,7 @@ export class JobLog {
   @Column({ name: 'job_id', type: 'uuid' })
   jobId: string;
 
-  @ManyToOne(() => Job, job => job.logs, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Job, (job) => job.logs, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'job_id' })
   job: Job;
 
@@ -35,4 +42,4 @@ export class JobLog {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
-} 
+}

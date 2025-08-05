@@ -1,16 +1,19 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {
-  constructor(
-    private jwtService: JwtService,
-  ) {}
+  constructor(private jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
-    
+
     if (!token) {
       throw new ForbiddenException('Token não fornecido');
     }
@@ -20,7 +23,9 @@ export class AdminAuthGuard implements CanActivate {
       const userRoleCode = payload.roleCode;
 
       if (!userRoleCode || userRoleCode !== 'ADMIN') {
-        throw new ForbiddenException('Acesso negado: apenas administradores podem acessar este recurso');
+        throw new ForbiddenException(
+          'Acesso negado: apenas administradores podem acessar este recurso',
+        );
       }
 
       // Adicionar informações completas do usuário ao request
@@ -32,7 +37,7 @@ export class AdminAuthGuard implements CanActivate {
         lastName: payload.lastName,
         roleCode: payload.roleCode,
       };
-      
+
       return true;
     } catch (error) {
       if (error instanceof ForbiddenException) {
@@ -46,4 +51,4 @@ export class AdminAuthGuard implements CanActivate {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
   }
-} 
+}

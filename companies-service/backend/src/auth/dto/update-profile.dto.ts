@@ -14,4 +14,4 @@ export class UpdateProfileDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
-} 
+}

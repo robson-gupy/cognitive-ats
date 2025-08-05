@@ -1,4 +1,14 @@
-import { IsString, IsNotEmpty, IsDateString, IsOptional, IsArray, ValidateNested, MinLength, IsEnum, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  MinLength,
+  IsEnum,
+  IsUUID,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { JobStatus } from '../entities/job.entity';
 
@@ -82,4 +92,4 @@ export class UpdateJobDto {
   @ValidateNested({ each: true })
   @Type(() => UpdateJobStageDto)
   stages?: UpdateJobStageDto[];
-} 
+}

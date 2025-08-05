@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
 import { Department } from '../../departments/entities/department.entity';
 import { Role } from '../../roles/entities/role.entity';
@@ -48,6 +57,6 @@ export class User {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @OneToMany(() => Job, job => job.createdBy)
+  @OneToMany(() => Job, (job) => job.createdBy)
   createdJobs: Job[];
-} 
+}
