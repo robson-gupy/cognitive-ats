@@ -101,10 +101,12 @@ services:
       - AWS_REGION=${AWS_REGION}
       - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - BACKEND_URL=${BACKEND_URL:-http://companies-backend:3000}
     volumes:
       - ./ai-service:/app
     depends_on:
       - localstack
+      - companies-backend
     networks:
       - cognitive-ats-network
     restart: unless-stopped

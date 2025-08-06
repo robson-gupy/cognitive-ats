@@ -58,6 +58,11 @@ APPLICATIONS_SQS_QUEUE_NAME=applications-queue
 CV_PROCESSING_QUEUE_URL=http://localhost:4566/000000000000/cv-processing-queue
 
 # =============================================================================
+# BACKEND CONFIGURATION
+# =============================================================================
+BACKEND_URL=http://companies-backend:3000
+
+# =============================================================================
 # LOCALSTACK CONFIGURATION
 # =============================================================================
 LOCALSTACK_PORT=4566

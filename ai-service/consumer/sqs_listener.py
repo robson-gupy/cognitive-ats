@@ -14,6 +14,7 @@ import asyncio
 import tempfile
 import requests
 import boto3
+from datetime import date, datetime
 from botocore.exceptions import ClientError, NoCredentialsError
 from dotenv import load_dotenv
 
@@ -31,6 +32,105 @@ except ImportError as e:
 
 # Carrega variáveis de ambiente
 load_dotenv()
+
+
+def convert_dates_to_iso(data):
+    """
+    Converte objetos date e datetime para strings ISO para serialização JSON
+    
+    Args:
+        data: Dados a serem convertidos (dict, list, ou valor primitivo)
+        
+    Returns:
+        Dados convertidos com datas em formato ISO
+    """
+    if isinstance(data, dict):
+        return {key: convert_dates_to_iso(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [convert_dates_to_iso(item) for item in data]
+    elif isinstance(data, (date, datetime)):
+        return data.isoformat()
+    else:
+        return data
+
+
+def map_resume_to_backend_format(resume_data: dict) -> dict:
+    """
+    Mapeia os dados do currículo do formato Python para o formato esperado pelo backend
+    
+    Args:
+        resume_data: Dados do currículo no formato Python
+        
+    Returns:
+        dict: Dados mapeados para o formato do backend
+    """
+    mapped_data = {}
+    
+    # Campos básicos
+    if 'summary' in resume_data:
+        mapped_data['summary'] = resume_data['summary']
+    
+    # Mapear experiências profissionais
+    if 'professional_experiences' in resume_data and resume_data['professional_experiences']:
+        mapped_data['professionalExperiences'] = []
+        for exp in resume_data['professional_experiences']:
+            mapped_exp = {
+                'companyName': exp.get('company_name', ''),
+                'position': exp.get('position', ''),
+                'startDate': exp.get('start_date', ''),
+                'endDate': exp.get('end_date'),
+                'isCurrent': exp.get('is_current', False),
+                'description': exp.get('description'),
+                'responsibilities': exp.get('responsibilities'),
+                'achievements': exp.get('achievements')
+            }
+            # Remove campos None
+            mapped_exp = {k: v for k, v in mapped_exp.items() if v is not None}
+            mapped_data['professionalExperiences'].append(mapped_exp)
+    
+    # Mapear formações acadêmicas
+    if 'academic_formations' in resume_data and resume_data['academic_formations']:
+        mapped_data['academicFormations'] = []
+        for formation in resume_data['academic_formations']:
+            mapped_formation = {
+                'institution': formation.get('institution', ''),
+                'course': formation.get('course', ''),
+                'degree': formation.get('degree', ''),
+                'startDate': formation.get('start_date', ''),
+                'endDate': formation.get('end_date'),
+                'isCurrent': formation.get('is_current', False),
+                'status': formation.get('status', 'completed'),
+                'description': formation.get('description')
+            }
+            # Remove campos None
+            mapped_formation = {k: v for k, v in mapped_formation.items() if v is not None}
+            mapped_data['academicFormations'].append(mapped_formation)
+    
+    # Mapear conquistas
+    if 'achievements' in resume_data and resume_data['achievements']:
+        mapped_data['achievements'] = []
+        for achievement in resume_data['achievements']:
+            mapped_achievement = {
+                'title': achievement.get('title', ''),
+                'description': achievement.get('description')
+            }
+            # Remove campos None
+            mapped_achievement = {k: v for k, v in mapped_achievement.items() if v is not None}
+            mapped_data['achievements'].append(mapped_achievement)
+    
+    # Mapear idiomas
+    if 'languages' in resume_data and resume_data['languages']:
+        mapped_data['languages'] = []
+        for language in resume_data['languages']:
+            mapped_language = {
+                'language': language.get('language', ''),
+                'proficiencyLevel': language.get('proficiency_level', '')
+            }
+            # Remove campos None
+            mapped_language = {k: v for k, v in mapped_language.items() if v is not None}
+            mapped_data['languages'].append(mapped_language)
+    
+    return mapped_data
 
 
 def get_sqs_client():
@@ -116,6 +216,70 @@ def should_delete_message(message: dict, max_retries: int = 3) -> bool:
         return False
 
 
+async def send_resume_to_backend(application_id: str, resume_data: dict) -> dict:
+    """
+    Envia os dados do currículo processado para o backend
+    
+    Args:
+        application_id: ID da aplicação
+        resume_data: Dados do currículo processado
+        
+    Returns:
+        dict: Resultado da requisição
+    """
+    try:
+        # Obtém a URL do backend das variáveis de ambiente
+        backend_url = os.getenv('BACKEND_URL', 'http://localhost:3000')
+        
+        # URL do endpoint de criação de resumo
+        url = f"{backend_url}/resumes/{application_id}"
+        
+        print(f"📤 Enviando dados do currículo para o backend...")
+        print(f"   URL: {url}")
+        print(f"   Application ID: {application_id}")
+        
+        # Faz a requisição POST
+        response = requests.post(
+            url,
+            json=resume_data,
+            headers={
+                'Content-Type': 'application/json',
+            },
+            timeout=30
+        )
+        
+        if response.status_code == 201 or response.status_code == 200:
+            print(f"✅ Dados do currículo enviados com sucesso!")
+            print(f"   Status: {response.status_code}")
+            return {
+                "success": True,
+                "status_code": response.status_code,
+                "response": response.json() if response.content else None
+            }
+        else:
+            print(f"❌ Erro ao enviar dados do currículo")
+            print(f"   Status: {response.status_code}")
+            print(f"   Response: {response.text}")
+            return {
+                "success": False,
+                "status_code": response.status_code,
+                "error": response.text
+            }
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Erro de conexão com o backend: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+    except Exception as e:
+        print(f"❌ Erro inesperado ao enviar dados do currículo: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
 def download_pdf_from_url(url: str) -> str:
     """
     Faz download de um PDF de uma URL e salva em um arquivo temporário
@@ -194,12 +358,35 @@ async def process_resume_message(message_data: dict, ai_service: AIService, retr
             print(f"   - Conquistas: {len(resume.achievements)}")
             print(f"   - Idiomas: {len(resume.languages)}")
             
-            return {
-                "success": True,
-                "application_id": application_id,
-                "resume": resume.model_dump(),
-                "message": "Currículo processado com sucesso"
-            }
+            # Prepara os dados do currículo para enviar ao backend
+            resume_data = resume.model_dump()
+            
+            # Converte datas para formato ISO para serialização JSON
+            resume_data = convert_dates_to_iso(resume_data)
+            
+            # Mapeia os dados para o formato esperado pelo backend
+            backend_resume_data = map_resume_to_backend_format(resume_data)
+            
+            # Envia os dados do currículo para o backend
+            backend_result = await send_resume_to_backend(application_id, backend_resume_data)
+            
+            if backend_result['success']:
+                return {
+                    "success": True,
+                    "application_id": application_id,
+                    "resume": resume_data,
+                    "backend_success": True,
+                    "message": "Currículo processado e enviado ao backend com sucesso"
+                }
+            else:
+                return {
+                    "success": False,
+                    "application_id": application_id,
+                    "resume": resume_data,
+                    "backend_success": False,
+                    "backend_error": backend_result.get('error'),
+                    "message": "Currículo processado mas falha ao enviar ao backend"
+                }
             
         finally:
             # Remove o arquivo temporário

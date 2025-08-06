@@ -32,6 +32,9 @@ APPLICATIONS_SQS_QUEUE_NAME=applications-queue
 
 # OpenAI
 OPENAI_API_KEY=sua-chave-api-openai
+
+# Backend
+BACKEND_URL=http://localhost:3000
 ```
 
 ### Dependências
@@ -84,8 +87,9 @@ As mensagens devem ter o seguinte formato JSON:
 3. **Download**: Faz download do PDF da URL fornecida
 4. **Processamento**: Usa OpenAI para extrair informações do currículo
 5. **Estruturação**: Converte para o modelo `Resume`
-6. **Limpeza**: Remove arquivo temporário
-7. **Log**: Registra resultado do processamento
+6. **Envio ao Backend**: Envia dados processados para o endpoint de criação de resumo
+7. **Limpeza**: Remove arquivo temporário
+8. **Log**: Registra resultado do processamento
 
 ## Logs e Monitoramento
 
@@ -112,8 +116,13 @@ O sistema gera logs detalhados:
    - Formações: 2
    - Conquistas: 5
    - Idiomas: 2
+📤 Enviando dados do currículo para o backend...
+   URL: http://localhost:3000/resumes/test-application-123
+   Application ID: test-application-123
+✅ Dados do currículo enviados com sucesso!
+   Status: 201
 🗑️ Arquivo temporário removido: /tmp/tmp123456.pdf
-✅ Currículo processado com sucesso!
+✅ Currículo processado e enviado ao backend com sucesso!
 ```
 
 ## Tratamento de Erros
