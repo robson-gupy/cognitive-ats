@@ -1,0 +1,65 @@
+# =============================================================================
+# COGNITIVE ATS - VARIÁVEIS DE AMBIENTE
+# =============================================================================
+
+# =============================================================================
+# POSTGRESQL DATABASE
+# =============================================================================
+POSTGRES_DB=cognitive_ats
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_PORT=5432
+
+# =============================================================================
+# COMPANIES SERVICE - BACKEND
+# =============================================================================
+NODE_ENV=development
+COMPANIES_BACKEND_PORT=3000
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+DB_NAME=cognitive_ats
+DB_DATABASE=cognitive_ats
+AI_SERVICE_URL=http://ai-service:8000
+ENDPOINT_URL=http://localstack:4566
+
+# =============================================================================
+# COMPANIES SERVICE - FRONTEND
+# =============================================================================
+COMPANIES_FRONTEND_PORT=8080
+
+# =============================================================================
+# AI SERVICE
+# =============================================================================
+AI_SERVICE_PORT=8000
+DEFAULT_AI_PROVIDER=openai
+OPENAI_API_KEY=sua_chave_openai_aqui
+ANTHROPIC_API_KEY=sua_chave_anthropic_aqui
+
+# =============================================================================
+# AWS / LOCALSTACK CONFIGURATION
+# =============================================================================
+AWS_ACCESS_KEY_ID=test
+AWS_SECRET_ACCESS_KEY=test
+AWS_REGION=us-east-1
+AWS_DEFAULT_REGION=us-east-1
+AWS_ENDPOINT_URL=http://localhost:4566
+
+# =============================================================================
+# S3 CONFIGURATION
+# =============================================================================
+RESUMES_BUCKET_NAME=cognitive-ats-uploads
+
+# =============================================================================
+# SQS CONFIGURATION
+# =============================================================================
+APPLICATIONS_SQS_QUEUE_NAME=applications-queue
+CV_PROCESSING_QUEUE_URL=http://localhost:4566/000000000000/cv-processing-queue
+
+# =============================================================================
+# LOCALSTACK CONFIGURATION
+# =============================================================================
+LOCALSTACK_PORT=4566
+LOCALSTACK_SERVICES=s3,sqs
+LOCALSTACK_DEBUG=1 

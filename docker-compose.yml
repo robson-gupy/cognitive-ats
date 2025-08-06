@@ -87,6 +87,28 @@ services:
     restart: unless-stopped
     command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
 
+  # SQS Listener Service
+  sqs-listener:
+    build:
+      context: ./ai-service
+      dockerfile: consumer/Dockerfile.listener
+    container_name: cognitive-ats-sqs-listener
+    environment:
+      - APPLICATIONS_SQS_QUEUE_NAME=${APPLICATIONS_SQS_QUEUE_NAME}
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./ai-service:/app
+    depends_on:
+      - localstack
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
   # LocalStack (AWS Services Simulator)
   localstack:
     image: localstack/localstack:latest
