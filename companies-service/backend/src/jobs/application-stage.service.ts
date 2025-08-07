@@ -75,12 +75,26 @@ export class ApplicationStageService {
     await this.applicationStageHistoryRepository.save(historyEntry);
 
     // Atualizar a etapa corrente da aplicação
-    application.currentStageId = changeStageDto.toStageId;
-    await this.applicationsRepository.save(application);
 
+    application.currentStageId = changeStageDto.toStageId;
+
+    // Forçar uma atualização direta no banco para garantir que os dados estão persistidos
+    console.log('Executando update direto no banco para currentStageId:', changeStageDto.toStageId);
+    await this.applicationsRepository
+      .createQueryBuilder()
+      .update(Application)
+      .set({ currentStageId: changeStageDto.toStageId })
+      .where('id = :id', { id: applicationId })
+      .execute();
+    console.log('Update direto executado com sucesso');
+    
     // Retornar a aplicação atualizada com as relações
     const updatedApplication = await this.applicationsRepository.findOne({
-      where: { id: applicationId },
+      where: { 
+        id: applicationId,
+        jobId,
+        companyId,
+      },
       relations: ['currentStage', 'stageHistory', 'stageHistory.fromStage', 'stageHistory.toStage', 'stageHistory.changedBy'],
     });
 
@@ -88,6 +102,7 @@ export class ApplicationStageService {
       throw new NotFoundException('Aplicação não encontrada após atualização');
     }
 
+    console.log('Aplicação retornada com currentStageId:', updatedApplication.currentStageId);
     return updatedApplication;
   }
 

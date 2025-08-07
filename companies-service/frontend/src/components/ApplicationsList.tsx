@@ -1,12 +1,272 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, Typography, Tag, Space, Button, List, Avatar, Divider, Checkbox, message, Spin } from 'antd';
-import { UserOutlined, MailOutlined, CalendarOutlined, FileTextOutlined, TrophyOutlined } from '@ant-design/icons';
+import { 
+  Card, 
+  Typography, 
+  Tag, 
+  Space, 
+  Button, 
+  Avatar, 
+  Checkbox, 
+  message, 
+  Spin,
+  Badge,
+  Modal,
+  Form,
+  Input
+} from 'antd';
+import { 
+  UserOutlined, 
+  MailOutlined, 
+  CalendarOutlined, 
+  FileTextOutlined, 
+  DragOutlined
+} from '@ant-design/icons';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+  KeyboardSensor,
+} from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { apiService } from '../services/api';
 import type { Application } from '../types/Application';
-import type { Job } from '../types/Job';
+import type { Job, JobStage } from '../types/Job';
 
 const { Title, Text } = Typography;
+const { TextArea } = Input;
+
+interface DraggableApplicationCardProps {
+  application: Application;
+  onViewResume?: () => void;
+  onViewResponses?: () => void;
+}
+
+const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({ 
+  application, 
+  onViewResume, 
+  onViewResponses 
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: application.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatContactInfo = (application: Application) => {
+    const contactInfo = [];
+    if (application.email) contactInfo.push(application.email);
+    if (application.phone) contactInfo.push(application.phone);
+    return contactInfo.join(' • ') || 'Nenhum contato informado';
+  };
+
+  const formatScore = (score?: number) => {
+    if (score === undefined || score === null) return 'N/A';
+    return `${score.toFixed(1)}/10`;
+  };
+
+  const getScoreColor = (score?: number) => {
+    if (score === undefined || score === null) return 'default';
+    if (score >= 8) return 'success';
+    if (score >= 6) return 'warning';
+    return 'error';
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      size="small"
+      hoverable
+      {...attributes}
+      {...listeners}
+      style={{
+        ...style,
+        marginBottom: '8px',
+        cursor: 'grab',
+        backgroundColor: isDragging ? '#f0f0f0' : 'white',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+        <DragOutlined style={{ marginRight: '8px', color: '#999' }} />
+        <Avatar 
+          size="small" 
+          icon={<UserOutlined />} 
+          style={{ backgroundColor: '#1890ff' }}
+        />
+        <div style={{ flex: 1, marginLeft: '8px' }}>
+          <Text strong style={{ fontSize: '14px' }}>
+            {application.firstName} {application.lastName}
+          </Text>
+        </div>
+        {application.aiScore !== undefined && (
+          <Tag color={getScoreColor(application.aiScore)}>
+            {formatScore(application.aiScore)}
+          </Tag>
+        )}
+      </div>
+
+      <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+        <div>
+          <MailOutlined style={{ marginRight: '4px' }} />
+          {formatContactInfo(application)}
+        </div>
+        <div>
+          <CalendarOutlined style={{ marginRight: '4px' }} />
+          {formatDate(application.createdAt)}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '4px' }}>
+        {application.resumeUrl && (
+          <Button 
+            type="text" 
+            size="small" 
+            icon={<FileTextOutlined />}
+            onClick={onViewResume}
+            style={{ padding: '0 4px' }}
+          >
+            CV
+          </Button>
+        )}
+        {application.questionResponses && application.questionResponses.length > 0 && (
+          <Button 
+            type="text" 
+            size="small" 
+            onClick={onViewResponses}
+            style={{ padding: '0 4px' }}
+          >
+            {application.questionResponses.length} respostas
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+interface StageColumnProps {
+  stage: JobStage;
+  applications: Application[];
+  onViewResume: (application: Application) => void;
+  onViewResponses: (application: Application) => void;
+}
+
+const StageColumn: React.FC<StageColumnProps> = ({ 
+  stage, 
+  applications, 
+  onViewResume,
+  onViewResponses
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: stage.id! });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className="stage-column"
+      style={{
+        ...style,
+        minWidth: '320px',
+        maxWidth: '380px',
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        padding: '16px',
+        margin: '0 8px',
+        height: 'fit-content',
+        maxHeight: 'calc(100vh - 240px)',
+        overflowY: 'auto',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        border: '1px solid #e8e8e8',
+      }}
+    >
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '16px',
+        padding: '12px',
+        backgroundColor: '#fafafa',
+        borderRadius: '8px',
+        border: '1px solid #e8e8e8'
+      }}>
+        <div>
+          <Title level={5} style={{ margin: 0, fontSize: '16px' }}>
+            {stage.name}
+          </Title>
+          {stage.description && (
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {stage.description}
+            </Text>
+          )}
+        </div>
+        <Badge count={applications.length} showZero style={{ backgroundColor: '#1890ff' }} />
+      </div>
+
+      <SortableContext items={applications.map(app => app.id)} strategy={verticalListSortingStrategy}>
+        {applications.map((application) => (
+          <DraggableApplicationCard
+            key={application.id}
+            application={application}
+            onViewResume={() => onViewResume(application)}
+            onViewResponses={() => onViewResponses(application)}
+          />
+        ))}
+      </SortableContext>
+
+      {applications.length === 0 && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '20px', 
+          color: '#999',
+          fontSize: '12px'
+        }}>
+          Nenhum candidato nesta etapa
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const ApplicationsList: React.FC = () => {
   const { id: jobId } = useParams<{ id: string }>();
@@ -15,6 +275,28 @@ export const ApplicationsList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showQuestionResponses, setShowQuestionResponses] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [isChangingStage, setIsChangingStage] = useState(false);
+  const [changeStageModal, setChangeStageModal] = useState<{
+    visible: boolean;
+    application: Application | null;
+    toStage: JobStage | null;
+    notes: string;
+  }>({
+    visible: false,
+    application: null,
+    toStage: null,
+    notes: '',
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor),
+  );
 
   useEffect(() => {
     if (jobId) {
@@ -50,33 +332,84 @@ export const ApplicationsList: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const applicationId = active.id as string;
+    const toStageId = over.id as string;
+
+    // Encontrar a aplicação e o stage atual
+    const application = applications.find(app => app.id === applicationId);
+    const toStage = job?.stages.find(stage => stage.id === toStageId);
+
+    if (!application || !toStage) return;
+
+    // Se a aplicação já está no stage de destino, não fazer nada
+    if (application.currentStageId === toStageId) return;
+
+    // Abrir modal para confirmar a mudança
+    setChangeStageModal({
+      visible: true,
+      application,
+      toStage,
+      notes: '',
     });
   };
 
-  const formatContactInfo = (application: Application) => {
-    const contactInfo = [];
-    if (application.email) contactInfo.push(application.email);
-    if (application.phone) contactInfo.push(application.phone);
-    return contactInfo.join(' • ') || 'Nenhum contato informado';
+  const handleStageChange = async () => {
+    if (!changeStageModal.application || !changeStageModal.toStage) return;
+
+    try {
+      setIsChangingStage(true);
+      
+      await apiService.changeApplicationStage(
+        jobId!,
+        changeStageModal.application.id,
+        {
+          toStageId: changeStageModal.toStage.id!,
+          notes: changeStageModal.notes,
+        }
+      );
+
+      message.success('Candidato movido com sucesso!');
+      
+      // Recarregar aplicações para atualizar o estado
+      await loadApplications();
+      
+      setChangeStageModal({
+        visible: false,
+        application: null,
+        toStage: null,
+        notes: '',
+      });
+    } catch (err) {
+      message.error('Erro ao mover candidato');
+      console.error('Erro ao mudar stage:', err);
+    } finally {
+      setIsChangingStage(false);
+    }
   };
 
-  const formatScore = (score?: number) => {
-    if (score === undefined || score === null) return 'N/A';
-    return `${score.toFixed(1)}/10`;
+  const handleViewResume = (application: Application) => {
+    if (application.resumeUrl) {
+      window.open(application.resumeUrl, '_blank');
+    }
   };
 
-  const getScoreColor = (score?: number) => {
-    if (score === undefined || score === null) return 'default';
-    if (score >= 8) return 'success';
-    if (score >= 6) return 'warning';
-    return 'error';
+  const handleViewResponses = (application: Application) => {
+    // Implementar visualização das respostas em um modal
+    console.log('Ver respostas de:', application);
+  };
+
+  const getApplicationsByStage = (stageId: string) => {
+    return applications.filter(app => app.currentStageId === stageId);
   };
 
   if (loading) {
@@ -99,6 +432,19 @@ export const ApplicationsList: React.FC = () => {
               Tentar novamente
             </Button>
           </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!job || !job.stages || job.stages.length === 0) {
+    return (
+      <Card>
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <Title level={4}>Nenhuma etapa configurada</Title>
+          <Text type="secondary">
+            Esta vaga não possui etapas configuradas. Configure as etapas primeiro.
+          </Text>
         </div>
       </Card>
     );
@@ -138,7 +484,7 @@ export const ApplicationsList: React.FC = () => {
         </div>
       </Card>
 
-      {/* Applications List */}
+      {/* Trello Board */}
       {applications.length === 0 ? (
         <Card>
           <div style={{ textAlign: 'center', padding: '50px' }}>
@@ -150,95 +496,106 @@ export const ApplicationsList: React.FC = () => {
           </div>
         </Card>
       ) : (
-        <List
-          grid={{ gutter: 16, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
-          dataSource={applications}
-          renderItem={(application) => (
-            <List.Item>
-              <Card
-                hoverable
-                style={{ width: '100%' }}
-                actions={
-                  application.resumeUrl ? [
-                    <Button 
-                      key="resume" 
-                      type="link" 
-                      icon={<FileTextOutlined />}
-                      href={application.resumeUrl}
-                      target="_blank"
-                    >
-                      Ver currículo
-                    </Button>
-                  ] : []
-                }
-              >
-                <List.Item.Meta
-                  avatar={
+        <div style={{ 
+          backgroundColor: '#f0f2f5', 
+          padding: '16px', 
+          borderRadius: '8px',
+          minHeight: 'calc(100vh - 200px)'
+        }}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div style={{ 
+              display: 'flex', 
+              gap: '16px', 
+              overflowX: 'auto',
+              padding: '8px',
+              minHeight: 'calc(100vh - 240px)'
+            }}>
+              {job.stages
+                .filter(stage => stage.isActive)
+                .sort((a, b) => a.orderIndex - b.orderIndex)
+                .map((stage) => (
+                  <StageColumn
+                    key={stage.id}
+                    stage={stage}
+                    applications={getApplicationsByStage(stage.id!)}
+                    onViewResume={handleViewResume}
+                    onViewResponses={handleViewResponses}
+                  />
+                ))}
+            </div>
+
+            <DragOverlay>
+              {activeId ? (
+                <div style={{ 
+                  backgroundColor: 'white',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                  border: '2px solid #1890ff',
+                  maxWidth: '300px',
+                  transform: 'rotate(5deg)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                    <DragOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
                     <Avatar 
-                      size="large" 
+                      size="small" 
                       icon={<UserOutlined />} 
                       style={{ backgroundColor: '#1890ff' }}
                     />
-                  }
-                  title={
-                    <Space>
-                      <Text strong style={{ fontSize: '16px' }}>
-                        {application.firstName} {application.lastName}
+                    <div style={{ flex: 1, marginLeft: '8px' }}>
+                      <Text strong style={{ fontSize: '14px', color: '#1890ff' }}>
+                        Arrastando candidato...
                       </Text>
-                      {application.aiScore !== undefined && (
-                        <Tag color={getScoreColor(application.aiScore)} icon={<TrophyOutlined />}>
-                          {formatScore(application.aiScore)}
-                        </Tag>
-                      )}
-                    </Space>
-                  }
-                  description={
-                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                      <Space>
-                        <MailOutlined />
-                        <Text type="secondary">{formatContactInfo(application)}</Text>
-                      </Space>
-                      <Space>
-                        <CalendarOutlined />
-                        <Text type="secondary">Inscrito em {formatDate(application.createdAt)}</Text>
-                      </Space>
-                      {application.questionResponses && application.questionResponses.length > 0 && (
-                        <Tag color="blue">
-                          {application.questionResponses.length} resposta{application.questionResponses.length !== 1 ? 's' : ''}
-                        </Tag>
-                      )}
-                    </Space>
-                  }
-                />
-
-                {/* Question Responses */}
-                {showQuestionResponses && application.questionResponses && application.questionResponses.length > 0 && (
-                  <>
-                    <Divider />
-                    <div>
-                      <Title level={5}>Respostas das questões:</Title>
-                      <List
-                        size="small"
-                        dataSource={application.questionResponses}
-                        renderItem={(response, index) => (
-                          <List.Item>
-                            <div style={{ width: '100%' }}>
-                              <Text strong>{index + 1}. {response.question}</Text>
-                              <div style={{ marginTop: '8px' }}>
-                                <Text type="secondary">{response.answer}</Text>
-                              </div>
-                            </div>
-                          </List.Item>
-                        )}
-                      />
                     </div>
-                  </>
-                )}
-              </Card>
-            </List.Item>
-          )}
-        />
+                  </div>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </div>
       )}
+
+      {/* Modal de Confirmação de Mudança de Stage */}
+      <Modal
+        title="Confirmar mudança de etapa"
+        open={changeStageModal.visible}
+        onOk={handleStageChange}
+        onCancel={() => setChangeStageModal({
+          visible: false,
+          application: null,
+          toStage: null,
+          notes: '',
+        })}
+        confirmLoading={isChangingStage}
+        okText="Confirmar"
+        cancelText="Cancelar"
+      >
+        {changeStageModal.application && changeStageModal.toStage && (
+          <div>
+            <p>
+              <strong>Mover candidato:</strong> {changeStageModal.application.firstName} {changeStageModal.application.lastName}
+            </p>
+            <p>
+              <strong>Para etapa:</strong> {changeStageModal.toStage.name}
+            </p>
+            <Form layout="vertical">
+              <Form.Item label="Observações (opcional)">
+                <TextArea
+                  rows={3}
+                  value={changeStageModal.notes}
+                  onChange={(e) => setChangeStageModal(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Adicione observações sobre esta mudança..."
+                />
+              </Form.Item>
+            </Form>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
