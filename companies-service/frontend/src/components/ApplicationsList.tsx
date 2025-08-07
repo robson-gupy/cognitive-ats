@@ -51,12 +51,14 @@ interface DraggableApplicationCardProps {
   application: Application;
   onViewResume?: () => void;
   onViewResponses?: () => void;
+  hasPendingChange?: boolean;
 }
 
 const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({ 
   application, 
   onViewResume, 
-  onViewResponses 
+  onViewResponses,
+  hasPendingChange = false
 }) => {
   const {
     attributes,
@@ -113,7 +115,9 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
         ...style,
         marginBottom: '8px',
         cursor: 'grab',
-        backgroundColor: isDragging ? '#f0f0f0' : 'white',
+        backgroundColor: isDragging ? '#f0f0f0' : hasPendingChange ? '#fff7e6' : 'white',
+        border: hasPendingChange ? '2px solid #faad14' : undefined,
+        opacity: hasPendingChange ? 0.8 : 1,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
@@ -127,6 +131,11 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
           <Text strong style={{ fontSize: '14px' }}>
             {application.firstName} {application.lastName}
           </Text>
+          {hasPendingChange && (
+            <div style={{ fontSize: '10px', color: '#faad14', marginTop: '2px' }}>
+              ⏳ Aguardando confirmação
+            </div>
+          )}
         </div>
         {application.aiScore !== undefined && (
           <Tag color={getScoreColor(application.aiScore)}>
@@ -178,13 +187,15 @@ interface StageColumnProps {
   applications: Application[];
   onViewResume: (application: Application) => void;
   onViewResponses: (application: Application) => void;
+  pendingStageChanges: Map<string, string>;
 }
 
 const StageColumn: React.FC<StageColumnProps> = ({ 
   stage, 
   applications, 
   onViewResume,
-  onViewResponses
+  onViewResponses,
+  pendingStageChanges
 }) => {
   const {
     attributes,
@@ -250,6 +261,7 @@ const StageColumn: React.FC<StageColumnProps> = ({
             application={application}
             onViewResume={() => onViewResume(application)}
             onViewResponses={() => onViewResponses(application)}
+            hasPendingChange={pendingStageChanges.has(application.id)}
           />
         ))}
       </SortableContext>
@@ -277,6 +289,10 @@ export const ApplicationsList: React.FC = () => {
   const [showQuestionResponses, setShowQuestionResponses] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isChangingStage, setIsChangingStage] = useState(false);
+  
+  // Estado para controlar mudanças temporárias de stage
+  const [pendingStageChanges, setPendingStageChanges] = useState<Map<string, string>>(new Map());
+  
   const [changeStageModal, setChangeStageModal] = useState<{
     visible: boolean;
     application: Application | null;
@@ -354,6 +370,9 @@ export const ApplicationsList: React.FC = () => {
     // Se a aplicação já está no stage de destino, não fazer nada
     if (application.currentStageId === toStageId) return;
 
+    // Aplicar mudança visual imediatamente
+    setPendingStageChanges(prev => new Map(prev.set(applicationId, toStageId)));
+
     // Abrir modal para confirmar a mudança
     setChangeStageModal({
       visible: true,
@@ -379,6 +398,13 @@ export const ApplicationsList: React.FC = () => {
       );
 
       message.success('Candidato movido com sucesso!');
+      
+      // Limpar mudança temporária
+      setPendingStageChanges(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(changeStageModal.application!.id);
+        return newMap;
+      });
       
       // Recarregar aplicações para atualizar o estado
       await loadApplications();
@@ -409,7 +435,12 @@ export const ApplicationsList: React.FC = () => {
   };
 
   const getApplicationsByStage = (stageId: string) => {
-    return applications.filter(app => app.currentStageId === stageId);
+    return applications.filter(app => {
+      // Verificar se há uma mudança temporária para esta aplicação
+      const pendingStageId = pendingStageChanges.get(app.id);
+      const effectiveStageId = pendingStageId || app.currentStageId;
+      return effectiveStageId === stageId;
+    });
   };
 
   if (loading) {
@@ -525,6 +556,7 @@ export const ApplicationsList: React.FC = () => {
                     applications={getApplicationsByStage(stage.id!)}
                     onViewResume={handleViewResume}
                     onViewResponses={handleViewResponses}
+                    pendingStageChanges={pendingStageChanges}
                   />
                 ))}
             </div>
@@ -565,12 +597,23 @@ export const ApplicationsList: React.FC = () => {
         title="Confirmar mudança de etapa"
         open={changeStageModal.visible}
         onOk={handleStageChange}
-        onCancel={() => setChangeStageModal({
-          visible: false,
-          application: null,
-          toStage: null,
-          notes: '',
-        })}
+        onCancel={() => {
+          // Reverter mudança visual se cancelar
+          if (changeStageModal.application) {
+            setPendingStageChanges(prev => {
+              const newMap = new Map(prev);
+              newMap.delete(changeStageModal.application!.id);
+              return newMap;
+            });
+          }
+          
+          setChangeStageModal({
+            visible: false,
+            application: null,
+            toStage: null,
+            notes: '',
+          });
+        }}
         confirmLoading={isChangingStage}
         okText="Confirmar"
         cancelText="Cancelar"
