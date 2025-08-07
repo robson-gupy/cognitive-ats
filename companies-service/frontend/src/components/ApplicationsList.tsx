@@ -286,7 +286,7 @@ export const ApplicationsList: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showQuestionResponses, setShowQuestionResponses] = useState(false);
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isChangingStage, setIsChangingStage] = useState(false);
   
@@ -305,6 +305,14 @@ export const ApplicationsList: React.FC = () => {
     notes: '',
   });
 
+  const [responsesModal, setResponsesModal] = useState<{
+    visible: boolean;
+    application: Application | null;
+  }>({
+    visible: false,
+    application: null,
+  });
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -319,7 +327,7 @@ export const ApplicationsList: React.FC = () => {
       loadJob();
       loadApplications();
     }
-  }, [jobId, showQuestionResponses]);
+  }, [jobId]);
 
   const loadJob = async () => {
     try {
@@ -335,9 +343,7 @@ export const ApplicationsList: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const data = showQuestionResponses 
-        ? await apiService.getApplicationsWithQuestionResponses(jobId!)
-        : await apiService.getApplications(jobId!);
+      const data = await apiService.getApplicationsWithQuestionResponses(jobId!);
       
       setApplications(data);
     } catch (err) {
@@ -430,8 +436,10 @@ export const ApplicationsList: React.FC = () => {
   };
 
   const handleViewResponses = (application: Application) => {
-    // Implementar visualização das respostas em um modal
-    console.log('Ver respostas de:', application);
+    setResponsesModal({
+      visible: true,
+      application,
+    });
   };
 
   const getApplicationsByStage = (stageId: string) => {
@@ -501,13 +509,6 @@ export const ApplicationsList: React.FC = () => {
           </div>
           
           <Space>
-            <Checkbox
-              checked={showQuestionResponses}
-              onChange={(e) => setShowQuestionResponses(e.target.checked)}
-            >
-              Incluir respostas das questões
-            </Checkbox>
-            
             <Button type="primary" onClick={loadApplications}>
               Atualizar
             </Button>
@@ -636,6 +637,77 @@ export const ApplicationsList: React.FC = () => {
                 />
               </Form.Item>
             </Form>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Respostas das Questões */}
+      <Modal
+        title={`Respostas de ${responsesModal.application?.firstName} ${responsesModal.application?.lastName}`}
+        open={responsesModal.visible}
+        onCancel={() => setResponsesModal({
+          visible: false,
+          application: null,
+        })}
+        footer={[
+          <Button 
+            key="close" 
+            onClick={() => setResponsesModal({
+              visible: false,
+              application: null,
+            })}
+          >
+            Fechar
+          </Button>
+        ]}
+        width={600}
+        style={{ top: 20 }}
+        bodyStyle={{ 
+          maxHeight: 'calc(100vh - 200px)', 
+          overflowY: 'auto',
+          padding: '16px'
+        }}
+      >
+        {responsesModal.application && (
+          <div>
+            {responsesModal.application.questionResponses && responsesModal.application.questionResponses.length > 0 ? (
+              <div>
+                {responsesModal.application.questionResponses.map((response, index) => (
+                  <Card 
+                    key={response.id} 
+                    size="small" 
+                    style={{ marginBottom: '12px' }}
+                    title={`Pergunta ${index + 1}`}
+                  >
+                    <div style={{ marginBottom: '8px' }}>
+                      <Text strong>Pergunta:</Text>
+                      <div style={{ marginTop: '4px', color: '#666' }}>
+                        {response.question}
+                      </div>
+                    </div>
+                    <div>
+                      <Text strong>Resposta:</Text>
+                      <div style={{ marginTop: '4px', color: '#333' }}>
+                        {response.answer}
+                      </div>
+                    </div>
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
+                      Respondida em: {new Date(response.createdAt).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                <p>Nenhuma resposta encontrada para este candidato.</p>
+              </div>
+            )}
           </div>
         )}
       </Modal>
