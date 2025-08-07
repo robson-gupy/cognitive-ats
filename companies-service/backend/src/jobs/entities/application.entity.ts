@@ -14,6 +14,8 @@ import { Job } from './job.entity';
 import { Company } from '../../companies/entities/company.entity';
 import { Resume } from './resume.entity';
 import { ApplicationQuestionResponse } from './application-question-response.entity';
+import { JobStage } from './job-stage.entity';
+import { ApplicationStageHistory } from './application-stage-history.entity';
 
 @Entity('applications')
 @Index(['jobId'])
@@ -63,6 +65,13 @@ export class Application {
   @Column({ name: 'resume_url', length: 500, nullable: true })
   resumeUrl: string;
 
+  @Column({ name: 'current_stage_id', type: 'uuid', nullable: true })
+  currentStageId: string;
+
+  @ManyToOne(() => JobStage)
+  @JoinColumn({ name: 'current_stage_id' })
+  currentStage: JobStage;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
@@ -82,4 +91,13 @@ export class Application {
     },
   )
   questionResponses: ApplicationQuestionResponse[];
+
+  @OneToMany(
+    () => ApplicationStageHistory,
+    (history) => history.application,
+    {
+      cascade: true,
+    },
+  )
+  stageHistory: ApplicationStageHistory[];
 }

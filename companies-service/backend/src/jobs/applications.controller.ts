@@ -15,16 +15,21 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicationsService } from './applications.service';
+import { ApplicationStageService } from './application-stage.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
+import { ChangeApplicationStageDto } from './dto/change-application-stage.dto';
 import { UploadResumeDto } from './dto/upload-resume.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
 
 @Controller('jobs/:jobId/applications')
 export class ApplicationsController {
-  constructor(private readonly applicationsService: ApplicationsService) {}
+  constructor(
+    private readonly applicationsService: ApplicationsService,
+    private readonly applicationStageService: ApplicationStageService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -130,6 +135,54 @@ export class ApplicationsController {
       jobId,
       updateScoreDto,
       companyId,
+    );
+  }
+
+  @Patch(':id/change-stage')
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
+  async changeStage(
+    @Param('jobId') jobId: string,
+    @Param('id') id: string,
+    @Body() changeStageDto: ChangeApplicationStageDto,
+    @Request() req,
+  ) {
+    const companyId = req.user.companyId;
+    return this.applicationStageService.changeStage(
+      id,
+      jobId,
+      companyId,
+      changeStageDto,
+      req.user,
+    );
+  }
+
+  @Get(':id/stage-history')
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
+  async getStageHistory(
+    @Param('jobId') jobId: string,
+    @Param('id') id: string,
+    @Request() req,
+  ) {
+    const companyId = req.user.companyId;
+    return this.applicationStageService.getStageHistory(
+      id,
+      jobId,
+      companyId,
+    );
+  }
+
+  @Get('by-stage/:stageId')
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
+  async getApplicationsByStage(
+    @Param('jobId') jobId: string,
+    @Param('stageId') stageId: string,
+    @Request() req,
+  ) {
+    const companyId = req.user.companyId;
+    return this.applicationStageService.getApplicationsByStage(
+      jobId,
+      companyId,
+      stageId,
     );
   }
 }

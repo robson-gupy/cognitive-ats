@@ -8,6 +8,8 @@ import { JobQuestion } from './src/jobs/entities/job-question.entity';
 import { JobStage } from './src/jobs/entities/job-stage.entity';
 import { JobLog } from './src/jobs/entities/job-log.entity';
 import { Application } from './src/jobs/entities/application.entity';
+import { ApplicationQuestionResponse } from './src/jobs/entities/application-question-response.entity';
+import { ApplicationStageHistory } from './src/jobs/entities/application-stage-history.entity';
 import { Resume } from './src/jobs/entities/resume.entity';
 import { ResumeProfessionalExperience } from './src/jobs/entities/resume-professional-experience.entity';
 import { ResumeAcademicFormation } from './src/jobs/entities/resume-academic-formation.entity';
@@ -31,6 +33,8 @@ export const AppDataSource = new DataSource({
     JobStage, 
     JobLog, 
     Application,
+    ApplicationQuestionResponse,
+    ApplicationStageHistory,
     Resume,
     ResumeProfessionalExperience,
     ResumeAcademicFormation,

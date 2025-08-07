@@ -8,6 +8,13 @@ export interface Application {
   phone?: string;
   aiScore?: number;
   resumeUrl?: string;
+  currentStageId?: string;
+  currentStage?: {
+    id: string;
+    name: string;
+    description?: string;
+    orderIndex: number;
+  };
   createdAt: string;
   updatedAt: string;
   job?: {
@@ -52,6 +59,33 @@ export interface Application {
     answer: string;
     createdAt: string;
   }>;
+  stageHistory?: Array<{
+    id: string;
+    applicationId: string;
+    jobId: string;
+    companyId: string;
+    fromStageId?: string;
+    toStageId: string;
+    changedById: string;
+    notes?: string;
+    createdAt: string;
+    fromStage?: {
+      id: string;
+      name: string;
+      description?: string;
+    };
+    toStage?: {
+      id: string;
+      name: string;
+      description?: string;
+    };
+    changedBy?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+  }>;
 }
 
 export interface CreateApplicationData {
@@ -72,4 +106,9 @@ export interface UpdateApplicationData {
 
 export interface UpdateApplicationScoreData {
   aiScore: number;
+}
+
+export interface ChangeApplicationStageData {
+  toStageId: string;
+  notes?: string;
 }

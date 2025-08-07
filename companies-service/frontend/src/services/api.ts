@@ -3,7 +3,7 @@ import type { LoginData, RegisterData, AuthResponse, RegisterResponse } from '..
 import type { Company, CreateCompanyData, UpdateCompanyData } from '../types/Company';
 import type { Department, CreateDepartmentRequest, UpdateDepartmentRequest } from '../types/Department';
 import type { Role, CreateRoleRequest, UpdateRoleRequest } from '../types/Role';
-import type { Application, CreateApplicationData, UpdateApplicationData, UpdateApplicationScoreData } from '../types/Application';
+import type { Application, CreateApplicationData, UpdateApplicationData, UpdateApplicationScoreData, ChangeApplicationStageData } from '../types/Application';
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -438,6 +438,21 @@ export class ApiService {
       method: 'PATCH',
       body: JSON.stringify(scoreData),
     });
+  }
+
+  async changeApplicationStage(jobId: string, applicationId: string, stageData: ChangeApplicationStageData): Promise<Application> {
+    return this.request<Application>(`/jobs/${jobId}/applications/${applicationId}/change-stage`, {
+      method: 'PATCH',
+      body: JSON.stringify(stageData),
+    });
+  }
+
+  async getApplicationStageHistory(jobId: string, applicationId: string): Promise<any[]> {
+    return this.request<any[]>(`/jobs/${jobId}/applications/${applicationId}/stage-history`);
+  }
+
+  async getApplicationsByStage(jobId: string, stageId: string): Promise<Application[]> {
+    return this.request<Application[]>(`/jobs/${jobId}/applications/by-stage/${stageId}`);
   }
 }
 
