@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Tag, Space, message, Popconfirm, Card, Typography, Dropdown } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HistoryOutlined, RobotOutlined, DownOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, RobotOutlined, DownOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import type { Job } from '../types/Job';
@@ -133,16 +133,16 @@ export const JobList: React.FC = () => {
             Ver
           </Button>
           <Button
+            icon={<UserOutlined />}
+            onClick={() => navigate(`/jobs/${record.id}/applications`)}
+          >
+            Candidatos
+          </Button>
+          <Button
             icon={<EditOutlined />}
             onClick={() => navigate(`/jobs/${record.id}/edit`)}
           >
             Editar
-          </Button>
-          <Button
-            icon={<HistoryOutlined />}
-            onClick={() => navigate(`/jobs/${record.id}/logs`)}
-          >
-            Logs
           </Button>
           <Popconfirm
             title="Tem certeza que deseja excluir esta vaga?"

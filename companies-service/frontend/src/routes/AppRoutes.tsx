@@ -12,6 +12,7 @@ import { JobView } from '../components/JobView';
 import { JobLogs } from '../components/JobLogs';
 import { JobStagesForm } from '../components/JobStagesForm';
 import { CreateJobWithAi } from '../components/CreateJobWithAi';
+import { ApplicationsList } from '../components/ApplicationsList';
 import { DragTest } from '../components/DragTest';
 import { AppLayout } from '../components/Layout';
 import { useAuthContext } from '../contexts/AuthContext';
@@ -87,6 +88,10 @@ export const AppRoutes: React.FC = () => {
         <Route 
           path="/jobs/:id/logs" 
           element={<JobLogs />} 
+        />
+        <Route 
+          path="/jobs/:id/applications" 
+          element={<ApplicationsList />} 
         />
         <Route 
           path="/test-drag" 

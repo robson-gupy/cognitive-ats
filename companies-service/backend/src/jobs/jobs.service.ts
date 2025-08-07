@@ -78,8 +78,39 @@ export class JobsService {
       await this.jobQuestionsRepository.save(questions);
     }
 
-    // Criar etapas se fornecidas
-    if (createJobDto.stages && createJobDto.stages.length > 0) {
+    // Criar etapas padrão se nenhuma for fornecida
+    if (!createJobDto.stages || createJobDto.stages.length === 0) {
+      const defaultStages = [
+        {
+          name: 'Triagem',
+          description: 'Avaliação inicial dos candidatos',
+          isActive: true,
+          orderIndex: 0,
+        },
+        {
+          name: 'Entrevista',
+          description: 'Entrevista com candidatos selecionados',
+          isActive: true,
+          orderIndex: 1,
+        },
+        {
+          name: 'Contratação',
+          description: 'Processo final de contratação',
+          isActive: true,
+          orderIndex: 2,
+        },
+      ];
+
+      const stages = defaultStages.map((s, index) =>
+        this.jobStagesRepository.create({
+          ...s,
+          jobId: jobId,
+          orderIndex: s.orderIndex ?? index,
+        }),
+      );
+      await this.jobStagesRepository.save(stages);
+    } else {
+      // Criar etapas fornecidas
       const stages = createJobDto.stages.map((s, index) =>
         this.jobStagesRepository.create({
           ...s,

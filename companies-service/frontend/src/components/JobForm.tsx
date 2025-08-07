@@ -280,10 +280,40 @@ export const JobForm: React.FC = () => {
     })
   );
 
+  const createDefaultStages = () => {
+    const defaultStages: JobStage[] = [
+      {
+        id: `stage-${Date.now()}-1`,
+        name: 'Triagem',
+        description: 'Avaliação inicial dos candidatos',
+        isActive: true,
+        orderIndex: 0,
+      },
+      {
+        id: `stage-${Date.now()}-2`,
+        name: 'Entrevista',
+        description: 'Entrevista com candidatos selecionados',
+        isActive: true,
+        orderIndex: 1,
+      },
+      {
+        id: `stage-${Date.now()}-3`,
+        name: 'Contratação',
+        description: 'Processo final de contratação',
+        isActive: true,
+        orderIndex: 2,
+      },
+    ];
+    setStages(defaultStages);
+  };
+
   useEffect(() => {
     loadDepartments();
     if (isEditing) {
       loadJob();
+    } else {
+      // Criar etapas padrão para novas vagas
+      createDefaultStages();
     }
   }, [id]);
 

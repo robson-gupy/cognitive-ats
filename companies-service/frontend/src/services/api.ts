@@ -3,6 +3,7 @@ import type { LoginData, RegisterData, AuthResponse, RegisterResponse } from '..
 import type { Company, CreateCompanyData, UpdateCompanyData } from '../types/Company';
 import type { Department, CreateDepartmentRequest, UpdateDepartmentRequest } from '../types/Department';
 import type { Role, CreateRoleRequest, UpdateRoleRequest } from '../types/Role';
+import type { Application, CreateApplicationData, UpdateApplicationData, UpdateApplicationScoreData } from '../types/Application';
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -397,6 +398,46 @@ export class ApiService {
     if (authKeys.length > 1) {
       authKeys.forEach(key => sessionStorage.removeItem(key));
     }
+  }
+
+  // Applications
+  async getApplications(jobId: string): Promise<Application[]> {
+    return this.request<Application[]>(`/jobs/${jobId}/applications`);
+  }
+
+  async getApplicationsWithQuestionResponses(jobId: string): Promise<Application[]> {
+    return this.request<Application[]>(`/jobs/${jobId}/applications/with-question-responses`);
+  }
+
+  async getApplication(jobId: string, applicationId: string): Promise<Application> {
+    return this.request<Application>(`/jobs/${jobId}/applications/${applicationId}`);
+  }
+
+  async createApplication(jobId: string, applicationData: CreateApplicationData): Promise<Application> {
+    return this.request<Application>(`/jobs/${jobId}/applications`, {
+      method: 'POST',
+      body: JSON.stringify(applicationData),
+    });
+  }
+
+  async updateApplication(jobId: string, applicationId: string, applicationData: UpdateApplicationData): Promise<Application> {
+    return this.request<Application>(`/jobs/${jobId}/applications/${applicationId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(applicationData),
+    });
+  }
+
+  async deleteApplication(jobId: string, applicationId: string): Promise<void> {
+    return this.request<void>(`/jobs/${jobId}/applications/${applicationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async updateApplicationScore(jobId: string, applicationId: string, scoreData: UpdateApplicationScoreData): Promise<Application> {
+    return this.request<Application>(`/jobs/${jobId}/applications/${applicationId}/ai-score`, {
+      method: 'PATCH',
+      body: JSON.stringify(scoreData),
+    });
   }
 }
 

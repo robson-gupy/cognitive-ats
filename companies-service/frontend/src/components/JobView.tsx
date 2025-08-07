@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Typography, Tag, Space, Button, Descriptions, Divider, List, message, Spin, Popconfirm } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
-import { EditOutlined, ArrowLeftOutlined, HistoryOutlined, GlobalOutlined, StopOutlined, SettingOutlined } from '@ant-design/icons';
+import { EditOutlined, ArrowLeftOutlined, HistoryOutlined, GlobalOutlined, StopOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
 import { apiService } from '../services/api';
 import type { Job } from '../types/Job';
 import { JobStatus } from '../types/Job';
@@ -190,6 +190,12 @@ export const JobView: React.FC = () => {
               onClick={() => navigate(`/jobs/${job.id}/logs`)}
             >
               Ver Logs
+            </Button>
+            <Button 
+              icon={<UserOutlined />}
+              onClick={() => navigate(`/jobs/${job.id}/applications`)}
+            >
+              Candidatos
             </Button>
           </Space>
         </div>

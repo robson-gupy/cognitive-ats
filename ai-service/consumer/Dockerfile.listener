@@ -18,7 +18,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY consumer/ ./consumer/
 COPY services/ ./services/
 COPY models.py .
-COPY shared/ ./shared/
 
 # Define variáveis de ambiente padrão
 ENV PYTHONPATH=/app
