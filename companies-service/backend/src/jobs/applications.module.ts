@@ -14,10 +14,17 @@ import { ResumeProfessionalExperience } from './entities/resume-professional-exp
 import { ResumeAcademicFormation } from './entities/resume-academic-formation.entity';
 import { ResumeAchievement } from './entities/resume-achievement.entity';
 import { ResumeLanguage } from './entities/resume-language.entity';
+import { ApplicationQuestionResponse } from './entities/application-question-response.entity';
+import { JobQuestion } from './entities/job-question.entity';
+import { JobLog } from './entities/job-log.entity';
 import { AuthModule } from '../auth/auth.module';
 import { JwtConfigModule } from '../auth/jwt.module';
 import { S3Module } from '../shared/services/s3.module';
 import { SqsModule } from '../shared/services/sqs.module';
+import { AiServiceClient } from './ai-service.client';
+import { CandidateEvaluationService } from './candidate-evaluation.service';
+import { JobsService } from './jobs.service';
+import { QuestionResponsesModule } from './question-responses.module';
 
 @Module({
   imports: [
@@ -31,14 +38,25 @@ import { SqsModule } from '../shared/services/sqs.module';
       ResumeAcademicFormation,
       ResumeAchievement,
       ResumeLanguage,
+      ApplicationQuestionResponse,
+      JobQuestion,
+      JobLog,
     ]),
     AuthModule,
     JwtConfigModule,
     S3Module,
     SqsModule,
+    QuestionResponsesModule,
   ],
   controllers: [ApplicationsController, ResumeController],
-  providers: [ApplicationsService, ApplicationStageService, ResumeService],
+  providers: [
+    ApplicationsService, 
+    ApplicationStageService, 
+    ResumeService,
+    AiServiceClient,
+    CandidateEvaluationService,
+    JobsService,
+  ],
   exports: [ApplicationsService, ApplicationStageService, ResumeService],
 })
 export class ApplicationsModule {}

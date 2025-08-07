@@ -29,6 +29,62 @@ export interface JobCreationResponse {
   }>;
 }
 
+export interface ResumeData {
+  personal_info?: any;
+  education?: Array<{
+    degree: string;
+    institution: string;
+    year: string;
+    gpa?: string;
+  }>;
+  experience?: Array<{
+    title: string;
+    company: string;
+    duration: string;
+    description: string;
+  }>;
+  skills?: string[];
+  languages?: Array<{
+    language: string;
+    level: string;
+  }>;
+  achievements?: string[];
+}
+
+export interface JobData {
+  title: string;
+  description: string;
+  requirements?: string[];
+  responsibilities?: string[];
+  education_required?: string;
+  experience_required?: string;
+  skills_required?: string[];
+}
+
+export interface QuestionResponse {
+  question: string;
+  answer: string;
+}
+
+export interface CandidateEvaluationRequest {
+  resume: ResumeData;
+  job: JobData;
+  question_responses?: QuestionResponse[];
+  provider?: string;
+  api_key?: string;
+  model?: string;
+}
+
+export interface CandidateEvaluationResponse {
+  overall_score: number;
+  question_responses_score: number;
+  education_score: number;
+  experience_score: number;
+  provider: string;
+  model?: string;
+  evaluation_details?: any;
+}
+
 @Injectable()
 export class AiServiceClient {
   private readonly aiServiceUrl: string;
@@ -70,6 +126,40 @@ export class AiServiceClient {
           error.response?.data?.detail ||
           error.message ||
           'Erro ao comunicar com o AI Service';
+        throw new HttpException(
+          message,
+          error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      throw new HttpException(
+        'Erro interno do servidor',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async evaluateCandidate(
+    request: CandidateEvaluationRequest,
+  ): Promise<CandidateEvaluationResponse> {
+    try {
+      const response = await axios.post(
+        `${this.aiServiceUrl}/ai/evaluate-candidate`,
+        request,
+        {
+          timeout: 60000, // 60 segundos de timeout
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      return response.data as CandidateEvaluationResponse;
+    } catch (error: any) {
+      if (error.response) {
+        const message =
+          error.response?.data?.detail ||
+          error.message ||
+          'Erro ao avaliar candidato com o AI Service';
         throw new HttpException(
           message,
           error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,

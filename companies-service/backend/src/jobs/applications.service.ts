@@ -13,6 +13,7 @@ import {UpdateApplicationDto} from './dto/update-application.dto';
 import {UpdateApplicationScoreDto} from './dto/update-application-score.dto';
 import {S3ClientService} from '../shared/services/s3-client.service';
 import {SqsClientService} from '../shared/services/sqs-client.service';
+import {CandidateEvaluationService} from './candidate-evaluation.service';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 
@@ -44,6 +45,7 @@ export class ApplicationsService {
         private jobsRepository: Repository<Job>,
         private s3ClientService: S3ClientService,
         private sqsClientService: SqsClientService,
+        private candidateEvaluationService: CandidateEvaluationService,
     ) {
     }
 
@@ -235,6 +237,14 @@ export class ApplicationsService {
             } catch (error) {
                 // Log do erro mas não falhar a criação da application
                 console.error('Erro ao enviar mensagem para SQS:', error);
+            }
+
+            // Avaliar automaticamente o candidato usando IA
+            try {
+                await this.candidateEvaluationService.evaluateApplication(savedApplication.id);
+            } catch (error) {
+                // Log do erro mas não falhar a criação da application
+                console.error('Erro ao avaliar candidato com IA:', error);
             }
 
             return savedApplication;

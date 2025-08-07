@@ -62,6 +62,70 @@ export class Application {
   })
   aiScore: number;
 
+  @Column({
+    name: 'overall_score',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  overallScore: number;
+
+  @Column({
+    name: 'question_responses_score',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  questionResponsesScore: number;
+
+  @Column({
+    name: 'education_score',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  educationScore: number;
+
+  @Column({
+    name: 'experience_score',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  experienceScore: number;
+
+  @Column({
+    name: 'evaluation_provider',
+    length: 50,
+    nullable: true,
+  })
+  evaluationProvider: string;
+
+  @Column({
+    name: 'evaluation_model',
+    length: 100,
+    nullable: true,
+  })
+  evaluationModel: string;
+
+  @Column({
+    name: 'evaluation_details',
+    type: 'jsonb',
+    nullable: true,
+  })
+  evaluationDetails: any;
+
+  @Column({
+    name: 'evaluated_at',
+    type: 'timestamp',
+    nullable: true,
+  })
+  evaluatedAt: Date;
+
   @Column({ name: 'resume_url', length: 500, nullable: true })
   resumeUrl: string;
 

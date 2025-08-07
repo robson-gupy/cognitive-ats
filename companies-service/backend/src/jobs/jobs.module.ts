@@ -11,10 +11,12 @@ import { ResumeProfessionalExperience } from './entities/resume-professional-exp
 import { ResumeAcademicFormation } from './entities/resume-academic-formation.entity';
 import { ResumeAchievement } from './entities/resume-achievement.entity';
 import { ResumeLanguage } from './entities/resume-language.entity';
+import { Application } from './entities/application.entity';
 import { ApplicationQuestionResponse } from './entities/application-question-response.entity';
 import { AuthModule } from '../auth/auth.module';
 import { JwtConfigModule } from '../auth/jwt.module';
 import { AiServiceClient } from './ai-service.client';
+import { CandidateEvaluationService } from './candidate-evaluation.service';
 import { ApplicationsModule } from './applications.module';
 import { QuestionResponsesModule } from './question-responses.module';
 
@@ -30,6 +32,7 @@ import { QuestionResponsesModule } from './question-responses.module';
       ResumeAcademicFormation,
       ResumeAchievement,
       ResumeLanguage,
+      Application,
       ApplicationQuestionResponse,
     ]),
     AuthModule,
@@ -38,7 +41,7 @@ import { QuestionResponsesModule } from './question-responses.module';
     QuestionResponsesModule,
   ],
   controllers: [JobsController],
-  providers: [JobsService, AiServiceClient],
-  exports: [JobsService],
+  providers: [JobsService, AiServiceClient, CandidateEvaluationService],
+  exports: [JobsService, CandidateEvaluationService],
 })
 export class JobsModule {}

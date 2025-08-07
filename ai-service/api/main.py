@@ -1,6 +1,7 @@
 """
 Aplicação FastAPI principal do AI Service
 """
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -8,6 +9,15 @@ import os
 
 from shared.config import Config, AIProvider
 from api.routes import ai, jobs
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+    ]
+)
 
 # Carrega variáveis de ambiente
 load_dotenv()

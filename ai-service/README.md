@@ -1,111 +1,190 @@
 # AI Service
 
-Serviço de Inteligência Artificial configurável para diferentes providers (OpenAI, Anthropic, etc.).
+Serviço configurável para diferentes providers de IA (OpenAI, Anthropic, etc.)
+
+## Funcionalidades
+
+- **Geração de Texto**: Gera texto usando diferentes modelos de IA
+- **Chat Completion**: Gera respostas de chat
+- **Embeddings**: Gera embeddings de texto
+- **Criação de Vagas**: Cria vagas usando IA
+- **Melhoria de Vagas**: Melhora vagas existentes
+- **Análise de Currículos**: Analisa e extrai informações de currículos
+- **Avaliação de Candidatos**: Avalia a aderência de candidatos a vagas
+
+## Configuração
+
+1. Copie o arquivo de exemplo de ambiente:
+```bash
+cp env.example .env
+```
+
+2. Configure as variáveis de ambiente no arquivo `.env`:
+```env
+# Provider padrão (openai, anthropic)
+DEFAULT_AI_PROVIDER=openai
+
+# OpenAI
+OPENAI_API_KEY=sua_chave_aqui
+OPENAI_MODEL=gpt-4
+
+# Anthropic
+ANTHROPIC_API_KEY=sua_chave_aqui
+ANTHROPIC_MODEL=claude-3-sonnet-20240229
+```
+
+## Instalação
+
+```bash
+# Instalar dependências
+pip install -r requirements.txt
+
+# Executar o serviço
+uvicorn api.main:app --reload
+```
+
+## Endpoints
+
+### Geração de Texto
+```bash
+POST /ai/generate-text
+```
+
+### Chat
+```bash
+POST /ai/chat
+```
+
+### Embeddings
+```bash
+POST /ai/embedding
+```
+
+### Criação de Vagas
+```bash
+POST /ai/jobs/create
+```
+
+### Melhoria de Vagas
+```bash
+POST /ai/jobs/enhance
+```
+
+### Análise de Currículos
+```bash
+POST /ai/resume/parse
+```
+
+### Avaliação de Candidatos
+```bash
+POST /ai/evaluate-candidate
+```
+
+## Exemplo de Avaliação de Candidatos
+
+```bash
+curl -X POST "http://localhost:8000/ai/evaluate-candidate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resume": {
+      "personal_info": {
+        "name": "João Silva",
+        "email": "joao@email.com"
+      },
+      "education": [
+        {
+          "degree": "Bacharelado em Ciência da Computação",
+          "institution": "Universidade Federal",
+          "year": "2020"
+        }
+      ],
+      "experience": [
+        {
+          "title": "Desenvolvedor Full Stack",
+          "company": "Tech Corp",
+          "duration": "2 anos",
+          "description": "Desenvolvimento de aplicações web com React e Node.js"
+        }
+      ],
+      "skills": ["JavaScript", "React", "Node.js", "Python"]
+    },
+    "job": {
+      "title": "Desenvolvedor Full Stack Senior",
+      "description": "Desenvolvimento de aplicações web modernas",
+      "requirements": ["React", "Node.js", "TypeScript"],
+      "education_required": "Bacharelado em Ciência da Computação",
+      "experience_required": "3+ anos"
+    },
+    "question_responses": [
+      {
+        "question": "Como você lida com prazos apertados?",
+        "answer": "Organizo as tarefas por prioridade e uso metodologias ágeis"
+      }
+    ]
+  }'
+```
+
+**Resposta:**
+```json
+{
+  "overall_score": 75,
+  "question_responses_score": 80,
+  "education_score": 90,
+  "experience_score": 70,
+  "provider": "openai",
+  "model": "gpt-4",
+  "evaluation_details": {
+    "overall_score": 75,
+    "question_responses_score": 80,
+    "education_score": 90,
+    "experience_score": 70
+  }
+}
+```
 
 ## Estrutura do Projeto
 
 ```
 ai-service/
-├── api/                    # API FastAPI principal
-│   ├── __init__.py
-│   ├── main.py            # Aplicação FastAPI
-│   ├── routes/            # Rotas da API
-│   │   ├── __init__.py
-│   │   ├── ai.py          # Rotas de IA geral
-│   │   └── jobs.py        # Rotas específicas para jobs
-│   └── models/            # Modelos Pydantic
-│       ├── __init__.py
-│       ├── ai.py          # Modelos para requisições de IA
-│       └── jobs.py        # Modelos para jobs
-├── core/                   # Lógica de negócio principal
-│   ├── __init__.py
-│   ├── ai/                # Serviços de IA
-│   │   ├── __init__.py
-│   │   ├── base.py        # Classe base para providers
-│   │   ├── openai.py      # Provider OpenAI
-│   │   ├── anthropic.py   # Provider Anthropic
-│   │   └── factory.py     # Factory para criar providers
-│   ├── jobs/              # Serviços específicos para jobs
-│   │   ├── __init__.py
-│   │   ├── creator.py     # Criação de jobs com IA
-│   │   └── enhancer.py    # Melhoria de jobs
-│   └── resume/            # Processamento de currículos
-│       ├── __init__.py
-│       └── parser.py      # Parser de currículos
-├── consumer/              # Consumidor SQS (mantido)
-│   ├── __init__.py
-│   ├── sqs_listener.py
-│   ├── Dockerfile.listener
-│   └── README.md
-├── shared/                # Utilitários compartilhados
-│   ├── __init__.py
-│   ├── config.py          # Configurações
-│   ├── exceptions.py      # Exceções customizadas
-│   └── utils.py           # Utilitários gerais
-├── tests/                 # Testes
-│   ├── __init__.py
-│   ├── test_ai_service.py
-│   └── test_jobs.py
-├── Dockerfile             # Dockerfile principal
-├── requirements.txt        # Dependências
-└── README.md             # Este arquivo
+├── api/
+│   ├── main.py              # Aplicação FastAPI
+│   ├── models/              # Modelos Pydantic
+│   └── routes/              # Rotas da API
+├── core/
+│   ├── ai/                  # Lógica de IA
+│   ├── jobs/                # Lógica de vagas
+│   └── resume/              # Lógica de currículos
+├── shared/
+│   ├── config.py            # Configurações
+│   ├── exceptions.py        # Exceções customizadas
+│   └── utils.py             # Utilitários
+└── tests/                   # Testes
 ```
 
-## Componentes Principais
+## Providers Suportados
 
-### API (`api/`)
-- **main.py**: Aplicação FastAPI principal
-- **routes/**: Rotas organizadas por funcionalidade
-- **models/**: Modelos Pydantic para validação
+- **OpenAI**: GPT-4, GPT-3.5-turbo
+- **Anthropic**: Claude-3, Claude-2
 
-### Core (`core/`)
-- **ai/**: Implementações dos providers de IA
-- **jobs/**: Lógica específica para criação e melhoria de jobs
-- **resume/**: Processamento de currículos
+## Desenvolvimento
 
-### Consumer (`consumer/`)
-- Consumidor SQS para processamento assíncrono de currículos
-- Mantido como está para não quebrar funcionalidade existente
-
-### Shared (`shared/`)
-- Configurações, exceções e utilitários compartilhados
-
-## Como Usar
-
-### Desenvolvimento Local
 ```bash
-cd ai-service
+# Instalar dependências de desenvolvimento
 pip install -r requirements.txt
-uvicorn api.main:app --reload
+
+# Executar testes
+pytest
+
+# Executar com hot reload
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Docker
+## Docker
+
 ```bash
+# Construir imagem
 docker build -t ai-service .
+
+# Executar container
 docker run -p 8000:8000 ai-service
 ```
-
-### Consumer SQS
-```bash
-cd consumer
-docker build -f Dockerfile.listener -t sqs-listener .
-docker run sqs-listener
-```
-
-## Endpoints Principais
-
-- `GET /health` - Health check
-- `GET /providers` - Lista providers disponíveis
-- `POST /generate-text` - Geração de texto
-- `POST /chat` - Chat com IA
-- `POST /embedding` - Geração de embeddings
-- `POST /jobs/create-from-prompt` - Criação de jobs
-- `POST /jobs/generate-questions` - Geração de perguntas
-- `POST /jobs/generate-stages` - Geração de estágios
-
-## Configuração
-
-Configure as variáveis de ambiente:
-- `DEFAULT_AI_PROVIDER`: Provider padrão (openai, anthropic)
-- `OPENAI_API_KEY`: Chave da API OpenAI
-- `ANTHROPIC_API_KEY`: Chave da API Anthropic

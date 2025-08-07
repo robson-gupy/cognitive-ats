@@ -12,6 +12,7 @@ import {
   HttpStatus,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicationsService } from './applications.service';
@@ -21,14 +22,18 @@ import { UpdateApplicationDto } from './dto/update-application.dto';
 import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
 import { ChangeApplicationStageDto } from './dto/change-application-stage.dto';
 import { UploadResumeDto } from './dto/upload-resume.dto';
+import { UpdateApplicationEvaluationDto } from './dto/update-application-evaluation.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
+import { LocalAuthGuard } from '../auth/guards/local-auth.guard';
+import { CandidateEvaluationService } from './candidate-evaluation.service';
 
 @Controller('jobs/:jobId/applications')
 export class ApplicationsController {
   constructor(
     private readonly applicationsService: ApplicationsService,
     private readonly applicationStageService: ApplicationStageService,
+    private readonly candidateEvaluationService: CandidateEvaluationService,
   ) {}
 
   @Post()
@@ -184,5 +189,20 @@ export class ApplicationsController {
       companyId,
       stageId,
     );
+  }
+
+  @Post(':id/evaluate')
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async evaluateApplication(
+    @Param('id') id: string,
+    @Param('jobId') jobId: string,
+    @Query('companyId') companyId: string,
+  ) {
+    // Primeiro verificar se a application existe e pertence à company
+    await this.applicationsService.findOneByJobId(id, jobId, companyId);
+
+    // Avaliar a application
+    return this.candidateEvaluationService.evaluateApplication(id);
   }
 }
