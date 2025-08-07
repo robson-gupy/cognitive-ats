@@ -52,7 +52,18 @@ export class AiServiceClient {
         },
       );
 
-      return response.data as JobCreationResponse;
+      // O AI Service retorna um objeto com 'job', 'questions', 'stages', etc.
+      // Precisamos extrair os dados do objeto 'job'
+      const responseData = response.data as any;
+      const jobData = responseData.job;
+
+      return {
+        title: jobData.title,
+        description: jobData.description,
+        requirements: jobData.requirements,
+        questions: responseData.questions,
+        stages: responseData.stages,
+      } as JobCreationResponse;
     } catch (error: any) {
       if (error.response) {
         const message =

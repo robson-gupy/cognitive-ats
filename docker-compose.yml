@@ -80,12 +80,16 @@ services:
       - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-gpt-4}
+      - DEFAULT_MAX_TOKENS=${DEFAULT_MAX_TOKENS:-1000}
+      - DEFAULT_TEMPERATURE=${DEFAULT_TEMPERATURE:-0.7}
+      - REQUEST_TIMEOUT=${REQUEST_TIMEOUT:-30}
     volumes:
       - ./ai-service:/app
     networks:
       - cognitive-ats-network
     restart: unless-stopped
-    command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
+    command: [ "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
 
   # SQS Listener Service
   sqs-listener:

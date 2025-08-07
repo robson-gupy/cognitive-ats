@@ -22,7 +22,9 @@ from dotenv import load_dotenv
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from services.ai_service import AIService, AIProvider
+    from core.ai.service import AIService
+    from shared.config import AIProvider
+    from core.resume.parser import ResumeParser
 except ImportError as e:
     print(f"❌ Erro ao importar módulos: {e}")
     print(f"   Python path: {sys.path}")
@@ -56,10 +58,10 @@ def convert_dates_to_iso(data):
 
 def map_resume_to_backend_format(resume_data: dict) -> dict:
     """
-    Mapeia os dados do currículo do formato Python para o formato esperado pelo backend
+    Mapeia os dados do currículo para o formato esperado pelo backend
     
     Args:
-        resume_data: Dados do currículo no formato Python
+        resume_data: Dados do currículo já no formato correto
         
     Returns:
         dict: Dados mapeados para o formato do backend
@@ -71,15 +73,15 @@ def map_resume_to_backend_format(resume_data: dict) -> dict:
         mapped_data['summary'] = resume_data['summary']
     
     # Mapear experiências profissionais
-    if 'professional_experiences' in resume_data and resume_data['professional_experiences']:
+    if 'professionalExperiences' in resume_data and resume_data['professionalExperiences']:
         mapped_data['professionalExperiences'] = []
-        for exp in resume_data['professional_experiences']:
+        for exp in resume_data['professionalExperiences']:
             mapped_exp = {
-                'companyName': exp.get('company_name', ''),
+                'companyName': exp.get('companyName', ''),
                 'position': exp.get('position', ''),
-                'startDate': exp.get('start_date', ''),
-                'endDate': exp.get('end_date'),
-                'isCurrent': exp.get('is_current', False),
+                'startDate': exp.get('startDate', ''),
+                'endDate': exp.get('endDate'),
+                'isCurrent': exp.get('isCurrent', False),
                 'description': exp.get('description'),
                 'responsibilities': exp.get('responsibilities'),
                 'achievements': exp.get('achievements')
@@ -89,15 +91,15 @@ def map_resume_to_backend_format(resume_data: dict) -> dict:
             mapped_data['professionalExperiences'].append(mapped_exp)
     
     # Mapear formações acadêmicas
-    if 'academic_formations' in resume_data and resume_data['academic_formations']:
+    if 'academicFormations' in resume_data and resume_data['academicFormations']:
         mapped_data['academicFormations'] = []
-        for formation in resume_data['academic_formations']:
+        for formation in resume_data['academicFormations']:
             mapped_formation = {
                 'institution': formation.get('institution', ''),
                 'course': formation.get('course', ''),
                 'degree': formation.get('degree', ''),
-                'startDate': formation.get('start_date', ''),
-                'endDate': formation.get('end_date'),
+                'startDate': formation.get('startDate', ''),
+                'endDate': formation.get('endDate'),
                 'isCurrent': formation.get('is_current', False),
                 'status': formation.get('status', 'completed'),
                 'description': formation.get('description')
@@ -348,18 +350,18 @@ async def process_resume_message(message_data: dict, ai_service: AIService, retr
         pdf_path = download_pdf_from_url(resume_url)
         
         try:
+            # Cria o parser de currículos
+            resume_parser = ResumeParser(ai_service)
+            
             # Processa o currículo
-            resume = await ai_service.parse_resume_from_pdf(pdf_path, application_id)
+            resume_data = await resume_parser.parse_resume_from_pdf(pdf_path, application_id)
             
             print(f"✅ Currículo processado com sucesso!")
-            print(f"   - Resumo: {len(resume.summary or '')} caracteres")
-            print(f"   - Experiências: {len(resume.professional_experiences)}")
-            print(f"   - Formações: {len(resume.academic_formations)}")
-            print(f"   - Conquistas: {len(resume.achievements)}")
-            print(f"   - Idiomas: {len(resume.languages)}")
-            
-            # Prepara os dados do currículo para enviar ao backend
-            resume_data = resume.model_dump()
+            print(f"   - Resumo: {len(resume_data.get('summary', '') or '')} caracteres")
+            print(f"   - Experiências: {len(resume_data.get('professionalExperiences', []))}")
+            print(f"   - Formações: {len(resume_data.get('academicFormations', []))}")
+            print(f"   - Conquistas: {len(resume_data.get('achievements', []))}")
+            print(f"   - Idiomas: {len(resume_data.get('languages', []))}")
             
             # Converte datas para formato ISO para serialização JSON
             resume_data = convert_dates_to_iso(resume_data)

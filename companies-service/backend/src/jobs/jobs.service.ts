@@ -156,9 +156,13 @@ export class JobsService {
       max_stages: createJobWithAiDto.maxStages || 3,
     };
 
+    console.log('AI Request:', JSON.stringify(aiRequest, null, 2));
+
     // Chamar AI Service
     const aiResponse =
       await this.aiServiceClient.createJobFromPrompt(aiRequest);
+
+    console.log('AI Response:', JSON.stringify(aiResponse, null, 2));
 
     // Criar vaga com dados gerados pela IA
     const createJobDto: CreateJobDto = {
@@ -178,6 +182,8 @@ export class JobsService {
         orderIndex: index,
       })),
     };
+
+    console.log('CreateJobDto:', JSON.stringify(createJobDto, null, 2));
 
     // Criar a vaga usando o método existente
     return this.create(createJobDto, user);
