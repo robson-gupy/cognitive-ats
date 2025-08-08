@@ -132,12 +132,14 @@ export const JobList: React.FC = () => {
           >
             Ver
           </Button>
-          <Button
-            icon={<UserOutlined />}
-            onClick={() => navigate(`/jobs/${record.id}/applications`)}
-          >
-            Candidatos
-          </Button>
+          {record.status === JobStatus.PUBLISHED && (
+            <Button
+              icon={<UserOutlined />}
+              onClick={() => navigate(`/jobs/${record.id}/applications`)}
+            >
+              Candidatos
+            </Button>
+          )}
           <Button
             icon={<EditOutlined />}
             onClick={() => navigate(`/jobs/${record.id}/edit`)}

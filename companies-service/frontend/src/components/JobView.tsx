@@ -191,12 +191,14 @@ export const JobView: React.FC = () => {
             >
               Ver Logs
             </Button>
-            <Button 
-              icon={<UserOutlined />}
-              onClick={() => navigate(`/jobs/${job.id}/applications`)}
-            >
-              Candidatos
-            </Button>
+            {job.status === JobStatus.PUBLISHED && (
+              <Button 
+                icon={<UserOutlined />}
+                onClick={() => navigate(`/jobs/${job.id}/applications`)}
+              >
+                Candidatos
+              </Button>
+            )}
           </Space>
         </div>
 

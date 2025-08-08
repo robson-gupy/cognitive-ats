@@ -39,6 +39,10 @@ import {
 import {
   useSortable,
 } from '@dnd-kit/sortable';
+import {
+  useDroppable,
+  useDraggable,
+} from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { apiService } from '../services/api';
 import type { Application } from '../types/Application';
@@ -65,13 +69,11 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
     listeners,
     setNodeRef,
     transform,
-    transition,
     isDragging,
-  } = useSortable({ id: application.id });
+  } = useDraggable({ id: application.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
     opacity: isDragging ? 0.5 : 1,
   };
 
@@ -104,6 +106,22 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
     return 'error';
   };
 
+  const getAdherenceLevel = (overallScore?: number) => {
+    if (overallScore === undefined || overallScore === null) return null;
+    if (overallScore >= 90) return 'Muito alta';
+    if (overallScore >= 70) return 'Alta';
+    if (overallScore >= 50) return 'Média';
+    return 'Baixa';
+  };
+
+  const getAdherenceColor = (overallScore?: number) => {
+    if (overallScore === undefined || overallScore === null) return 'default';
+    if (overallScore >= 90) return 'blue'; // Azul mais escuro
+    if (overallScore >= 70) return 'cyan'; // Azul claro
+    if (overallScore >= 50) return 'gold'; // Amarela
+    return 'red'; // Vermelha
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -114,10 +132,11 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
       style={{
         ...style,
         marginBottom: '8px',
-        cursor: 'grab',
+        cursor: isDragging ? 'grabbing' : 'grab',
         backgroundColor: isDragging ? '#f0f0f0' : hasPendingChange ? '#fff7e6' : 'white',
         border: hasPendingChange ? '2px solid #faad14' : undefined,
         opacity: hasPendingChange ? 0.8 : 1,
+        userSelect: 'none',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
@@ -137,11 +156,18 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
             </div>
           )}
         </div>
-        {application.aiScore !== undefined && (
-          <Tag color={getScoreColor(application.aiScore)}>
-            {formatScore(application.aiScore)}
-          </Tag>
-        )}
+        <Space size="small">
+          {application.overallScore !== undefined && (
+            <Tag color={getAdherenceColor(application.overallScore)}>
+              {getAdherenceLevel(application.overallScore)}
+            </Tag>
+          )}
+          {application.aiScore !== undefined && (
+            <Tag color={getScoreColor(application.aiScore)}>
+              {formatScore(application.aiScore)}
+            </Tag>
+          )}
+        </Space>
       </div>
 
       <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
@@ -198,23 +224,22 @@ const StageColumn: React.FC<StageColumnProps> = ({
   pendingStageChanges
 }) => {
   const {
-    attributes,
-    listeners,
     setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id: stage.id! });
+    isOver,
+  } = useDroppable({ id: stage.id! });
+
+
+
+
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    backgroundColor: isOver ? '#f0f8ff' : 'white',
+    border: isOver ? '2px dashed #1890ff' : '1px solid #e8e8e8',
   };
 
   return (
     <div
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
       className="stage-column"
       style={{
         ...style,
@@ -229,6 +254,8 @@ const StageColumn: React.FC<StageColumnProps> = ({
         overflowY: 'auto',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         border: '1px solid #e8e8e8',
+        position: 'relative',
+        zIndex: 2
       }}
     >
       <div style={{ 
@@ -254,7 +281,7 @@ const StageColumn: React.FC<StageColumnProps> = ({
         <Badge count={applications.length} showZero style={{ backgroundColor: '#1890ff' }} />
       </div>
 
-      <SortableContext items={applications.map(app => app.id)} strategy={verticalListSortingStrategy}>
+      <div>
         {applications.map((application) => (
           <DraggableApplicationCard
             key={application.id}
@@ -264,7 +291,7 @@ const StageColumn: React.FC<StageColumnProps> = ({
             hasPendingChange={pendingStageChanges.has(application.id)}
           />
         ))}
-      </SortableContext>
+      </div>
 
       {applications.length === 0 && (
         <div style={{ 
@@ -316,7 +343,7 @@ export const ApplicationsList: React.FC = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3,
       },
     }),
     useSensor(KeyboardSensor),
@@ -328,6 +355,8 @@ export const ApplicationsList: React.FC = () => {
       loadApplications();
     }
   }, [jobId]);
+
+
 
   const loadJob = async () => {
     try {
@@ -371,11 +400,15 @@ export const ApplicationsList: React.FC = () => {
     const application = applications.find(app => app.id === applicationId);
     const toStage = job?.stages.find(stage => stage.id === toStageId);
 
-    if (!application || !toStage) return;
+    if (!application || !toStage) {
+      return;
+    }
 
     // Se a aplicação já está no stage de destino, não fazer nada
-    if (application.currentStageId === toStageId) return;
-
+    if (application.currentStageId === toStageId) {
+      return;
+    }
+    
     // Aplicar mudança visual imediatamente
     setPendingStageChanges(prev => new Map(prev.set(applicationId, toStageId)));
 
@@ -443,12 +476,19 @@ export const ApplicationsList: React.FC = () => {
   };
 
   const getApplicationsByStage = (stageId: string) => {
-    return applications.filter(app => {
-      // Verificar se há uma mudança temporária para esta aplicação
-      const pendingStageId = pendingStageChanges.get(app.id);
-      const effectiveStageId = pendingStageId || app.currentStageId;
-      return effectiveStageId === stageId;
-    });
+    return applications
+      .filter(app => {
+        // Verificar se há uma mudança temporária para esta aplicação
+        const pendingStageId = pendingStageChanges.get(app.id);
+        const effectiveStageId = pendingStageId || app.currentStageId;
+        return effectiveStageId === stageId;
+      })
+      .sort((a, b) => {
+        // Ordenar por overall_score do maior para o menor
+        const scoreA = a.overallScore ?? 0;
+        const scoreB = b.overallScore ?? 0;
+        return scoreB - scoreA; // Ordem decrescente
+      });
   };
 
   if (loading) {
@@ -504,7 +544,7 @@ export const ApplicationsList: React.FC = () => {
               )}
             </Title>
             <Text type="secondary">
-              {applications.length} candidato{applications.length !== 1 ? 's' : ''} inscrito{applications.length !== 1 ? 's' : ''}
+              {applications.length} candidato{applications.length !== 1 ? 's' : ''} inscrito{applications.length !== 1 ? 's' : ''} • Ordenados por aderência (maior para menor)
             </Text>
           </div>
           
@@ -532,7 +572,9 @@ export const ApplicationsList: React.FC = () => {
           backgroundColor: '#f0f2f5', 
           padding: '16px', 
           borderRadius: '8px',
-          minHeight: 'calc(100vh - 200px)'
+          minHeight: 'calc(100vh - 200px)',
+          position: 'relative',
+          zIndex: 1
         }}>
           <DndContext
             sensors={sensors}
@@ -618,6 +660,8 @@ export const ApplicationsList: React.FC = () => {
         confirmLoading={isChangingStage}
         okText="Confirmar"
         cancelText="Cancelar"
+        style={{ zIndex: 1000 }}
+        maskStyle={{ zIndex: 999 }}
       >
         {changeStageModal.application && changeStageModal.toStage && (
           <div>

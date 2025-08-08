@@ -7,6 +7,14 @@ export interface Application {
   email?: string;
   phone?: string;
   aiScore?: number;
+  overallScore?: number;
+  questionResponsesScore?: number;
+  educationScore?: number;
+  experienceScore?: number;
+  evaluationProvider?: string;
+  evaluationModel?: string;
+  evaluationDetails?: any;
+  evaluatedAt?: string;
   resumeUrl?: string;
   currentStageId?: string;
   currentStage?: {
