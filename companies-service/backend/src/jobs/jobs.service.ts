@@ -346,8 +346,19 @@ export class JobsService {
           await this.updateQuestions(job.id, updateJobDto.questions, user.id);
         }
 
-        if (updateJobDto.stages) {
-          await this.updateStages(job.id, updateJobDto.stages, user.id);
+        // Só atualizar stages se realmente houver mudanças
+        if (updateJobDto.stages && updateJobDto.stages.length > 0) {
+          const existingStages = await this.jobStagesRepository.find({
+            where: { jobId: job.id },
+            order: { orderIndex: 'ASC' },
+          });
+          
+          // Verificar se há mudanças reais nos stages
+          const hasStageChanges = this.hasStageChanges(existingStages, updateJobDto.stages);
+          
+          if (hasStageChanges) {
+            await this.updateStages(job.id, updateJobDto.stages, user.id);
+          }
         }
 
         return this.findOne(id, user.companyId);
@@ -392,32 +403,156 @@ export class JobsService {
     stages: any[],
     userId: string,
   ): Promise<void> {
-    // Remover etapas existentes usando query direta para evitar problemas de cascade
-    await this.jobStagesRepository.query(
-      'DELETE FROM job_stages WHERE job_id = $1',
-      [jobId],
-    );
+    // Buscar stages existentes
+    const existingStages = await this.jobStagesRepository.find({
+      where: { jobId },
+      order: { orderIndex: 'ASC' },
+    });
 
-    // Criar novas etapas
-    if (stages.length > 0) {
-      const newStages = stages.map((s: any, index) =>
-        this.jobStagesRepository.create({
-          name: s.name,
-          description: s.description,
-          orderIndex: s.orderIndex ?? index,
-          isActive: s.isActive ?? true,
-          jobId,
-        }),
-      );
-      await this.jobStagesRepository.save(newStages);
+    // Se não há stages para atualizar, não fazer nada
+    if (!stages || stages.length === 0) {
+      return;
     }
 
-    await this.createLog(
-      jobId,
-      userId,
-      'Etapas do processo seletivo atualizadas',
-      'stages',
+    const stagesToUpdate: any[] = [];
+    const stagesToCreate: any[] = [];
+    const stagesToDelete: string[] = [];
+
+    // Mapear stages existentes por ID
+    const existingStagesMap = new Map(
+      existingStages.map(stage => [stage.id, stage])
     );
+
+    // Processar stages enviados
+    stages.forEach((stageData: any, index) => {
+      if (stageData.id && existingStagesMap.has(stageData.id)) {
+        // Stage existente - atualizar apenas se houver mudanças
+        const existingStage = existingStagesMap.get(stageData.id)!;
+        
+        // Verificar se há mudanças reais
+        const hasChanges = 
+          existingStage.name !== stageData.name ||
+          existingStage.description !== stageData.description ||
+          existingStage.orderIndex !== (stageData.orderIndex ?? index) ||
+          existingStage.isActive !== (stageData.isActive ?? true);
+
+        if (hasChanges) {
+          const updatedStage = {
+            ...existingStage,
+            name: stageData.name,
+            description: stageData.description,
+            orderIndex: stageData.orderIndex ?? index,
+            isActive: stageData.isActive ?? true,
+          };
+          stagesToUpdate.push(updatedStage);
+        }
+        
+        existingStagesMap.delete(stageData.id);
+      } else {
+        // Novo stage - criar
+        stagesToCreate.push({
+          name: stageData.name,
+          description: stageData.description,
+          orderIndex: stageData.orderIndex ?? index,
+          isActive: stageData.isActive ?? true,
+          jobId,
+        });
+      }
+    });
+
+    // Stages que não foram enviados devem ser deletados
+    stagesToDelete.push(...existingStagesMap.keys());
+
+    // Executar operações em transação
+    await this.jobStagesRepository.manager.transaction(async (entityManager) => {
+      // Verificar se há aplicações usando os stages que serão deletados
+      if (stagesToDelete.length > 0) {
+        // Verificar se há aplicações nos stages que serão deletados
+        const applicationsInStages = await entityManager.query(
+          'SELECT COUNT(*) as count FROM applications WHERE current_stage_id = ANY($1)',
+          [stagesToDelete]
+        );
+        
+        if (applicationsInStages[0].count > 0) {
+          throw new BadRequestException(
+            'Não é possível excluir etapas que possuem candidatos. Mova os candidatos para outras etapas primeiro.'
+          );
+        }
+
+        // Deletar histórico de movimentação que referencia esses stages
+        await entityManager.query(
+          'DELETE FROM application_stage_history WHERE from_stage_id = ANY($1) OR to_stage_id = ANY($1)',
+          [stagesToDelete]
+        );
+
+        // Deletar stages que não estão mais presentes
+        await entityManager.query(
+          'DELETE FROM job_stages WHERE id = ANY($1)',
+          [stagesToDelete]
+        );
+      }
+
+      // Atualizar stages existentes
+      if (stagesToUpdate.length > 0) {
+        await entityManager.save(JobStage, stagesToUpdate);
+      }
+
+      // Criar novos stages
+      if (stagesToCreate.length > 0) {
+        const newStages = stagesToCreate.map(stageData =>
+          entityManager.create(JobStage, stageData)
+        );
+        await entityManager.save(JobStage, newStages);
+      }
+    });
+
+    // Só criar log se houve mudanças
+    if (stagesToUpdate.length > 0 || stagesToCreate.length > 0) {
+      await this.createLog(
+        jobId,
+        userId,
+        'Etapas do processo seletivo atualizadas',
+        'stages',
+      );
+    }
+  }
+
+  private hasStageChanges(existingStages: JobStage[], newStages: any[]): boolean {
+    // Se o número de stages mudou, há mudanças
+    if (existingStages.length !== newStages.length) {
+      return true;
+    }
+
+    // Criar map dos stages existentes por ID
+    const existingStagesMap = new Map(
+      existingStages.map(stage => [stage.id, stage])
+    );
+
+    // Verificar se cada stage novo corresponde ao existente
+    for (const newStage of newStages) {
+      if (!newStage.id) {
+        // Stage sem ID é considerado novo
+        return true;
+      }
+
+      const existingStage = existingStagesMap.get(newStage.id);
+      if (!existingStage) {
+        // Stage com ID não encontrado é considerado novo
+        return true;
+      }
+
+      // Verificar se os campos principais mudaram
+      if (
+        existingStage.name !== newStage.name ||
+        existingStage.description !== newStage.description ||
+        existingStage.orderIndex !== (newStage.orderIndex ?? existingStage.orderIndex) ||
+        existingStage.isActive !== (newStage.isActive ?? existingStage.isActive)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   async remove(id: string, userCompanyId: string): Promise<void> {

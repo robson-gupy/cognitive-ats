@@ -488,11 +488,13 @@ export const JobForm: React.FC = () => {
         ...(values.departmentId && { departmentId: values.departmentId }),
         ...(values.expirationDate && { expirationDate: values.expirationDate.toISOString() }),
         questions: questions.filter(q => q.question.trim() !== '').map((q, index) => ({
+          id: q.id,
           question: q.question,
           isRequired: q.isRequired,
           orderIndex: index,
         })),
         stages: stages.filter(s => s.name.trim() !== '').map((s, index) => ({
+          id: s.id,
           name: s.name,
           description: s.description,
           isActive: s.isActive,

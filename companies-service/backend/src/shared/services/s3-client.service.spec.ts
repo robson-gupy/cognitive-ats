@@ -58,28 +58,35 @@ describe('S3ClientService', () => {
 
   describe('uploadFile', () => {
     it('should upload file successfully when bucket exists', async () => {
-      // Mock do fs.existsSync
-      jest.spyOn(require('fs'), 'existsSync').mockReturnValue(true);
-      jest
+      // Mock do fs.existsSync e readFileSync
+      const existsSyncSpy = jest.spyOn(require('fs'), 'existsSync').mockReturnValue(true);
+      const readFileSyncSpy = jest
         .spyOn(require('fs'), 'readFileSync')
         .mockReturnValue(Buffer.from('test content'));
 
-      const result = await service.uploadFile('/test/file.pdf', 'test-bucket');
+      try {
+        const result = await service.uploadFile('/test/file.pdf', 'test-bucket');
 
-      expect(mockS3.headBucket).toHaveBeenCalledWith({ Bucket: 'test-bucket' });
-      expect(mockS3.upload).toHaveBeenCalledWith({
-        Bucket: 'test-bucket',
-        Key: 'file.pdf',
-        Body: Buffer.from('test content'),
-        ContentType: 'application/pdf',
-      });
-      expect(result).toBe('http://localhost:9000/test-bucket/test-file.pdf');
+        expect(mockS3.headBucket).toHaveBeenCalledWith({ Bucket: 'test-bucket' });
+        expect(mockS3.upload).toHaveBeenCalledWith({
+          Bucket: 'test-bucket',
+          Key: 'file.pdf',
+          Body: Buffer.from('test content'),
+          ContentType: 'application/pdf',
+          ACL: 'public-read',
+        });
+        expect(result).toBe('http://localhost:9000/test-bucket/file.pdf');
+      } finally {
+        // Restaurar os mocks originais
+        existsSyncSpy.mockRestore();
+        readFileSyncSpy.mockRestore();
+      }
     });
 
     it('should create bucket and upload file when bucket does not exist', async () => {
-      // Mock do fs.existsSync
-      jest.spyOn(require('fs'), 'existsSync').mockReturnValue(true);
-      jest
+      // Mock do fs.existsSync e readFileSync
+      const existsSyncSpy = jest.spyOn(require('fs'), 'existsSync').mockReturnValue(true);
+      const readFileSyncSpy = jest
         .spyOn(require('fs'), 'readFileSync')
         .mockReturnValue(Buffer.from('test content'));
 
@@ -106,21 +113,33 @@ describe('S3ClientService', () => {
         eventNames: jest.fn(),
       } as any);
 
-      const result = await service.uploadFile('/test/file.pdf', 'new-bucket');
+      try {
+        const result = await service.uploadFile('/test/file.pdf', 'new-bucket');
 
-      expect(mockS3.createBucket).toHaveBeenCalledWith({
-        Bucket: 'new-bucket',
-      });
-      expect(mockS3.upload).toHaveBeenCalled();
-      expect(result).toBe('http://localhost:9000/test-bucket/test-file.pdf');
+        expect(mockS3.createBucket).toHaveBeenCalledWith({
+          Bucket: 'new-bucket',
+        });
+        expect(mockS3.upload).toHaveBeenCalled();
+        expect(result).toBe('http://localhost:9000/new-bucket/file.pdf');
+      } finally {
+        // Restaurar os mocks originais
+        existsSyncSpy.mockRestore();
+        readFileSyncSpy.mockRestore();
+      }
     });
 
     it('should throw error when file does not exist', async () => {
-      jest.spyOn(require('fs'), 'existsSync').mockReturnValue(false);
+      // Mock do fs.existsSync para retornar false (arquivo não existe)
+      const existsSyncSpy = jest.spyOn(require('fs'), 'existsSync').mockReturnValue(false);
 
-      await expect(
-        service.uploadFile('/nonexistent/file.pdf', 'test-bucket'),
-      ).rejects.toThrow('Arquivo não encontrado: /nonexistent/file.pdf');
+      try {
+        await expect(
+          service.uploadFile('/nonexistent/file.pdf', 'test-bucket'),
+        ).rejects.toThrow('Arquivo não encontrado: /nonexistent/file.pdf');
+      } finally {
+        // Restaurar o mock original
+        existsSyncSpy.mockRestore();
+      }
     });
   });
 

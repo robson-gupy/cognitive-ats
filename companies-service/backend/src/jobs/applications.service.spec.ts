@@ -7,6 +7,9 @@ import { Job } from './entities/job.entity';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { S3ClientService } from '../shared/services/s3-client.service';
+import { SqsClientService } from '../shared/services/sqs-client.service';
+import { CandidateEvaluationService } from './candidate-evaluation.service';
 
 describe('ApplicationsService', () => {
   let service: ApplicationsService;
@@ -23,6 +26,30 @@ describe('ApplicationsService', () => {
 
   const mockJobsRepository = {
     findOne: jest.fn(),
+    createQueryBuilder: jest.fn().mockReturnValue({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getOne: jest.fn(),
+    }),
+  };
+
+  const mockS3ClientService = {
+    uploadFile: jest.fn(),
+    getPresignedUrl: jest.fn(),
+    deleteFile: jest.fn(),
+  };
+
+  const mockSqsClientService = {
+    sendMessage: jest.fn(),
+    receiveMessages: jest.fn(),
+    deleteMessage: jest.fn(),
+  };
+
+  const mockCandidateEvaluationService = {
+    evaluateCandidate: jest.fn(),
+    updateEvaluation: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -36,6 +63,18 @@ describe('ApplicationsService', () => {
         {
           provide: getRepositoryToken(Job),
           useValue: mockJobsRepository,
+        },
+        {
+          provide: S3ClientService,
+          useValue: mockS3ClientService,
+        },
+        {
+          provide: SqsClientService,
+          useValue: mockSqsClientService,
+        },
+        {
+          provide: CandidateEvaluationService,
+          useValue: mockCandidateEvaluationService,
         },
       ],
     }).compile();
@@ -75,6 +114,16 @@ describe('ApplicationsService', () => {
       };
 
       mockJobsRepository.findOne.mockResolvedValue(mockJob);
+      mockJobsRepository.createQueryBuilder().getOne.mockResolvedValue({
+        id: 'job-uuid',
+        stages: [
+          {
+            id: 'stage-uuid',
+            isActive: true,
+            orderIndex: 1,
+          },
+        ],
+      });
       mockApplicationsRepository.create.mockReturnValue(mockApplication);
       mockApplicationsRepository.save.mockResolvedValue(mockApplication);
 
@@ -175,7 +224,12 @@ describe('ApplicationsService', () => {
       expect(result).toEqual(updatedApplication);
       expect(mockApplicationsRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'app-uuid', companyId: 'company-uuid' },
-        relations: ['job'],
+        relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
+        order: {
+          questionResponses: {
+            createdAt: 'ASC',
+          },
+        },
       });
       expect(mockApplicationsRepository.save).toHaveBeenCalledWith(updatedApplication);
     });

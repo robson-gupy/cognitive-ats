@@ -262,8 +262,11 @@ export const JobList: React.FC = () => {
         >
           <Row gutter={[16, 16]} align="middle">
             <Col xs={24} sm={12} md={8} lg={6}>
+              <div style={{ marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: '#666' }}>
+                Buscar por título
+              </div>
               <Search
-                placeholder="Buscar por título da vaga..."
+                placeholder="Digite o título da vaga..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 allowClear
@@ -271,8 +274,11 @@ export const JobList: React.FC = () => {
               />
             </Col>
             <Col xs={24} sm={12} md={8} lg={6}>
+              <div style={{ marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: '#666' }}>
+                Filtrar por departamento
+              </div>
               <Select
-                placeholder="Filtrar por departamento"
+                placeholder="Selecione um departamento"
                 value={selectedDepartment}
                 onChange={setSelectedDepartment}
                 allowClear
@@ -287,8 +293,11 @@ export const JobList: React.FC = () => {
               </Select>
             </Col>
             <Col xs={24} sm={12} md={8} lg={6}>
+              <div style={{ marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: '#666' }}>
+                Filtrar por status
+              </div>
               <Select
-                placeholder="Filtrar por status"
+                placeholder="Selecione um status"
                 value={selectedStatus}
                 onChange={setSelectedStatus}
                 allowClear
@@ -301,6 +310,9 @@ export const JobList: React.FC = () => {
               </Select>
             </Col>
             <Col xs={24} sm={12} md={8} lg={6}>
+              <div style={{ marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: '#666' }}>
+                Ações
+              </div>
               <Button 
                 onClick={clearFilters}
                 style={{ width: '100%' }}
