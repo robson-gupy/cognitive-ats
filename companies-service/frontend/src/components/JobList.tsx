@@ -1,21 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Tag, Space, message, Popconfirm, Card, Typography, Dropdown } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, RobotOutlined, DownOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, message, Popconfirm, Card, Typography, Dropdown, Input, Select, Row, Col } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, RobotOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import type { Job } from '../types/Job';
+import type { Department } from '../types/Department';
 import { JobStatus } from '../types/Job';
 
 const { Title } = Typography;
+const { Search } = Input;
+const { Option } = Select;
 
 export const JobList: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Estados dos filtros
+  const [searchText, setSearchText] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
 
   useEffect(() => {
     loadJobs();
+    loadDepartments();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [jobs, searchText, selectedDepartment, selectedStatus]);
 
   const loadJobs = async () => {
     try {
@@ -27,6 +43,51 @@ export const JobList: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadDepartments = async () => {
+    try {
+      setDepartmentsLoading(true);
+      const data = await apiService.getDepartments();
+      setDepartments(data);
+    } catch (error) {
+      message.error('Erro ao carregar departamentos');
+    } finally {
+      setDepartmentsLoading(false);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...jobs];
+
+    // Filtro por texto de busca (título)
+    if (searchText) {
+      filtered = filtered.filter(job =>
+        job.title.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    // Filtro por departamento
+    if (selectedDepartment) {
+      filtered = filtered.filter(job =>
+        job.department?.id === selectedDepartment
+      );
+    }
+
+    // Filtro por status
+    if (selectedStatus) {
+      filtered = filtered.filter(job =>
+        job.status === selectedStatus
+      );
+    }
+
+    setFilteredJobs(filtered);
+  };
+
+  const clearFilters = () => {
+    setSearchText('');
+    setSelectedDepartment('');
+    setSelectedStatus('');
   };
 
   const handleDelete = async (id: string) => {
@@ -194,9 +255,76 @@ export const JobList: React.FC = () => {
           </Dropdown>
         </div>
 
+        {/* Filtros */}
+        <Card 
+          size="small" 
+          style={{ marginBottom: '16px', backgroundColor: '#fafafa' }}
+        >
+          <Row gutter={[16, 16]} align="middle">
+            <Col xs={24} sm={12} md={8} lg={6}>
+              <Search
+                placeholder="Buscar por título da vaga..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                allowClear
+                prefix={<SearchOutlined />}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={8} lg={6}>
+              <Select
+                placeholder="Filtrar por departamento"
+                value={selectedDepartment}
+                onChange={setSelectedDepartment}
+                allowClear
+                loading={departmentsLoading}
+                style={{ width: '100%' }}
+              >
+                {departments.map(dept => (
+                  <Option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={8} lg={6}>
+              <Select
+                placeholder="Filtrar por status"
+                value={selectedStatus}
+                onChange={setSelectedStatus}
+                allowClear
+                style={{ width: '100%' }}
+              >
+                <Option value={JobStatus.DRAFT}>Rascunho</Option>
+                <Option value={JobStatus.PUBLISHED}>Publicada</Option>
+                <Option value={JobStatus.CLOSED}>Fechada</Option>
+                <Option value={JobStatus.PAUSED}>Pausada</Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={8} lg={6}>
+              <Button 
+                onClick={clearFilters}
+                style={{ width: '100%' }}
+              >
+                Limpar Filtros
+              </Button>
+            </Col>
+          </Row>
+          
+          {/* Resumo dos filtros aplicados */}
+          {(searchText || selectedDepartment || selectedStatus) && (
+            <div style={{ marginTop: '12px', fontSize: '12px', color: '#666' }}>
+              <strong>Filtros ativos:</strong>
+              {searchText && ` Busca: "${searchText}"`}
+              {selectedDepartment && ` Departamento: "${departments.find(d => d.id === selectedDepartment)?.name}"`}
+              {selectedStatus && ` Status: "${getStatusText(selectedStatus as JobStatus)}"`}
+              {` (${filteredJobs.length} de ${jobs.length} vagas)`}
+            </div>
+          )}
+        </Card>
+
         <Table
           columns={columns}
-          dataSource={jobs}
+          dataSource={filteredJobs}
           rowKey="id"
           loading={loading}
           pagination={{
