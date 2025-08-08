@@ -74,6 +74,7 @@ export interface Job {
   questions: JobQuestion[];
   stages: JobStage[];
   logs?: JobLog[];
+  applicationCount?: number;
 }
 
 export interface CreateJobData {

@@ -190,11 +190,55 @@ export class JobsService {
   }
 
   async findAll(userCompanyId: string): Promise<Job[]> {
-    return await this.jobsRepository.find({
+    // Primeiro, buscar todos os jobs
+    const jobs = await this.jobsRepository.find({
       where: { companyId: userCompanyId },
       relations: ['company', 'department', 'createdBy', 'questions', 'stages'],
       order: { createdAt: 'DESC' },
     });
+
+    console.log(`Found ${jobs.length} jobs for company ${userCompanyId}`);
+
+    // Verificar se existem applications na tabela
+    const totalApplications = await this.jobsRepository.query(`
+      SELECT COUNT(*) as total FROM applications
+    `);
+    console.log('Total applications in database:', totalApplications[0].total);
+
+    // Buscar contagem de applications para cada job usando query SQL direta
+    const applicationCounts = await this.jobsRepository.query(`
+      SELECT 
+        j.id as "jobId",
+        COALESCE(COUNT(a.id), 0) as count
+      FROM jobs j
+      LEFT JOIN applications a ON j.id = a.job_id
+      WHERE j.company_id = $1
+      GROUP BY j.id
+    `, [userCompanyId]);
+
+    console.log('Application counts:', applicationCounts);
+
+    // Criar um mapa de jobId -> count
+    const countMap = new Map();
+    applicationCounts.forEach(item => {
+      const count = parseInt(item.count);
+      console.log(`Mapping jobId: ${item.jobId}, count: ${count}`);
+      countMap.set(item.jobId, count);
+    });
+
+    console.log('Count map:', countMap);
+
+    // Adicionar applicationCount a cada job
+    const jobsWithCounts = jobs.map(job => {
+      const count = countMap.get(job.id) || 0;
+      console.log(`Job ${job.id} (${job.title}): ${count} applications`);
+      return {
+        ...job,
+        applicationCount: count,
+      };
+    });
+
+    return jobsWithCounts;
   }
 
   async findOne(id: string, userCompanyId: string): Promise<Job> {

@@ -176,6 +176,16 @@ export const JobList: React.FC = () => {
       render: (stages: any[]) => stages?.length || 0,
     },
     {
+      title: 'Candidaturas',
+      dataIndex: 'applicationCount',
+      key: 'applicationCount',
+      render: (count: number) => (
+        <Tag color="purple">
+          {count || 0}
+        </Tag>
+      ),
+    },
+    {
       title: 'Criada em',
       dataIndex: 'createdAt',
       key: 'createdAt',
