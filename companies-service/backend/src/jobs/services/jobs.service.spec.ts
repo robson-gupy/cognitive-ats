@@ -128,9 +128,15 @@ describe('JobsService', () => {
 
     service = module.get<JobsService>(JobsService);
     jobRepository = module.get<Repository<Job>>(getRepositoryToken(Job));
-    jobQuestionRepository = module.get<Repository<JobQuestion>>(getRepositoryToken(JobQuestion));
-    jobStageRepository = module.get<Repository<JobStage>>(getRepositoryToken(JobStage));
-    jobLogRepository = module.get<Repository<JobLog>>(getRepositoryToken(JobLog));
+    jobQuestionRepository = module.get<Repository<JobQuestion>>(
+      getRepositoryToken(JobQuestion),
+    );
+    jobStageRepository = module.get<Repository<JobStage>>(
+      getRepositoryToken(JobStage),
+    );
+    jobLogRepository = module.get<Repository<JobLog>>(
+      getRepositoryToken(JobLog),
+    );
     aiServiceClient = module.get<AiServiceClient>(AiServiceClient);
   });
 
@@ -143,7 +149,10 @@ describe('JobsService', () => {
       const existingStages = mockStages;
       const newStages = [mockStages[0]]; // Different length
 
-      const result = (service as any).hasStageChanges(existingStages, newStages);
+      const result = (service as any).hasStageChanges(
+        existingStages,
+        newStages,
+      );
       expect(result).toBe(true);
     });
 
@@ -154,7 +163,10 @@ describe('JobsService', () => {
         mockStages[1],
       ];
 
-      const result = (service as any).hasStageChanges(existingStages, newStages);
+      const result = (service as any).hasStageChanges(
+        existingStages,
+        newStages,
+      );
       expect(result).toBe(true);
     });
 
@@ -162,18 +174,29 @@ describe('JobsService', () => {
       const existingStages = mockStages;
       const newStages = [...mockStages]; // Same stages
 
-      const result = (service as any).hasStageChanges(existingStages, newStages);
+      const result = (service as any).hasStageChanges(
+        existingStages,
+        newStages,
+      );
       expect(result).toBe(false);
     });
 
     it('should return true when new stage has no ID', () => {
       const existingStages = mockStages;
       const newStages = [
-        { name: 'Nova Etapa', description: 'Nova', orderIndex: 0, isActive: true }, // No ID
+        {
+          name: 'Nova Etapa',
+          description: 'Nova',
+          orderIndex: 0,
+          isActive: true,
+        }, // No ID
         mockStages[1],
       ];
 
-      const result = (service as any).hasStageChanges(existingStages, newStages);
+      const result = (service as any).hasStageChanges(
+        existingStages,
+        newStages,
+      );
       expect(result).toBe(true);
     });
   });
@@ -199,7 +222,7 @@ describe('JobsService', () => {
         logData.description,
         logData.fieldName,
         logData.oldValue,
-        logData.newValue
+        logData.newValue,
       );
 
       // Assert
@@ -212,7 +235,7 @@ describe('JobsService', () => {
           logData.fieldName,
           logData.oldValue,
           logData.newValue,
-        ])
+        ]),
       );
     });
   });
@@ -221,7 +244,11 @@ describe('JobsService', () => {
     it('should publish a draft job', async () => {
       // Arrange
       const draftJob = { ...mockJob, status: JobStatus.DRAFT };
-      const publishedJob = { ...mockJob, status: JobStatus.PUBLISHED, publishedAt: new Date() };
+      const publishedJob = {
+        ...mockJob,
+        status: JobStatus.PUBLISHED,
+        publishedAt: new Date(),
+      };
 
       jest.spyOn(service, 'findOne').mockResolvedValue(draftJob as Job);
       jest.spyOn(jobRepository, 'save').mockResolvedValue(publishedJob as Job);
@@ -235,7 +262,7 @@ describe('JobsService', () => {
         expect.objectContaining({
           status: JobStatus.PUBLISHED,
           publishedAt: expect.any(Date),
-        })
+        }),
       );
       expect(service.createLog).toHaveBeenCalledWith(
         'job-1',
@@ -243,7 +270,7 @@ describe('JobsService', () => {
         'Vaga publicada',
         'status',
         JobStatus.DRAFT,
-        JobStatus.PUBLISHED
+        JobStatus.PUBLISHED,
       );
     });
 
@@ -255,7 +282,7 @@ describe('JobsService', () => {
 
       // Act & Assert
       await expect(service.publish('job-1', mockUser as any)).rejects.toThrow(
-        BadRequestException
+        BadRequestException,
       );
     });
   });
@@ -264,7 +291,11 @@ describe('JobsService', () => {
     it('should close a published job', async () => {
       // Arrange
       const publishedJob = { ...mockJob, status: JobStatus.PUBLISHED };
-      const closedJob = { ...mockJob, status: JobStatus.CLOSED, closedAt: new Date() };
+      const closedJob = {
+        ...mockJob,
+        status: JobStatus.CLOSED,
+        closedAt: new Date(),
+      };
 
       jest.spyOn(service, 'findOne').mockResolvedValue(publishedJob as Job);
       jest.spyOn(jobRepository, 'save').mockResolvedValue(closedJob as Job);
@@ -278,7 +309,7 @@ describe('JobsService', () => {
         expect.objectContaining({
           status: JobStatus.CLOSED,
           closedAt: expect.any(Date),
-        })
+        }),
       );
       expect(service.createLog).toHaveBeenCalledWith(
         'job-1',
@@ -286,7 +317,7 @@ describe('JobsService', () => {
         'Vaga fechada',
         'status',
         JobStatus.PUBLISHED,
-        JobStatus.CLOSED
+        JobStatus.CLOSED,
       );
     });
   });

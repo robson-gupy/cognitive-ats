@@ -143,15 +143,29 @@ export class CreateResumeTables1754406860000 implements MigrationInterface {
     // Remover índices
     await queryRunner.query(`DROP INDEX "IDX_resume_languages_resume_id"`);
     await queryRunner.query(`DROP INDEX "IDX_resume_achievements_resume_id"`);
-    await queryRunner.query(`DROP INDEX "IDX_resume_academic_formations_resume_id"`);
-    await queryRunner.query(`DROP INDEX "IDX_resume_professional_experiences_resume_id"`);
+    await queryRunner.query(
+      `DROP INDEX "IDX_resume_academic_formations_resume_id"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "IDX_resume_professional_experiences_resume_id"`,
+    );
 
     // Remover chaves estrangeiras
-    await queryRunner.query(`ALTER TABLE "resume_languages" DROP CONSTRAINT "FK_resume_languages_resume_id"`);
-    await queryRunner.query(`ALTER TABLE "resume_achievements" DROP CONSTRAINT "FK_resume_achievements_resume_id"`);
-    await queryRunner.query(`ALTER TABLE "resume_academic_formations" DROP CONSTRAINT "FK_resume_academic_formations_resume_id"`);
-    await queryRunner.query(`ALTER TABLE "resume_professional_experiences" DROP CONSTRAINT "FK_resume_professional_experiences_resume_id"`);
-    await queryRunner.query(`ALTER TABLE "resumes" DROP CONSTRAINT "FK_resumes_application_id"`);
+    await queryRunner.query(
+      `ALTER TABLE "resume_languages" DROP CONSTRAINT "FK_resume_languages_resume_id"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "resume_achievements" DROP CONSTRAINT "FK_resume_achievements_resume_id"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "resume_academic_formations" DROP CONSTRAINT "FK_resume_academic_formations_resume_id"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "resume_professional_experiences" DROP CONSTRAINT "FK_resume_professional_experiences_resume_id"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "resumes" DROP CONSTRAINT "FK_resumes_application_id"`,
+    );
 
     // Remover tabelas
     await queryRunner.query(`DROP TABLE "resume_languages"`);
@@ -160,4 +174,4 @@ export class CreateResumeTables1754406860000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "resume_professional_experiences"`);
     await queryRunner.query(`DROP TABLE "resumes"`);
   }
-} 
+}

@@ -38,10 +38,7 @@ import { SharedModule } from '../shared/shared.module';
     AuthModule,
     SharedModule,
   ],
-  controllers: [
-    ApplicationsController,
-    QuestionResponsesController,
-  ],
+  controllers: [ApplicationsController, QuestionResponsesController],
   providers: [
     ApplicationsService,
     ApplicationStageService,

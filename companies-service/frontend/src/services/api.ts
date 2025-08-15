@@ -83,6 +83,30 @@ export class ApiService {
     return this.request<Company>(`/companies/${id}`);
   }
 
+  async checkSlugAvailability(slug: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/companies/check-slug/${slug}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.available;
+      } else {
+        // Erro na requisição, assumir como disponível para não bloquear o usuário
+        console.warn('Erro ao verificar disponibilidade do slug:', response.status);
+        return true;
+      }
+    } catch (error) {
+      console.error('Erro ao verificar disponibilidade do slug:', error);
+      // Em caso de erro, assumir como disponível para não bloquear o usuário
+      return true;
+    }
+  }
+
   async createCompany(companyData: CreateCompanyData): Promise<Company> {
     return this.request<Company>('/companies', {
       method: 'POST',

@@ -36,16 +36,25 @@ export class SqsClientService {
       };
 
       const result = await this.sqs.sendMessage(params).promise();
-      this.logger.log(`Mensagem enviada para fila ${queueName} com sucesso. MessageId: ${result.MessageId}`);
+      this.logger.log(
+        `Mensagem enviada para fila ${queueName} com sucesso. MessageId: ${result.MessageId}`,
+      );
     } catch (error) {
-      this.logger.error(`Erro ao enviar mensagem para fila ${queueName}:`, error);
+      this.logger.error(
+        `Erro ao enviar mensagem para fila ${queueName}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  async sendApplicationCreatedMessage(applicationId: string, resumeUrl: string): Promise<void> {
-    const queueName = process.env.APPLICATIONS_SQS_QUEUE_NAME || 'applications-queue';
-    
+  async sendApplicationCreatedMessage(
+    applicationId: string,
+    resumeUrl: string,
+  ): Promise<void> {
+    const queueName =
+      process.env.APPLICATIONS_SQS_QUEUE_NAME || 'applications-queue';
+
     const messageBody = {
       applicationId,
       resumeUrl,
@@ -55,4 +64,4 @@ export class SqsClientService {
 
     await this.sendMessage(queueName, messageBody);
   }
-} 
+}

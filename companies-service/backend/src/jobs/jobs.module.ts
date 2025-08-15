@@ -16,12 +16,7 @@ import { SharedModule } from '../shared/shared.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Job, 
-      JobQuestion, 
-      JobStage, 
-      JobLog,
-    ]),
+    TypeOrmModule.forFeature([Job, JobQuestion, JobStage, JobLog]),
     AuthModule,
     JwtConfigModule,
     CompaniesModule,

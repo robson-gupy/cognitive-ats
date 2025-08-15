@@ -156,12 +156,8 @@ export class Application {
   )
   questionResponses: ApplicationQuestionResponse[];
 
-  @OneToMany(
-    () => ApplicationStageHistory,
-    (history) => history.application,
-    {
-      cascade: true,
-    },
-  )
+  @OneToMany(() => ApplicationStageHistory, (history) => history.application, {
+    cascade: true,
+  })
   stageHistory: ApplicationStageHistory[];
 }

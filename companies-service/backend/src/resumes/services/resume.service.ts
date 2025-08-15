@@ -21,7 +21,10 @@ export class ResumeService {
     private questionResponsesService: QuestionResponsesService,
   ) {}
 
-  async create(applicationId: string, createResumeDto: CreateResumeDto): Promise<Resume> {
+  async create(
+    applicationId: string,
+    createResumeDto: CreateResumeDto,
+  ): Promise<Resume> {
     // Verificar se a aplicação existe
     const application = await this.applicationRepository.findOne({
       where: { id: applicationId },
@@ -29,7 +32,9 @@ export class ResumeService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Application with ID ${applicationId} not found`);
+      throw new NotFoundException(
+        `Application with ID ${applicationId} not found`,
+      );
     }
 
     // Verificar se já existe um currículo para esta aplicação
@@ -51,16 +56,25 @@ export class ResumeService {
 
     // Após salvar o currículo, avaliar o candidato automaticamente
     try {
-      await this.evaluateCandidateAfterResumeCreation(applicationId, savedResume);
+      await this.evaluateCandidateAfterResumeCreation(
+        applicationId,
+        savedResume,
+      );
     } catch (error) {
-      console.error('Erro ao avaliar candidato após criação do currículo:', error);
+      console.error(
+        'Erro ao avaliar candidato após criação do currículo:',
+        error,
+      );
       // Não falhar a criação do currículo se a avaliação falhar
     }
 
     return savedResume;
   }
 
-  private async evaluateCandidateAfterResumeCreation(applicationId: string, resume: Resume): Promise<void> {
+  private async evaluateCandidateAfterResumeCreation(
+    applicationId: string,
+    resume: Resume,
+  ): Promise<void> {
     try {
       // Buscar a aplicação com todas as relações necessárias
       const application = await this.applicationRepository.findOne({
@@ -90,7 +104,8 @@ export class ResumeService {
       }
 
       // Buscar respostas das perguntas da aplicação
-      const questionResponses = await this.questionResponsesService.findAllByApplication(applicationId);
+      const questionResponses =
+        await this.questionResponsesService.findAllByApplication(applicationId);
 
       // Preparar dados do currículo para o AI Service
       const resumeData = {
@@ -99,31 +114,41 @@ export class ResumeService {
           email: application.email,
           phone: application.phone,
         },
-        education: completeResume.academicFormations?.map(formation => ({
-          degree: formation.degree,
-          institution: formation.institution,
-          year: formation.startDate ? new Date(formation.startDate).getFullYear().toString() : '',
-          gpa: formation.description || '',
-        })) || [],
-        experience: completeResume.professionalExperiences?.map(exp => ({
-          title: exp.position,
-          company: exp.companyName,
-          duration: `${exp.startDate ? new Date(exp.startDate).toISOString().split('T')[0] : ''} - ${exp.isCurrent ? 'Atual' : exp.endDate ? new Date(exp.endDate).toISOString().split('T')[0] : ''}`,
-          description: exp.description || '',
-        })) || [],
+        education:
+          completeResume.academicFormations?.map((formation) => ({
+            degree: formation.degree,
+            institution: formation.institution,
+            year: formation.startDate
+              ? new Date(formation.startDate).getFullYear().toString()
+              : '',
+            gpa: formation.description || '',
+          })) || [],
+        experience:
+          completeResume.professionalExperiences?.map((exp) => ({
+            title: exp.position,
+            company: exp.companyName,
+            duration: `${exp.startDate ? new Date(exp.startDate).toISOString().split('T')[0] : ''} - ${exp.isCurrent ? 'Atual' : exp.endDate ? new Date(exp.endDate).toISOString().split('T')[0] : ''}`,
+            description: exp.description || '',
+          })) || [],
         skills: [], // Campo não existe na entidade Resume
-        languages: completeResume.languages?.map(lang => ({
-          language: lang.language,
-          level: lang.proficiencyLevel,
-        })) || [],
-        achievements: completeResume.achievements?.map(achievement => achievement.description) || [],
+        languages:
+          completeResume.languages?.map((lang) => ({
+            language: lang.language,
+            level: lang.proficiencyLevel,
+          })) || [],
+        achievements:
+          completeResume.achievements?.map(
+            (achievement) => achievement.description,
+          ) || [],
       };
 
       // Preparar dados da vaga para o AI Service
       const jobData = {
         title: application.job.title,
         description: application.job.description,
-        requirements: application.job.requirements.split('\n').filter(req => req.trim()),
+        requirements: application.job.requirements
+          .split('\n')
+          .filter((req) => req.trim()),
         responsibilities: [], // Campo não existe na entidade Job
         education_required: '', // Campo não existe na entidade Job
         experience_required: '', // Campo não existe na entidade Job
@@ -131,7 +156,7 @@ export class ResumeService {
       };
 
       // Preparar respostas das perguntas
-      const questionResponsesData = questionResponses.map(qr => ({
+      const questionResponsesData = questionResponses.map((qr) => ({
         question: qr.question,
         answer: qr.answer,
       }));
@@ -146,7 +171,9 @@ export class ResumeService {
       // Atualizar a aplicação com os scores
       const updateData = {
         overallScore: Number(evaluationResult.overall_score),
-        questionResponsesScore: Number(evaluationResult.question_responses_score),
+        questionResponsesScore: Number(
+          evaluationResult.question_responses_score,
+        ),
         educationScore: Number(evaluationResult.education_score),
         experienceScore: Number(evaluationResult.experience_score),
         evaluationProvider: evaluationResult.provider,
@@ -155,23 +182,41 @@ export class ResumeService {
         evaluatedAt: new Date(),
       };
 
-      console.log(`🔄 Atualizando aplicação ${applicationId} com scores:`, updateData);
+      console.log(
+        `🔄 Atualizando aplicação ${applicationId} com scores:`,
+        updateData,
+      );
 
-      const updateResult = await this.applicationRepository.update(applicationId, updateData);
-      
+      const updateResult = await this.applicationRepository.update(
+        applicationId,
+        updateData,
+      );
+
       console.log(`📝 Resultado da atualização:`, updateResult);
 
       // Verificar se a atualização foi bem-sucedida
       const updatedApplication = await this.applicationRepository.findOne({
         where: { id: applicationId },
-        select: ['id', 'overallScore', 'questionResponsesScore', 'educationScore', 'experienceScore', 'evaluationProvider', 'evaluationModel', 'evaluatedAt']
+        select: [
+          'id',
+          'overallScore',
+          'questionResponsesScore',
+          'educationScore',
+          'experienceScore',
+          'evaluationProvider',
+          'evaluationModel',
+          'evaluatedAt',
+        ],
       });
 
       console.log(`🔍 Aplicação após atualização:`, updatedApplication);
 
-      console.log(`✅ Candidato avaliado com sucesso para aplicação ${applicationId}`);
-      console.log(`📊 Scores: Geral=${evaluationResult.overall_score}, Respostas=${evaluationResult.question_responses_score}, Educação=${evaluationResult.education_score}, Experiência=${evaluationResult.experience_score}`);
-
+      console.log(
+        `✅ Candidato avaliado com sucesso para aplicação ${applicationId}`,
+      );
+      console.log(
+        `📊 Scores: Geral=${evaluationResult.overall_score}, Respostas=${evaluationResult.question_responses_score}, Educação=${evaluationResult.education_score}, Experiência=${evaluationResult.experience_score}`,
+      );
     } catch (error) {
       console.error('❌ Erro ao avaliar candidato:', error);
       throw error;
@@ -190,13 +235,18 @@ export class ResumeService {
     });
 
     if (!resume) {
-      throw new NotFoundException(`Resume not found for application ${applicationId}`);
+      throw new NotFoundException(
+        `Resume not found for application ${applicationId}`,
+      );
     }
 
     return resume;
   }
 
-  async update(applicationId: string, updateResumeDto: UpdateResumeDto): Promise<Resume> {
+  async update(
+    applicationId: string,
+    updateResumeDto: UpdateResumeDto,
+  ): Promise<Resume> {
     const resume = await this.findByApplicationId(applicationId);
 
     // Atualizar o currículo
@@ -214,7 +264,10 @@ export class ResumeService {
     return this.resumeRepository
       .createQueryBuilder('resume')
       .leftJoinAndSelect('resume.application', 'application')
-      .leftJoinAndSelect('resume.professionalExperiences', 'professionalExperiences')
+      .leftJoinAndSelect(
+        'resume.professionalExperiences',
+        'professionalExperiences',
+      )
       .leftJoinAndSelect('resume.academicFormations', 'academicFormations')
       .leftJoinAndSelect('resume.achievements', 'achievements')
       .leftJoinAndSelect('resume.languages', 'languages')
@@ -226,11 +279,14 @@ export class ResumeService {
     return this.resumeRepository
       .createQueryBuilder('resume')
       .leftJoinAndSelect('resume.application', 'application')
-      .leftJoinAndSelect('resume.professionalExperiences', 'professionalExperiences')
+      .leftJoinAndSelect(
+        'resume.professionalExperiences',
+        'professionalExperiences',
+      )
       .leftJoinAndSelect('resume.academicFormations', 'academicFormations')
       .leftJoinAndSelect('resume.achievements', 'achievements')
       .leftJoinAndSelect('resume.languages', 'languages')
       .where('application.companyId = :companyId', { companyId })
       .getMany();
   }
-} 
+}

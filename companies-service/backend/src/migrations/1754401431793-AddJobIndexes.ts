@@ -78,4 +78,4 @@ export class AddJobIndexes1754401431793 implements MigrationInterface {
       DROP INDEX IF EXISTS idx_jobs_company_id;
     `);
   }
-} 
+}

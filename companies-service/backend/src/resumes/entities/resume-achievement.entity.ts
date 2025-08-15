@@ -34,4 +34,4 @@ export class ResumeAchievement {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-} 
+}

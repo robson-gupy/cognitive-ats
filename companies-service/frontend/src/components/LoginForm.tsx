@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Form, Input, Button, Card, message, Tabs } from 'antd';
+import { UserOutlined, LockOutlined, BankOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useAuthContext } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
+import { generateSlug } from '../utils/slug';
+import { debounce } from 'lodash';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -10,7 +13,10 @@ interface LoginFormProps {
 export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
+  const [slugLoading, setSlugLoading] = useState(false);
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const { login } = useAuthContext();
+  const [form] = Form.useForm();
 
   const onFinish = async (values: any) => {
     try {
@@ -36,6 +42,95 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função para verificar disponibilidade do slug no servidor
+  const checkSlugAvailability = async (slug: string) => {
+    if (!slug || slug.length < 2) {
+      setSlugAvailable(null);
+      return;
+    }
+
+    try {
+      setSlugLoading(true);
+      // Aqui você precisará implementar o endpoint no backend para verificar disponibilidade
+      // Por enquanto, vou simular uma verificação
+      const isAvailable = await apiService.checkSlugAvailability(slug);
+      setSlugAvailable(isAvailable);
+    } catch (error) {
+      console.error('Erro ao verificar disponibilidade do slug:', error);
+      setSlugAvailable(null);
+    } finally {
+      setSlugLoading(false);
+    }
+  };
+
+  // Debounce da verificação de disponibilidade (500ms após parar de digitar)
+  const debouncedSlugCheck = useCallback(
+    debounce((slug: string) => {
+      checkSlugAvailability(slug);
+    }, 500),
+    []
+  );
+
+  const handleCompanyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const companyName = e.target.value;
+    
+    if (companyName) {
+      // Gerar novo slug baseado no nome
+      const newSlug = generateSlug(companyName);
+      form.setFieldValue('companySlug', newSlug);
+      
+      // Verificar disponibilidade do novo slug
+      debouncedSlugCheck(newSlug);
+    } else {
+      // Limpar slug e status de disponibilidade
+      form.setFieldValue('companySlug', '');
+      setSlugAvailable(null);
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const slug = e.target.value;
+    
+    if (slug) {
+      // Verificar disponibilidade do slug digitado
+      debouncedSlugCheck(slug);
+    } else {
+      setSlugAvailable(null);
+    }
+  };
+
+  const getSlugStatusIcon = () => {
+    if (slugLoading) {
+      return <span style={{ color: '#1890ff' }}>⏳</span>;
+    }
+    if (slugAvailable === true) {
+      return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+    }
+    if (slugAvailable === false) {
+      return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
+    }
+    return null;
+  };
+
+  const getSlugStatusText = () => {
+    if (slugLoading) {
+      return 'Verificando disponibilidade...';
+    }
+    if (slugAvailable === true) {
+      return 'Identificador disponível';
+    }
+    if (slugAvailable === false) {
+      return 'Identificador já está em uso';
+    }
+    return '';
+  };
+
+  const getSlugStatusColor = () => {
+    if (slugAvailable === true) return '#52c41a';
+    if (slugAvailable === false) return '#ff4d4f';
+    return '#666';
   };
 
   const loginForm = (
@@ -81,6 +176,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
       onFinish={onRegister}
       layout="vertical"
       requiredMark={false}
+      form={form}
     >
       <div style={{ marginBottom: '24px' }}>
         <h3 style={{ marginBottom: '16px', color: '#1890ff' }}>Dados da Empresa</h3>
@@ -93,7 +189,29 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
             { min: 2, message: 'O nome deve ter pelo menos 2 caracteres!' },
           ]}
         >
-          <Input placeholder="Nome da empresa" />
+          <Input 
+            placeholder="Nome da empresa" 
+            onChange={handleCompanyNameChange}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="Identificador Legível"
+          name="companySlug"
+          rules={[
+            { required: true, message: 'Por favor, insira o identificador legível!' },
+            { min: 2, message: 'O identificador deve ter pelo menos 2 caracteres!' },
+            { pattern: /^[a-z0-9-]+$/, message: 'O identificador deve conter apenas letras minúsculas, números e hífens!' },
+          ]}
+          tooltip="Identificador único e legível para a empresa (ex: minha-empresa-tecnologia)"
+          validateStatus={slugAvailable === false ? 'error' : slugAvailable === true ? 'success' : undefined}
+          help={getSlugStatusText()}
+        >
+          <Input 
+            placeholder="ex: minha-empresa-tecnologia" 
+            onChange={handleSlugChange}
+            suffix={getSlugStatusIcon()}
+          />
         </Form.Item>
 
         <Form.Item

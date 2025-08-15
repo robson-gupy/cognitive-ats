@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Input, Button, Card, Typography, message, Select, Space, Switch, Divider } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PlusOutlined, DeleteOutlined, DragOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, DragOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { apiService } from '../services/api';
 import type { Job, CreateJobData, UpdateJobData } from '../types/Job';
 import type { Department } from '../types/Department';
 import { JobStatus } from '../types/Job';
+import { generateSlug } from '../utils/slug';
+import { debounce } from 'lodash';
 import {
   DndContext,
   closestCenter,
@@ -249,7 +251,64 @@ export const JobForm: React.FC = () => {
   const [stages, setStages] = useState<JobStage[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [slugLoading, setSlugLoading] = useState(false);
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const isEditing = !!id;
+
+  // Função para verificar disponibilidade do slug no servidor
+  const checkSlugAvailability = async (slug: string) => {
+    if (!slug || slug.length < 2) {
+      setSlugAvailable(null);
+      return;
+    }
+
+    try {
+      setSlugLoading(true);
+      // Para jobs, vamos usar o mesmo endpoint de empresas por enquanto
+      // Você pode criar um endpoint específico para jobs se necessário
+      const isAvailable = await apiService.checkSlugAvailability(slug);
+      setSlugAvailable(isAvailable);
+    } catch (error) {
+      console.error('Erro ao verificar disponibilidade do slug:', error);
+      setSlugAvailable(null);
+    } finally {
+      setSlugLoading(false);
+    }
+  };
+
+  // Debounce da verificação de disponibilidade (500ms após parar de digitar)
+  const debouncedSlugCheck = useCallback(
+    debounce((slug: string) => {
+      checkSlugAvailability(slug);
+    }, 500),
+    []
+  );
+
+  const getSlugStatusIcon = () => {
+    if (slugLoading) {
+      return <span style={{ color: '#1890ff' }}>⏳</span>;
+    }
+    if (slugAvailable === true) {
+      return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+    }
+    if (slugAvailable === false) {
+      return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
+    }
+    return null;
+  };
+
+  const getSlugStatusText = () => {
+    if (slugLoading) {
+      return 'Verificando disponibilidade...';
+    }
+    if (slugAvailable === true) {
+      return 'Identificador disponível';
+    }
+    if (slugAvailable === false) {
+      return 'Identificador já está em uso';
+    }
+    return '';
+  };
 
   const loadDepartments = async () => {
     try {
@@ -327,6 +386,7 @@ export const JobForm: React.FC = () => {
         requirements: job.requirements,
         status: job.status,
         departmentId: job.departmentId,
+        slug: job.slug,
         // expirationDate: job.expirationDate ? new Date(job.expirationDate) : null,
       });
       
@@ -523,6 +583,34 @@ export const JobForm: React.FC = () => {
     navigate('/jobs');
   };
 
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const title = e.target.value;
+    
+    if (title) {
+      // Gerar novo slug baseado no título
+      const newSlug = generateSlug(title);
+      form.setFieldValue('slug', newSlug);
+      
+      // Verificar disponibilidade do novo slug
+      debouncedSlugCheck(newSlug);
+    } else {
+      // Limpar slug e status de disponibilidade
+      form.setFieldValue('slug', '');
+      setSlugAvailable(null);
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const slug = e.target.value;
+    
+    if (slug) {
+      // Verificar disponibilidade do slug digitado
+      debouncedSlugCheck(slug);
+    } else {
+      setSlugAvailable(null);
+    }
+  };
+
   if (initialLoading) {
     return <div>Carregando...</div>;
   }
@@ -547,7 +635,29 @@ export const JobForm: React.FC = () => {
             label="Título da Vaga"
             rules={[{ required: true, message: 'Por favor, insira o título da vaga' }]}
           >
-            <Input placeholder="Ex: Desenvolvedor Full Stack" />
+            <Input 
+              placeholder="Ex: Desenvolvedor Full Stack" 
+              onChange={handleTitleChange}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="slug"
+            label="Identificador Legível"
+            rules={[
+              { required: true, message: 'Por favor, insira o identificador legível!' },
+              { min: 2, message: 'O identificador deve ter pelo menos 2 caracteres!' },
+              { pattern: /^[a-z0-9-]+$/, message: 'O identificador deve conter apenas letras minúsculas, números e hífens!' },
+            ]}
+            tooltip="Identificador único e legível para a vaga (ex: desenvolvedor-full-stack)"
+            validateStatus={slugAvailable === false ? 'error' : slugAvailable === true ? 'success' : undefined}
+            help={getSlugStatusText()}
+          >
+            <Input 
+              placeholder="ex: desenvolvedor-full-stack" 
+              onChange={handleSlugChange}
+              suffix={getSlugStatusIcon()}
+            />
           </Form.Item>
 
           <Form.Item

@@ -34,4 +34,10 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(255)
+  slug?: string;
 }

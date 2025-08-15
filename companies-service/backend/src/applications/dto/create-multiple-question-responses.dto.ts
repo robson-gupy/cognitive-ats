@@ -8,4 +8,4 @@ export class CreateMultipleQuestionResponsesDto {
   @Type(() => CreateQuestionResponseDto)
   @IsNotEmpty()
   responses: CreateQuestionResponseDto[];
-} 
+}

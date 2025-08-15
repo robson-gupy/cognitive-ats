@@ -21,6 +21,7 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { CreateCompanyDto } from '../companies/dto/create-company.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { generateSlug } from '../shared/utils/slug.util';
 
 @Controller('auth')
 export class AuthController {
@@ -43,6 +44,7 @@ export class AuthController {
       cnpj: registerDto.cnpj,
       businessArea: registerDto.businessArea,
       description: registerDto.companyDescription,
+      slug: generateSlug(registerDto.companyName),
     };
 
     const company = await this.companiesService.create(companyData);

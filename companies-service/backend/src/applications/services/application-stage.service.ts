@@ -53,7 +53,9 @@ export class ApplicationStageService {
     });
 
     if (!newStage) {
-      throw new BadRequestException('Etapa não encontrada ou não pertence a esta vaga');
+      throw new BadRequestException(
+        'Etapa não encontrada ou não pertence a esta vaga',
+      );
     }
 
     // Verificar se não está tentando mudar para a mesma etapa
@@ -79,7 +81,10 @@ export class ApplicationStageService {
     application.currentStageId = changeStageDto.toStageId;
 
     // Forçar uma atualização direta no banco para garantir que os dados estão persistidos
-    console.log('Executando update direto no banco para currentStageId:', changeStageDto.toStageId);
+    console.log(
+      'Executando update direto no banco para currentStageId:',
+      changeStageDto.toStageId,
+    );
     await this.applicationsRepository
       .createQueryBuilder()
       .update(Application)
@@ -87,22 +92,31 @@ export class ApplicationStageService {
       .where('id = :id', { id: applicationId })
       .execute();
     console.log('Update direto executado com sucesso');
-    
+
     // Retornar a aplicação atualizada com as relações
     const updatedApplication = await this.applicationsRepository.findOne({
-      where: { 
+      where: {
         id: applicationId,
         jobId,
         companyId,
       },
-      relations: ['currentStage', 'stageHistory', 'stageHistory.fromStage', 'stageHistory.toStage', 'stageHistory.changedBy'],
+      relations: [
+        'currentStage',
+        'stageHistory',
+        'stageHistory.fromStage',
+        'stageHistory.toStage',
+        'stageHistory.changedBy',
+      ],
     });
 
     if (!updatedApplication) {
       throw new NotFoundException('Aplicação não encontrada após atualização');
     }
 
-    console.log('Aplicação retornada com currentStageId:', updatedApplication.currentStageId);
+    console.log(
+      'Aplicação retornada com currentStageId:',
+      updatedApplication.currentStageId,
+    );
     return updatedApplication;
   }
 

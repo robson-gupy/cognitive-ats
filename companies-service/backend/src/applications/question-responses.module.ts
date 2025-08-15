@@ -20,4 +20,4 @@ import { SharedModule } from '../shared/shared.module';
   providers: [QuestionResponsesService],
   exports: [QuestionResponsesService],
 })
-export class QuestionResponsesModule {} 
+export class QuestionResponsesModule {}

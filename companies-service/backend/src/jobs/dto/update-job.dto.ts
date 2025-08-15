@@ -8,6 +8,7 @@ import {
   MinLength,
   IsEnum,
   IsUUID,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JobStatus } from '../entities/job.entity';
@@ -80,6 +81,13 @@ export class UpdateJobDto {
   @IsOptional()
   @IsUUID()
   departmentId?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(255)
+  slug?: string;
 
   @IsOptional()
   @IsArray()

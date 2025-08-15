@@ -41,12 +41,30 @@ describe('JobsService Integration', () => {
           username: process.env.DB_USERNAME || 'postgres',
           password: process.env.DB_PASSWORD || 'postgres',
           database: process.env.DB_DATABASE || 'cognitive_ats_test',
-          entities: [Job, JobStage, JobQuestion, JobLog, Application, ApplicationStageHistory, User, Company, Department],
+          entities: [
+            Job,
+            JobStage,
+            JobQuestion,
+            JobLog,
+            Application,
+            ApplicationStageHistory,
+            User,
+            Company,
+            Department,
+          ],
           synchronize: true,
           logging: false,
         }),
         TypeOrmModule.forFeature([
-          Job, JobStage, JobQuestion, JobLog, Application, ApplicationStageHistory, User, Company, Department
+          Job,
+          JobStage,
+          JobQuestion,
+          JobLog,
+          Application,
+          ApplicationStageHistory,
+          User,
+          Company,
+          Department,
         ]),
       ],
       providers: [
@@ -63,12 +81,20 @@ describe('JobsService Integration', () => {
     jobsService = module.get<JobsService>(JobsService);
     jobRepository = module.get<Repository<Job>>('JobRepository');
     jobStageRepository = module.get<Repository<JobStage>>('JobStageRepository');
-    jobQuestionRepository = module.get<Repository<JobQuestion>>('JobQuestionRepository');
-    applicationRepository = module.get<Repository<Application>>('ApplicationRepository');
-    applicationStageHistoryRepository = module.get<Repository<ApplicationStageHistory>>('ApplicationStageHistoryRepository');
+    jobQuestionRepository = module.get<Repository<JobQuestion>>(
+      'JobQuestionRepository',
+    );
+    applicationRepository = module.get<Repository<Application>>(
+      'ApplicationRepository',
+    );
+    applicationStageHistoryRepository = module.get<
+      Repository<ApplicationStageHistory>
+    >('ApplicationStageHistoryRepository');
     userRepository = module.get<Repository<User>>('UserRepository');
     companyRepository = module.get<Repository<Company>>('CompanyRepository');
-    departmentRepository = module.get<Repository<Department>>('DepartmentRepository');
+    departmentRepository = module.get<Repository<Department>>(
+      'DepartmentRepository',
+    );
   });
 
   beforeEach(async () => {
@@ -126,9 +152,24 @@ describe('JobsService Integration', () => {
     it('should create stages when job has no stages', async () => {
       // Arrange
       const newStages = [
-        { name: 'Triagem', description: 'Avaliação inicial', orderIndex: 0, isActive: true },
-        { name: 'Entrevista', description: 'Entrevista com candidatos', orderIndex: 1, isActive: true },
-        { name: 'Contratação', description: 'Processo final', orderIndex: 2, isActive: true },
+        {
+          name: 'Triagem',
+          description: 'Avaliação inicial',
+          orderIndex: 0,
+          isActive: true,
+        },
+        {
+          name: 'Entrevista',
+          description: 'Entrevista com candidatos',
+          orderIndex: 1,
+          isActive: true,
+        },
+        {
+          name: 'Contratação',
+          description: 'Processo final',
+          orderIndex: 2,
+          isActive: true,
+        },
       ];
 
       // Act
@@ -149,8 +190,18 @@ describe('JobsService Integration', () => {
     it('should update existing stages without creating duplicates', async () => {
       // Arrange - Create initial stages
       const initialStages = [
-        { name: 'Triagem', description: 'Avaliação inicial', orderIndex: 0, isActive: true },
-        { name: 'Entrevista', description: 'Entrevista com candidatos', orderIndex: 1, isActive: true },
+        {
+          name: 'Triagem',
+          description: 'Avaliação inicial',
+          orderIndex: 0,
+          isActive: true,
+        },
+        {
+          name: 'Entrevista',
+          description: 'Entrevista com candidatos',
+          orderIndex: 1,
+          isActive: true,
+        },
       ];
 
       await jobsService.updateStages(testJob.id, initialStages, testUser.id);
@@ -163,8 +214,20 @@ describe('JobsService Integration', () => {
 
       // Act - Update stages
       const updatedStages = [
-        { id: createdStages[0].id, name: 'Triagem Atualizada', description: 'Nova descrição', orderIndex: 0, isActive: true },
-        { id: createdStages[1].id, name: 'Entrevista', description: 'Entrevista com candidatos', orderIndex: 1, isActive: true },
+        {
+          id: createdStages[0].id,
+          name: 'Triagem Atualizada',
+          description: 'Nova descrição',
+          orderIndex: 0,
+          isActive: true,
+        },
+        {
+          id: createdStages[1].id,
+          name: 'Entrevista',
+          description: 'Entrevista com candidatos',
+          orderIndex: 1,
+          isActive: true,
+        },
       ];
 
       await jobsService.updateStages(testJob.id, updatedStages, testUser.id);
@@ -183,9 +246,24 @@ describe('JobsService Integration', () => {
     it('should delete stages that are no longer present', async () => {
       // Arrange - Create initial stages
       const initialStages = [
-        { name: 'Triagem', description: 'Avaliação inicial', orderIndex: 0, isActive: true },
-        { name: 'Entrevista', description: 'Entrevista com candidatos', orderIndex: 1, isActive: true },
-        { name: 'Contratação', description: 'Processo final', orderIndex: 2, isActive: true },
+        {
+          name: 'Triagem',
+          description: 'Avaliação inicial',
+          orderIndex: 0,
+          isActive: true,
+        },
+        {
+          name: 'Entrevista',
+          description: 'Entrevista com candidatos',
+          orderIndex: 1,
+          isActive: true,
+        },
+        {
+          name: 'Contratação',
+          description: 'Processo final',
+          orderIndex: 2,
+          isActive: true,
+        },
       ];
 
       await jobsService.updateStages(testJob.id, initialStages, testUser.id);
@@ -198,8 +276,20 @@ describe('JobsService Integration', () => {
 
       // Act - Remove one stage
       const updatedStages = [
-        { id: createdStages[0].id, name: 'Triagem', description: 'Avaliação inicial', orderIndex: 0, isActive: true },
-        { id: createdStages[2].id, name: 'Contratação', description: 'Processo final', orderIndex: 1, isActive: true },
+        {
+          id: createdStages[0].id,
+          name: 'Triagem',
+          description: 'Avaliação inicial',
+          orderIndex: 0,
+          isActive: true,
+        },
+        {
+          id: createdStages[2].id,
+          name: 'Contratação',
+          description: 'Processo final',
+          orderIndex: 1,
+          isActive: true,
+        },
       ];
 
       await jobsService.updateStages(testJob.id, updatedStages, testUser.id);
@@ -218,8 +308,18 @@ describe('JobsService Integration', () => {
     it('should not delete stages if there are active applications', async () => {
       // Arrange - Create stages and application
       const initialStages = [
-        { name: 'Triagem', description: 'Avaliação inicial', orderIndex: 0, isActive: true },
-        { name: 'Entrevista', description: 'Entrevista com candidatos', orderIndex: 1, isActive: true },
+        {
+          name: 'Triagem',
+          description: 'Avaliação inicial',
+          orderIndex: 0,
+          isActive: true,
+        },
+        {
+          name: 'Entrevista',
+          description: 'Entrevista com candidatos',
+          orderIndex: 1,
+          isActive: true,
+        },
       ];
 
       await jobsService.updateStages(testJob.id, initialStages, testUser.id);
@@ -241,19 +341,35 @@ describe('JobsService Integration', () => {
 
       // Act & Assert - Try to delete stage with active application
       const updatedStages = [
-        { id: createdStages[1].id, name: 'Entrevista', description: 'Entrevista com candidatos', orderIndex: 0, isActive: true },
+        {
+          id: createdStages[1].id,
+          name: 'Entrevista',
+          description: 'Entrevista com candidatos',
+          orderIndex: 0,
+          isActive: true,
+        },
       ];
 
-      await expect(jobsService.updateStages(testJob.id, updatedStages, testUser.id)).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(
+        jobsService.updateStages(testJob.id, updatedStages, testUser.id),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should delete stage history when deleting stages', async () => {
       // Arrange - Create stages and history
       const initialStages = [
-        { name: 'Triagem', description: 'Avaliação inicial', orderIndex: 0, isActive: true },
-        { name: 'Entrevista', description: 'Entrevista com candidatos', orderIndex: 1, isActive: true },
+        {
+          name: 'Triagem',
+          description: 'Avaliação inicial',
+          orderIndex: 0,
+          isActive: true,
+        },
+        {
+          name: 'Entrevista',
+          description: 'Entrevista com candidatos',
+          orderIndex: 1,
+          isActive: true,
+        },
       ];
 
       await jobsService.updateStages(testJob.id, initialStages, testUser.id);
@@ -276,7 +392,13 @@ describe('JobsService Integration', () => {
 
       // Act - Delete the first stage
       const updatedStages = [
-        { id: createdStages[1].id, name: 'Entrevista', description: 'Entrevista com candidatos', orderIndex: 0, isActive: true },
+        {
+          id: createdStages[1].id,
+          name: 'Entrevista',
+          description: 'Entrevista com candidatos',
+          orderIndex: 0,
+          isActive: true,
+        },
       ];
 
       await jobsService.updateStages(testJob.id, updatedStages, testUser.id);
@@ -304,7 +426,11 @@ describe('JobsService Integration', () => {
       };
 
       // Act
-      const updatedJob = await jobsService.update(testJob.id, updateData, testUser);
+      const updatedJob = await jobsService.update(
+        testJob.id,
+        updateData,
+        testUser,
+      );
 
       // Assert
       expect(updatedJob.title).toBe('Updated Job Title');
@@ -316,8 +442,18 @@ describe('JobsService Integration', () => {
       const updateData = {
         title: 'Updated Job Title',
         stages: [
-          { name: 'Triagem', description: 'Avaliação inicial', orderIndex: 0, isActive: true },
-          { name: 'Entrevista', description: 'Entrevista com candidatos', orderIndex: 1, isActive: true },
+          {
+            name: 'Triagem',
+            description: 'Avaliação inicial',
+            orderIndex: 0,
+            isActive: true,
+          },
+          {
+            name: 'Entrevista',
+            description: 'Entrevista com candidatos',
+            orderIndex: 1,
+            isActive: true,
+          },
         ],
       };
 
@@ -370,9 +506,9 @@ describe('JobsService Integration', () => {
       });
 
       // Act & Assert
-      await expect(jobsService.publish(publishedJob.id, testUser)).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(
+        jobsService.publish(publishedJob.id, testUser),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

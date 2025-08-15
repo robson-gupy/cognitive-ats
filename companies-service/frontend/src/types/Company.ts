@@ -5,6 +5,7 @@ export interface Company {
   cnpj: string;
   businessArea: string;
   description?: string;
+  slug: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,6 +16,7 @@ export interface CreateCompanyData {
   cnpj: string;
   businessArea: string;
   description?: string;
+  slug: string;
 }
 
 export interface UpdateCompanyData {
@@ -23,4 +25,5 @@ export interface UpdateCompanyData {
   cnpj?: string;
   businessArea?: string;
   description?: string;
+  slug?: string;
 } 

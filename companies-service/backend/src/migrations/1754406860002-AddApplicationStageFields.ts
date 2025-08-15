@@ -1,6 +1,14 @@
-import { MigrationInterface, QueryRunner, Table, TableIndex, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableIndex,
+  TableForeignKey,
+} from 'typeorm';
 
-export class AddApplicationStageFields1754406860002 implements MigrationInterface {
+export class AddApplicationStageFields1754406860002
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Adicionar campo current_stage_id na tabela applications
     await queryRunner.query(`
@@ -149,16 +157,40 @@ export class AddApplicationStageFields1754406860002 implements MigrationInterfac
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover foreign keys da application_stage_history
-    await queryRunner.dropForeignKey('application_stage_history', 'FK_application_stage_history_changed_by');
-    await queryRunner.dropForeignKey('application_stage_history', 'FK_application_stage_history_to_stage');
-    await queryRunner.dropForeignKey('application_stage_history', 'FK_application_stage_history_from_stage');
-    await queryRunner.dropForeignKey('application_stage_history', 'FK_application_stage_history_application');
+    await queryRunner.dropForeignKey(
+      'application_stage_history',
+      'FK_application_stage_history_changed_by',
+    );
+    await queryRunner.dropForeignKey(
+      'application_stage_history',
+      'FK_application_stage_history_to_stage',
+    );
+    await queryRunner.dropForeignKey(
+      'application_stage_history',
+      'FK_application_stage_history_from_stage',
+    );
+    await queryRunner.dropForeignKey(
+      'application_stage_history',
+      'FK_application_stage_history_application',
+    );
 
     // Remover índices da application_stage_history
-    await queryRunner.dropIndex('application_stage_history', 'IDX_application_stage_history_application_created');
-    await queryRunner.dropIndex('application_stage_history', 'IDX_application_stage_history_company_id');
-    await queryRunner.dropIndex('application_stage_history', 'IDX_application_stage_history_job_id');
-    await queryRunner.dropIndex('application_stage_history', 'IDX_application_stage_history_application_id');
+    await queryRunner.dropIndex(
+      'application_stage_history',
+      'IDX_application_stage_history_application_created',
+    );
+    await queryRunner.dropIndex(
+      'application_stage_history',
+      'IDX_application_stage_history_company_id',
+    );
+    await queryRunner.dropIndex(
+      'application_stage_history',
+      'IDX_application_stage_history_job_id',
+    );
+    await queryRunner.dropIndex(
+      'application_stage_history',
+      'IDX_application_stage_history_application_id',
+    );
 
     // Remover tabela application_stage_history
     await queryRunner.dropTable('application_stage_history');

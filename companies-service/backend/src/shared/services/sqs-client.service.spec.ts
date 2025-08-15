@@ -22,7 +22,9 @@ describe('SqsClientService', () => {
       const resumeUrl = 'https://example.com/resume.pdf';
 
       // Mock do método sendMessage
-      const sendMessageSpy = jest.spyOn(service as any, 'sendMessage').mockResolvedValue(undefined);
+      const sendMessageSpy = jest
+        .spyOn(service as any, 'sendMessage')
+        .mockResolvedValue(undefined);
 
       await service.sendApplicationCreatedMessage(applicationId, resumeUrl);
 
@@ -33,8 +35,8 @@ describe('SqsClientService', () => {
           resumeUrl,
           eventType: 'APPLICATION_CREATED',
           timestamp: expect.any(String),
-        }
+        },
       );
     });
   });
-}); 
+});

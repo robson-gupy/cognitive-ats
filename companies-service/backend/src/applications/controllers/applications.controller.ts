@@ -169,11 +169,7 @@ export class ApplicationsController {
     @Request() req,
   ) {
     const companyId = req.user.companyId;
-    return this.applicationStageService.getStageHistory(
-      id,
-      jobId,
-      companyId,
-    );
+    return this.applicationStageService.getStageHistory(id, jobId, companyId);
   }
 
   @Get('by-stage/:stageId')

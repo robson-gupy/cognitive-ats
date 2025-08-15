@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddAiScoreToApplications1754406855088 implements MigrationInterface {
+export class AddAiScoreToApplications1754406855088
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Adicionar coluna ai_score para armazenar o score gerado pela IA
     await queryRunner.query(`
@@ -21,4 +23,4 @@ export class AddAiScoreToApplications1754406855088 implements MigrationInterface
       DROP COLUMN ai_score
     `);
   }
-} 
+}

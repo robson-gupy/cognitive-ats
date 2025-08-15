@@ -105,4 +105,4 @@ export class CreateResumeDto {
   @ValidateNested({ each: true })
   @Type(() => CreateResumeLanguageDto)
   languages?: CreateResumeLanguageDto[];
-} 
+}

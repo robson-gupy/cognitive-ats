@@ -13,7 +13,11 @@ import { CreateJobDto } from '../dto/create-job.dto';
 import { UpdateJobDto } from '../dto/update-job.dto';
 import { CreateJobWithAiDto } from '../dto/create-job-with-ai.dto';
 import { User } from '../../users/entities/user.entity';
-import { AiServiceClient, JobCreationRequest } from '../../shared/ai/ai-service.client';
+import {
+  AiServiceClient,
+  JobCreationRequest,
+} from '../../shared/ai/ai-service.client';
+import { generateUniqueSlug } from '../../shared/utils/slug.util';
 
 @Injectable()
 export class JobsService {
@@ -39,6 +43,22 @@ export class JobsService {
       throw new Error('User ID is required');
     }
 
+    // Se não foi fornecido um slug, gerar um baseado no título
+    if (!createJobDto.slug) {
+      const allSlugs = await this.jobsRepository.find({ select: ['slug'] });
+      const existingSlugs = allSlugs.map((j) => j.slug);
+      createJobDto.slug = generateUniqueSlug(createJobDto.title, existingSlugs);
+    }
+
+    // Verificar se o slug já existe
+    const existingSlug = await this.jobsRepository.findOne({
+      where: { slug: createJobDto.slug },
+    });
+
+    if (existingSlug) {
+      throw new BadRequestException('Identificador legível já está em uso');
+    }
+
     const expirationDateValue = createJobDto.expirationDate
       ? `'${createJobDto.expirationDate}'`
       : 'NULL';
@@ -49,8 +69,8 @@ export class JobsService {
     const result: Job[] = await this.jobsRepository.query(
       `
         INSERT INTO jobs (id, title, description, requirements, expiration_date, status, company_id, department_id,
-                          created_by, created_at, updated_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, ${expirationDateValue}, $4, $5, ${departmentIdValue}, $6, NOW(),
+                          created_by, slug, created_at, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, $3, ${expirationDateValue}, $4, $5, ${departmentIdValue}, $6, $7, NOW(),
                 NOW()) RETURNING id, status, created_at, updated_at
       `,
       [
@@ -60,6 +80,7 @@ export class JobsService {
         createJobDto.status || JobStatus.DRAFT,
         user.companyId,
         user.id,
+        createJobDto.slug,
       ],
     );
 
@@ -170,6 +191,7 @@ export class JobsService {
       description: aiResponse.description,
       requirements: aiResponse.requirements,
       status: JobStatus.DRAFT,
+      slug: generateUniqueSlug(aiResponse.title, []), // Gerar slug baseado no título
       questions: aiResponse.questions?.map((q: any, index) => ({
         question: q.question,
         isRequired: q.isRequired,
@@ -206,7 +228,8 @@ export class JobsService {
     console.log('Total applications in database:', totalApplications[0].total);
 
     // Buscar contagem de applications para cada job usando query SQL direta
-    const applicationCounts = await this.jobsRepository.query(`
+    const applicationCounts = await this.jobsRepository.query(
+      `
       SELECT 
         j.id as "jobId",
         COALESCE(COUNT(a.id), 0) as count
@@ -214,13 +237,15 @@ export class JobsService {
       LEFT JOIN applications a ON j.id = a.job_id
       WHERE j.company_id = $1
       GROUP BY j.id
-    `, [userCompanyId]);
+    `,
+      [userCompanyId],
+    );
 
     console.log('Application counts:', applicationCounts);
 
     // Criar um mapa de jobId -> count
     const countMap = new Map();
-    applicationCounts.forEach(item => {
+    applicationCounts.forEach((item) => {
       const count = parseInt(item.count);
       console.log(`Mapping jobId: ${item.jobId}, count: ${count}`);
       countMap.set(item.jobId, count);
@@ -229,7 +254,7 @@ export class JobsService {
     console.log('Count map:', countMap);
 
     // Adicionar applicationCount a cada job
-    const jobsWithCounts = jobs.map(job => {
+    const jobsWithCounts = jobs.map((job) => {
       const count = countMap.get(job.id) || 0;
       console.log(`Job ${job.id} (${job.title}): ${count} applications`);
       return {
@@ -287,6 +312,44 @@ export class JobsService {
         fieldName: 'title',
         oldValue: oldValues.title,
         newValue: updateJobDto.title,
+      });
+    }
+
+    if (updateJobDto.slug && updateJobDto.slug !== job.slug) {
+      // Verificar se o slug já existe
+      const existingSlug = await this.jobsRepository.findOne({
+        where: { slug: updateJobDto.slug },
+      });
+
+      if (existingSlug) {
+        throw new BadRequestException('Identificador legível já está em uso');
+      }
+
+      job.slug = updateJobDto.slug;
+      logsToCreate.push({
+        description: `Identificador legível alterado de "${oldValues.slug}" para "${updateJobDto.slug}"`,
+        fieldName: 'slug',
+        oldValue: oldValues.slug,
+        newValue: updateJobDto.slug,
+      });
+    }
+
+    // Se o slug não foi fornecido mas o título foi alterado, gerar um novo slug
+    if (
+      !updateJobDto.slug &&
+      updateJobDto.title &&
+      updateJobDto.title !== job.title
+    ) {
+      const allSlugs = await this.jobsRepository.find({ select: ['slug'] });
+      const existingSlugs = allSlugs.map((j) => j.slug);
+      const newSlug = generateUniqueSlug(updateJobDto.title, existingSlugs);
+
+      job.slug = newSlug;
+      logsToCreate.push({
+        description: `Identificador legível alterado de "${oldValues.slug}" para "${newSlug}"`,
+        fieldName: 'slug',
+        oldValue: oldValues.slug,
+        newValue: newSlug,
       });
     }
 
@@ -396,10 +459,13 @@ export class JobsService {
             where: { jobId: job.id },
             order: { orderIndex: 'ASC' },
           });
-          
+
           // Verificar se há mudanças reais nos stages
-          const hasStageChanges = this.hasStageChanges(existingStages, updateJobDto.stages);
-          
+          const hasStageChanges = this.hasStageChanges(
+            existingStages,
+            updateJobDto.stages,
+          );
+
           if (hasStageChanges) {
             await this.updateStages(job.id, updateJobDto.stages, user.id);
           }
@@ -464,7 +530,7 @@ export class JobsService {
 
     // Mapear stages existentes por ID
     const existingStagesMap = new Map(
-      existingStages.map(stage => [stage.id, stage])
+      existingStages.map((stage) => [stage.id, stage]),
     );
 
     // Processar stages enviados
@@ -472,9 +538,9 @@ export class JobsService {
       if (stageData.id && existingStagesMap.has(stageData.id)) {
         // Stage existente - atualizar apenas se houver mudanças
         const existingStage = existingStagesMap.get(stageData.id)!;
-        
+
         // Verificar se há mudanças reais
-        const hasChanges = 
+        const hasChanges =
           existingStage.name !== stageData.name ||
           existingStage.description !== stageData.description ||
           existingStage.orderIndex !== (stageData.orderIndex ?? index) ||
@@ -490,7 +556,7 @@ export class JobsService {
           };
           stagesToUpdate.push(updatedStage);
         }
-        
+
         existingStagesMap.delete(stageData.id);
       } else {
         // Novo stage - criar
@@ -508,47 +574,49 @@ export class JobsService {
     stagesToDelete.push(...existingStagesMap.keys());
 
     // Executar operações em transação
-    await this.jobStagesRepository.manager.transaction(async (entityManager) => {
-      // Verificar se há aplicações usando os stages que serão deletados
-      if (stagesToDelete.length > 0) {
-        // Verificar se há aplicações nos stages que serão deletados
-        const applicationsInStages = await entityManager.query(
-          'SELECT COUNT(*) as count FROM applications WHERE current_stage_id = ANY($1)',
-          [stagesToDelete]
-        );
-        
-        if (applicationsInStages[0].count > 0) {
-          throw new BadRequestException(
-            'Não é possível excluir etapas que possuem candidatos. Mova os candidatos para outras etapas primeiro.'
+    await this.jobStagesRepository.manager.transaction(
+      async (entityManager) => {
+        // Verificar se há aplicações usando os stages que serão deletados
+        if (stagesToDelete.length > 0) {
+          // Verificar se há aplicações nos stages que serão deletados
+          const applicationsInStages = await entityManager.query(
+            'SELECT COUNT(*) as count FROM applications WHERE current_stage_id = ANY($1)',
+            [stagesToDelete],
+          );
+
+          if (applicationsInStages[0].count > 0) {
+            throw new BadRequestException(
+              'Não é possível excluir etapas que possuem candidatos. Mova os candidatos para outras etapas primeiro.',
+            );
+          }
+
+          // Deletar histórico de movimentação que referencia esses stages
+          await entityManager.query(
+            'DELETE FROM application_stage_history WHERE from_stage_id = ANY($1) OR to_stage_id = ANY($1)',
+            [stagesToDelete],
+          );
+
+          // Deletar stages que não estão mais presentes
+          await entityManager.query(
+            'DELETE FROM job_stages WHERE id = ANY($1)',
+            [stagesToDelete],
           );
         }
 
-        // Deletar histórico de movimentação que referencia esses stages
-        await entityManager.query(
-          'DELETE FROM application_stage_history WHERE from_stage_id = ANY($1) OR to_stage_id = ANY($1)',
-          [stagesToDelete]
-        );
+        // Atualizar stages existentes
+        if (stagesToUpdate.length > 0) {
+          await entityManager.save(JobStage, stagesToUpdate);
+        }
 
-        // Deletar stages que não estão mais presentes
-        await entityManager.query(
-          'DELETE FROM job_stages WHERE id = ANY($1)',
-          [stagesToDelete]
-        );
-      }
-
-      // Atualizar stages existentes
-      if (stagesToUpdate.length > 0) {
-        await entityManager.save(JobStage, stagesToUpdate);
-      }
-
-      // Criar novos stages
-      if (stagesToCreate.length > 0) {
-        const newStages = stagesToCreate.map(stageData =>
-          entityManager.create(JobStage, stageData)
-        );
-        await entityManager.save(JobStage, newStages);
-      }
-    });
+        // Criar novos stages
+        if (stagesToCreate.length > 0) {
+          const newStages = stagesToCreate.map((stageData) =>
+            entityManager.create(JobStage, stageData),
+          );
+          await entityManager.save(JobStage, newStages);
+        }
+      },
+    );
 
     // Só criar log se houve mudanças
     if (stagesToUpdate.length > 0 || stagesToCreate.length > 0) {
@@ -561,7 +629,10 @@ export class JobsService {
     }
   }
 
-  private hasStageChanges(existingStages: JobStage[], newStages: any[]): boolean {
+  private hasStageChanges(
+    existingStages: JobStage[],
+    newStages: any[],
+  ): boolean {
     // Se o número de stages mudou, há mudanças
     if (existingStages.length !== newStages.length) {
       return true;
@@ -569,7 +640,7 @@ export class JobsService {
 
     // Criar map dos stages existentes por ID
     const existingStagesMap = new Map(
-      existingStages.map(stage => [stage.id, stage])
+      existingStages.map((stage) => [stage.id, stage]),
     );
 
     // Verificar se cada stage novo corresponde ao existente
@@ -589,7 +660,8 @@ export class JobsService {
       if (
         existingStage.name !== newStage.name ||
         existingStage.description !== newStage.description ||
-        existingStage.orderIndex !== (newStage.orderIndex ?? existingStage.orderIndex) ||
+        existingStage.orderIndex !==
+          (newStage.orderIndex ?? existingStage.orderIndex) ||
         existingStage.isActive !== (newStage.isActive ?? existingStage.isActive)
       ) {
         return true;
@@ -689,7 +761,8 @@ export class JobsService {
   }
 
   async findPublishedJobsByCompany(companyId: string): Promise<any[]> {
-    const jobs = await this.jobsRepository.query(`
+    const jobs = await this.jobsRepository.query(
+      `
       SELECT 
         j.id,
         j.title,
@@ -707,9 +780,11 @@ export class JobsService {
       LEFT JOIN departments d ON j.department_id = d.id
       WHERE j.company_id = $1 AND j.status = $2
       ORDER BY j.published_at DESC
-    `, [companyId, JobStatus.PUBLISHED]);
+    `,
+      [companyId, JobStatus.PUBLISHED],
+    );
 
-    return jobs.map(job => ({
+    return jobs.map((job) => ({
       id: job.id,
       title: job.title,
       description: job.description,
@@ -720,16 +795,19 @@ export class JobsService {
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
       publishedAt: job.publishedAt,
-      department: job.departmentId ? {
-        id: job.departmentId,
-        name: job.departmentName,
-        description: job.departmentDescription
-      } : null
+      department: job.departmentId
+        ? {
+            id: job.departmentId,
+            name: job.departmentName,
+            description: job.departmentDescription,
+          }
+        : null,
     }));
   }
 
   async findPublicJobById(companyId: string, jobId: string): Promise<any> {
-    const job = await this.jobsRepository.query(`
+    const job = await this.jobsRepository.query(
+      `
       SELECT 
         j.id,
         j.title,
@@ -746,7 +824,9 @@ export class JobsService {
       FROM jobs j
       LEFT JOIN departments d ON j.department_id = d.id
       WHERE j.company_id = $1 AND j.id = $2 AND j.status = $3
-    `, [companyId, jobId, JobStatus.PUBLISHED]);
+    `,
+      [companyId, jobId, JobStatus.PUBLISHED],
+    );
 
     if (!job || job.length === 0) {
       throw new NotFoundException('Vaga não encontrada ou não está publicada');
@@ -764,11 +844,13 @@ export class JobsService {
       createdAt: jobData.createdAt,
       updatedAt: jobData.updatedAt,
       publishedAt: jobData.publishedAt,
-      department: jobData.departmentId ? {
-        id: jobData.departmentId,
-        name: jobData.departmentName,
-        description: jobData.departmentDescription
-      } : null
+      department: jobData.departmentId
+        ? {
+            id: jobData.departmentId,
+            name: jobData.departmentName,
+            description: jobData.departmentDescription,
+          }
+        : null,
     };
   }
 }

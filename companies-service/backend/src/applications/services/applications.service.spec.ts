@@ -219,19 +219,29 @@ describe('ApplicationsService', () => {
       mockApplicationsRepository.findOne.mockResolvedValue(mockApplication);
       mockApplicationsRepository.save.mockResolvedValue(updatedApplication);
 
-      const result = await service.updateAiScore('app-uuid', updateScoreDto, 'company-uuid');
+      const result = await service.updateAiScore(
+        'app-uuid',
+        updateScoreDto,
+        'company-uuid',
+      );
 
       expect(result).toEqual(updatedApplication);
       expect(mockApplicationsRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'app-uuid', companyId: 'company-uuid' },
-        relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
+        relations: [
+          'job',
+          'questionResponses',
+          'questionResponses.jobQuestion',
+        ],
         order: {
           questionResponses: {
             createdAt: 'ASC',
           },
         },
       });
-      expect(mockApplicationsRepository.save).toHaveBeenCalledWith(updatedApplication);
+      expect(mockApplicationsRepository.save).toHaveBeenCalledWith(
+        updatedApplication,
+      );
     });
 
     it('should throw NotFoundException when application does not exist', async () => {
@@ -241,9 +251,13 @@ describe('ApplicationsService', () => {
 
       mockApplicationsRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.updateAiScore('non-existent-app', updateScoreDto, 'company-uuid')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.updateAiScore(
+          'non-existent-app',
+          updateScoreDto,
+          'company-uuid',
+        ),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

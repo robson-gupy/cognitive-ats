@@ -6,4 +6,4 @@ export class UpdateApplicationScoreDto {
   @Min(0)
   @Max(100)
   aiScore?: number;
-} 
+}

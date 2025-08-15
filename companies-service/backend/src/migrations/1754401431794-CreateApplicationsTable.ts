@@ -1,6 +1,14 @@
-import { MigrationInterface, QueryRunner, Table, TableIndex, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableIndex,
+  TableForeignKey,
+} from 'typeorm';
 
-export class CreateApplicationsTable1754401431794 implements MigrationInterface {
+export class CreateApplicationsTable1754401431794
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
@@ -115,7 +123,10 @@ export class CreateApplicationsTable1754401431794 implements MigrationInterface 
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover foreign keys
-    await queryRunner.dropForeignKey('applications', 'FK_applications_company_id');
+    await queryRunner.dropForeignKey(
+      'applications',
+      'FK_applications_company_id',
+    );
     await queryRunner.dropForeignKey('applications', 'FK_applications_job_id');
 
     // Remover índices
@@ -126,4 +137,4 @@ export class CreateApplicationsTable1754401431794 implements MigrationInterface 
     // Remover tabela
     await queryRunner.dropTable('applications');
   }
-} 
+}

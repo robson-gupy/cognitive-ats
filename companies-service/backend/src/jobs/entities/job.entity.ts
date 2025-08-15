@@ -32,7 +32,8 @@ export enum JobStatus {
 @Index(['companyId', 'closedAt'])
 @Index(['companyId', 'status'])
 @Index(['companyId', 'departmentId'])
-@Index(['companyId','status', 'publishedAt'])
+@Index(['companyId', 'status', 'publishedAt'])
+@Index(['slug'], { unique: true })
 export class Job {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -82,6 +83,9 @@ export class Job {
 
   @Column({ name: 'closed_at', type: 'timestamp', nullable: true })
   closedAt: Date;
+
+  @Column({ length: 255, unique: true })
+  slug: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

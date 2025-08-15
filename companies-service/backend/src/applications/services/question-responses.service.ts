@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { ApplicationQuestionResponse } from '../entities/application-question-response.entity';
@@ -43,7 +47,9 @@ export class QuestionResponsesService {
 
     // Validar se a pergunta pertence ao job da aplicação
     if (jobQuestion.jobId !== application.jobId) {
-      throw new BadRequestException('Job question does not belong to the job of this application');
+      throw new BadRequestException(
+        'Job question does not belong to the job of this application',
+      );
     }
 
     // Verificar se já existe uma resposta para esta pergunta nesta aplicação
@@ -55,7 +61,9 @@ export class QuestionResponsesService {
     });
 
     if (existingResponse) {
-      throw new BadRequestException('Response already exists for this question in this application');
+      throw new BadRequestException(
+        'Response already exists for this question in this application',
+      );
     }
 
     // Criar a resposta
@@ -88,7 +96,7 @@ export class QuestionResponsesService {
     const jobQuestionIds = createMultipleQuestionResponsesDto.responses.map(
       (response) => response.jobQuestionId,
     );
-    
+
     const jobQuestions = await this.jobQuestionRepository.find({
       where: { id: In(jobQuestionIds) },
     });
@@ -102,7 +110,7 @@ export class QuestionResponsesService {
     const missingQuestions = jobQuestionIds.filter(
       (id) => !jobQuestionsMap.has(id),
     );
-    
+
     if (missingQuestions.length > 0) {
       throw new NotFoundException(
         `Job questions not found: ${missingQuestions.join(', ')}`,
@@ -113,7 +121,7 @@ export class QuestionResponsesService {
     const invalidQuestions = jobQuestions.filter(
       (question) => question.jobId !== application.jobId,
     );
-    
+
     if (invalidQuestions.length > 0) {
       throw new BadRequestException(
         `Job questions do not belong to the job of this application: ${invalidQuestions
@@ -123,11 +131,12 @@ export class QuestionResponsesService {
     }
 
     // Verificar respostas duplicadas na requisição
-    const questionIdsInRequest = createMultipleQuestionResponsesDto.responses.map(
-      (response) => response.jobQuestionId,
-    );
+    const questionIdsInRequest =
+      createMultipleQuestionResponsesDto.responses.map(
+        (response) => response.jobQuestionId,
+      );
     const uniqueQuestionIds = new Set(questionIdsInRequest);
-    
+
     if (uniqueQuestionIds.size !== questionIdsInRequest.length) {
       throw new BadRequestException('Duplicate job question IDs in request');
     }
@@ -152,7 +161,9 @@ export class QuestionResponsesService {
       (responseDto) => {
         const jobQuestion = jobQuestionsMap.get(responseDto.jobQuestionId);
         if (!jobQuestion) {
-          throw new NotFoundException(`Job question not found: ${responseDto.jobQuestionId}`);
+          throw new NotFoundException(
+            `Job question not found: ${responseDto.jobQuestionId}`,
+          );
         }
         return this.questionResponseRepository.create({
           applicationId,
@@ -168,7 +179,9 @@ export class QuestionResponsesService {
     return this.questionResponseRepository.save(questionResponses);
   }
 
-  async findAllByApplication(applicationId: string): Promise<ApplicationQuestionResponse[]> {
+  async findAllByApplication(
+    applicationId: string,
+  ): Promise<ApplicationQuestionResponse[]> {
     return this.questionResponseRepository.find({
       where: { applicationId },
       relations: ['jobQuestion'],
@@ -204,4 +217,4 @@ export class QuestionResponsesService {
     const questionResponse = await this.findOne(id);
     await this.questionResponseRepository.remove(questionResponse);
   }
-} 
+}

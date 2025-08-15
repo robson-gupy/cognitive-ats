@@ -36,7 +36,8 @@ export class QuestionResponsesController {
   createMultiple(
     @Param('jobId') jobId: string,
     @Param('applicationId') applicationId: string,
-    @Body() createMultipleQuestionResponsesDto: CreateMultipleQuestionResponsesDto,
+    @Body()
+    createMultipleQuestionResponsesDto: CreateMultipleQuestionResponsesDto,
   ) {
     return this.questionResponsesService.createMultiple(
       applicationId,
@@ -55,10 +56,7 @@ export class QuestionResponsesController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  findOne(
-    @Param('jobId') jobId: string,
-    @Param('id') id: string,
-  ) {
+  findOne(@Param('jobId') jobId: string, @Param('id') id: string) {
     return this.questionResponsesService.findOne(id);
   }
 
@@ -74,10 +72,7 @@ export class QuestionResponsesController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  remove(
-    @Param('jobId') jobId: string,
-    @Param('id') id: string,
-  ) {
+  remove(@Param('jobId') jobId: string, @Param('id') id: string) {
     return this.questionResponsesService.remove(id);
   }
 }

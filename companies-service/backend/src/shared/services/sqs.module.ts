@@ -5,4 +5,4 @@ import { SqsClientService } from './sqs-client.service';
   providers: [SqsClientService],
   exports: [SqsClientService],
 })
-export class SqsModule {} 
+export class SqsModule {}

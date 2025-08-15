@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { Company } from './entities/company.entity';
+import { generateUniqueSlug } from '../shared/utils/slug.util';
 
 @Injectable()
 export class CompaniesService {
@@ -24,6 +25,29 @@ export class CompaniesService {
 
     if (existingCompany) {
       throw new ConflictException('CNPJ já está cadastrado');
+    }
+
+    // Verificar se o slug já existe (apenas se foi fornecido)
+    if (createCompanyDto.slug) {
+      const existingSlug = await this.companiesRepository.findOne({
+        where: { slug: createCompanyDto.slug },
+      });
+
+      if (existingSlug) {
+        throw new ConflictException('Identificador legível já está em uso');
+      }
+    }
+
+    // Se não foi fornecido um slug, gerar um baseado no nome
+    if (!createCompanyDto.slug) {
+      const allSlugs = await this.companiesRepository.find({
+        select: ['slug'],
+      });
+      const existingSlugs = allSlugs.map((c) => c.slug);
+      createCompanyDto.slug = generateUniqueSlug(
+        createCompanyDto.name,
+        existingSlugs,
+      );
     }
 
     const company = this.companiesRepository.create(createCompanyDto);
@@ -53,6 +77,15 @@ export class CompaniesService {
     });
   }
 
+  async checkSlugAvailability(slug: string): Promise<boolean> {
+    const existingCompany = await this.companiesRepository.findOne({
+      where: { slug },
+    });
+
+    // Retorna true se o slug estiver disponível (não encontrado)
+    return !existingCompany;
+  }
+
   async update(
     id: string,
     updateCompanyDto: UpdateCompanyDto,
@@ -68,6 +101,33 @@ export class CompaniesService {
       if (existingCompany) {
         throw new ConflictException('CNPJ já está cadastrado');
       }
+    }
+
+    // Se o slug estiver sendo atualizado, verificar se já existe
+    if (updateCompanyDto.slug && updateCompanyDto.slug !== company.slug) {
+      const existingSlug = await this.companiesRepository.findOne({
+        where: { slug: updateCompanyDto.slug },
+      });
+
+      if (existingSlug) {
+        throw new ConflictException('Identificador legível já está em uso');
+      }
+    }
+
+    // Se o slug não foi fornecido mas o nome foi alterado, gerar um novo slug
+    if (
+      !updateCompanyDto.slug &&
+      updateCompanyDto.name &&
+      updateCompanyDto.name !== company.name
+    ) {
+      const allSlugs = await this.companiesRepository.find({
+        select: ['slug'],
+      });
+      const existingSlugs = allSlugs.map((c) => c.slug);
+      updateCompanyDto.slug = generateUniqueSlug(
+        updateCompanyDto.name,
+        existingSlugs,
+      );
     }
 
     Object.assign(company, updateCompanyDto);

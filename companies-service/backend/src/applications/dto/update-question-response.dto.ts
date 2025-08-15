@@ -5,4 +5,4 @@ export class UpdateQuestionResponseDto {
   @IsNotEmpty()
   @IsOptional()
   answer?: string;
-} 
+}

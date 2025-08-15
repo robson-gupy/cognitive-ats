@@ -8,4 +8,4 @@ export class CreateQuestionResponseDto {
   @IsString()
   @IsNotEmpty()
   answer: string;
-} 
+}

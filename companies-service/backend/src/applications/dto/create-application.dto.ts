@@ -1,4 +1,11 @@
-import { IsUUID, IsString, IsEmail, IsOptional, ValidateIf, IsUrl } from 'class-validator';
+import {
+  IsUUID,
+  IsString,
+  IsEmail,
+  IsOptional,
+  ValidateIf,
+  IsUrl,
+} from 'class-validator';
 
 export class CreateApplicationDto {
   @IsUUID()
@@ -23,4 +30,4 @@ export class CreateApplicationDto {
   @IsOptional()
   @IsUrl()
   resumeUrl?: string;
-} 
+}

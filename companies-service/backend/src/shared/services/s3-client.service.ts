@@ -95,15 +95,22 @@ export class S3ClientService {
           },
         ],
       };
-      
-      await this.s3.putBucketPolicy({
-        Bucket: bucketName,
-        Policy: JSON.stringify(bucketPolicy),
-      }).promise();
-      
-      this.logger.log(`Política pública configurada para o bucket ${bucketName}`);
+
+      await this.s3
+        .putBucketPolicy({
+          Bucket: bucketName,
+          Policy: JSON.stringify(bucketPolicy),
+        })
+        .promise();
+
+      this.logger.log(
+        `Política pública configurada para o bucket ${bucketName}`,
+      );
     } catch (error) {
-      this.logger.warn(`Não foi possível configurar política pública para ${bucketName}:`, error);
+      this.logger.warn(
+        `Não foi possível configurar política pública para ${bucketName}:`,
+        error,
+      );
     }
   }
 
@@ -116,7 +123,7 @@ export class S3ClientService {
       // Verifica se o bucket existe
       await this.s3.headBucket({ Bucket: bucketName }).promise();
       this.logger.log(`Bucket ${bucketName} já existe`);
-      
+
       // Garante que o bucket tenha política pública
       await this.setBucketPublicPolicy(bucketName);
     } catch (error) {
@@ -125,7 +132,7 @@ export class S3ClientService {
         try {
           await this.s3.createBucket({ Bucket: bucketName }).promise();
           this.logger.log(`Bucket ${bucketName} criado com sucesso`);
-          
+
           // Configura política pública para o bucket
           await this.setBucketPublicPolicy(bucketName);
         } catch (createError) {

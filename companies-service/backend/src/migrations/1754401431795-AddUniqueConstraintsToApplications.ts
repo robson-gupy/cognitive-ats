@@ -1,10 +1,12 @@
 import { MigrationInterface, QueryRunner, TableIndex } from 'typeorm';
 
-export class AddUniqueConstraintsToApplications1754401431795 implements MigrationInterface {
+export class AddUniqueConstraintsToApplications1754401431795
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Primeiro, limpar dados duplicados
     console.log('Limpando aplicações duplicadas...');
-    
+
     // Remover duplicatas de email por vaga
     await queryRunner.query(`
       DELETE FROM applications 
@@ -66,7 +68,13 @@ export class AddUniqueConstraintsToApplications1754401431795 implements Migratio
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover índices únicos
-    await queryRunner.dropIndex('applications', 'IDX_applications_job_celular_unique');
-    await queryRunner.dropIndex('applications', 'IDX_applications_job_email_unique');
+    await queryRunner.dropIndex(
+      'applications',
+      'IDX_applications_job_celular_unique',
+    );
+    await queryRunner.dropIndex(
+      'applications',
+      'IDX_applications_job_email_unique',
+    );
   }
-} 
+}

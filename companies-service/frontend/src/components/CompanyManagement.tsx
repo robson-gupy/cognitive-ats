@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Layout, Button, message, Typography, Form, Input, Spin, Alert } from 'antd';
-import { SaveOutlined, EditOutlined, BankOutlined } from '@ant-design/icons';
+import { SaveOutlined, EditOutlined, BankOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { apiService } from '../services/api';
 import type { Company, UpdateCompanyData } from '../types/Company';
+import { generateSlug } from '../utils/slug';
+import { debounce } from 'lodash';
 
 const { Content } = Layout;
 const { Title, Paragraph } = Typography;
@@ -12,7 +14,68 @@ export const CompanyManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [slugLoading, setSlugLoading] = useState(false);
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [form] = Form.useForm();
+
+  // Função para verificar disponibilidade do slug no servidor
+  const checkSlugAvailability = async (slug: string) => {
+    if (!slug || slug.length < 2) {
+      setSlugAvailable(null);
+      return;
+    }
+
+    try {
+      setSlugLoading(true);
+      const isAvailable = await apiService.checkSlugAvailability(slug);
+      setSlugAvailable(isAvailable);
+    } catch (error) {
+      console.error('Erro ao verificar disponibilidade do slug:', error);
+      setSlugAvailable(null);
+    } finally {
+      setSlugLoading(false);
+    }
+  };
+
+  // Debounce da verificação de disponibilidade (500ms após parar de digitar)
+  const debouncedSlugCheck = useCallback(
+    debounce((slug: string) => {
+      checkSlugAvailability(slug);
+    }, 500),
+    []
+  );
+
+  const getSlugStatusIcon = () => {
+    if (slugLoading) {
+      return <span style={{ color: '#1890ff' }}>⏳</span>;
+    }
+    if (slugAvailable === true) {
+      return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+    }
+    if (slugAvailable === false) {
+      return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
+    }
+    return null;
+  };
+
+  const getSlugStatusText = () => {
+    if (slugLoading) {
+      return 'Verificando disponibilidade...';
+    }
+    if (slugAvailable === true) {
+      return 'Identificador disponível';
+    }
+    if (slugAvailable === false) {
+      return 'Identificador já está em uso';
+    }
+    return '';
+  };
+
+  const getSlugStatusColor = () => {
+    if (slugAvailable === true) return '#52c41a';
+    if (slugAvailable === false) return '#ff4d4f';
+    return '#666';
+  };
 
   useEffect(() => {
     loadCompany();
@@ -32,6 +95,7 @@ export const CompanyManagement: React.FC = () => {
           cnpj: companyData.cnpj,
           businessArea: companyData.businessArea,
           description: companyData.description,
+          slug: companyData.slug,
         });
       }
     } catch (error) {
@@ -56,6 +120,7 @@ export const CompanyManagement: React.FC = () => {
         cnpj: company.cnpj,
         businessArea: company.businessArea,
         description: company.description,
+        slug: company.slug,
       });
     }
   };
@@ -74,6 +139,34 @@ export const CompanyManagement: React.FC = () => {
       console.error('Erro ao atualizar empresa:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    
+    if (name) {
+      // Gerar novo slug baseado no nome
+      const newSlug = generateSlug(name);
+      form.setFieldValue('slug', newSlug);
+      
+      // Verificar disponibilidade do novo slug
+      debouncedSlugCheck(newSlug);
+    } else {
+      // Limpar slug e status de disponibilidade
+      form.setFieldValue('slug', '');
+      setSlugAvailable(null);
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const slug = e.target.value;
+    
+    if (slug) {
+      // Verificar disponibilidade do slug digitado
+      debouncedSlugCheck(slug);
+    } else {
+      setSlugAvailable(null);
     }
   };
 
@@ -175,7 +268,29 @@ export const CompanyManagement: React.FC = () => {
                   { min: 2, message: 'O nome deve ter pelo menos 2 caracteres!' },
                 ]}
               >
-                <Input placeholder="Nome da empresa" />
+                <Input 
+                  placeholder="Nome da empresa" 
+                  onChange={handleNameChange}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Identificador Legível"
+                name="slug"
+                rules={[
+                  { required: true, message: 'Por favor, insira o identificador legível!' },
+                  { min: 2, message: 'O identificador deve ter pelo menos 2 caracteres!' },
+                  { pattern: /^[a-z0-9-]+$/, message: 'O identificador deve conter apenas letras minúsculas, números e hífens!' },
+                ]}
+                tooltip="Identificador único e legível para a empresa (ex: minha-empresa-tecnologia)"
+                validateStatus={slugAvailable === false ? 'error' : slugAvailable === true ? 'success' : undefined}
+                help={getSlugStatusText()}
+              >
+                <Input 
+                  placeholder="ex: minha-empresa-tecnologia" 
+                  onChange={handleSlugChange}
+                  suffix={getSlugStatusIcon()}
+                />
               </Form.Item>
 
               <Form.Item

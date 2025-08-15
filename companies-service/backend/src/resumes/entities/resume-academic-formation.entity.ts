@@ -52,4 +52,4 @@ export class ResumeAcademicFormation {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-} 
+}

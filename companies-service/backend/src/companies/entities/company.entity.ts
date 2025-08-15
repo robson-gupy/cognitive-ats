@@ -5,12 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Department } from '../../departments/entities/department.entity';
 import { Job } from '../../jobs/entities/job.entity';
 
 @Entity('companies')
+@Index(['slug'], { unique: true })
 export class Company {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -29,6 +31,9 @@ export class Company {
 
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({ length: 255, unique: true })
+  slug: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

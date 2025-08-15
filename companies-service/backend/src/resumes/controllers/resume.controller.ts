@@ -70,18 +70,18 @@ export class ResumeController {
     const application = await this.applicationRepository.findOne({
       where: { id: applicationId },
       select: [
-        'id', 
-        'firstName', 
-        'lastName', 
-        'overallScore', 
-        'questionResponsesScore', 
-        'educationScore', 
-        'experienceScore', 
-        'evaluationProvider', 
-        'evaluationModel', 
+        'id',
+        'firstName',
+        'lastName',
+        'overallScore',
+        'questionResponsesScore',
+        'educationScore',
+        'experienceScore',
+        'evaluationProvider',
+        'evaluationModel',
         'evaluatedAt',
-        'evaluationDetails'
-      ]
+        'evaluationDetails',
+      ],
     });
 
     if (!application) {
@@ -104,8 +104,8 @@ export class ResumeController {
           model: application.evaluationModel,
           evaluatedAt: application.evaluatedAt,
           details: application.evaluationDetails,
-        }
-      }
+        },
+      },
     };
   }
 }
