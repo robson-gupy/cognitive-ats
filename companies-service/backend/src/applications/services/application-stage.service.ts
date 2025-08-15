@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Application } from './entities/application.entity';
-import { JobStage } from './entities/job-stage.entity';
-import { ApplicationStageHistory } from './entities/application-stage-history.entity';
-import { ChangeApplicationStageDto } from './dto/change-application-stage.dto';
-import { User } from '../users/entities/user.entity';
+import { Application } from '../entities/application.entity';
+import { JobStage } from '../../jobs/entities/job-stage.entity';
+import { ApplicationStageHistory } from '../entities/application-stage-history.entity';
+import { ChangeApplicationStageDto } from '../dto/change-application-stage.dto';
+import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class ApplicationStageService {

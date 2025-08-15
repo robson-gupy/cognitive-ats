@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Resume } from './entities/resume.entity';
-import { Application } from './entities/application.entity';
-import { CreateResumeDto } from './dto/create-resume.dto';
-import { UpdateResumeDto } from './dto/update-resume.dto';
-import { AiServiceClient } from './ai-service.client';
-import { JobsService } from './jobs.service';
-import { QuestionResponsesService } from './question-responses.service';
+import { Resume } from '../entities/resume.entity';
+import { Application } from '../../applications/entities/application.entity';
+import { CreateResumeDto } from '../dto/create-resume.dto';
+import { UpdateResumeDto } from '../dto/update-resume.dto';
+import { AiServiceClient } from '../../shared/ai/ai-service.client';
+
+import { QuestionResponsesService } from '../../applications/services/question-responses.service';
 
 @Injectable()
 export class ResumeService {
@@ -17,7 +17,7 @@ export class ResumeService {
     @InjectRepository(Application)
     private applicationRepository: Repository<Application>,
     private aiServiceClient: AiServiceClient,
-    private jobsService: JobsService,
+
     private questionResponsesService: QuestionResponsesService,
   ) {}
 

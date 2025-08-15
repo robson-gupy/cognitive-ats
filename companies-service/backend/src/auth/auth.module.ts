@@ -31,6 +31,6 @@ import { AuthLoggingInterceptor } from './auth.interceptor';
       useClass: AuthLoggingInterceptor,
     },
   ],
-  exports: [AuthService, AdminAuthGuard],
+  exports: [AuthService, AdminAuthGuard, JwtConfigModule],
 })
 export class AuthModule {}

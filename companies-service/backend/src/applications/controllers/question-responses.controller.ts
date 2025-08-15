@@ -8,11 +8,11 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { QuestionResponsesService } from './question-responses.service';
-import { CreateQuestionResponseDto } from './dto/create-question-response.dto';
-import { CreateMultipleQuestionResponsesDto } from './dto/create-multiple-question-responses.dto';
-import { UpdateQuestionResponseDto } from './dto/update-question-response.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { QuestionResponsesService } from '../services/question-responses.service';
+import { CreateQuestionResponseDto } from '../dto/create-question-response.dto';
+import { CreateMultipleQuestionResponsesDto } from '../dto/create-multiple-question-responses.dto';
+import { UpdateQuestionResponseDto } from '../dto/update-question-response.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @Controller('jobs/:jobId/applications/:applicationId/question-responses')
 export class QuestionResponsesController {

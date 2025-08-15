@@ -1,7 +1,7 @@
 import {Controller, Get, Param, NotFoundException, BadRequestException} from '@nestjs/common';
-import {JobsService} from './jobs.service';
-import {CompaniesService} from '../companies/companies.service';
-import {PublicJobsResponseDto, PublicJobResponseDto} from './dto/public-jobs-response.dto';
+import {JobsService} from '../services/jobs.service';
+import {CompaniesService} from '../../companies/companies.service';
+import {PublicJobsResponseDto, PublicJobResponseDto} from '../dto/public-jobs-response.dto';
 
 @Controller('public')
 export class PublicJobsController {

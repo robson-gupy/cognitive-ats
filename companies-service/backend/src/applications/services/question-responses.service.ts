@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { ApplicationQuestionResponse } from './entities/application-question-response.entity';
-import { JobQuestion } from './entities/job-question.entity';
-import { Application } from './entities/application.entity';
-import { CreateQuestionResponseDto } from './dto/create-question-response.dto';
-import { CreateMultipleQuestionResponsesDto } from './dto/create-multiple-question-responses.dto';
-import { UpdateQuestionResponseDto } from './dto/update-question-response.dto';
+import { ApplicationQuestionResponse } from '../entities/application-question-response.entity';
+import { JobQuestion } from '../../jobs/entities/job-question.entity';
+import { Application } from '../entities/application.entity';
+import { CreateQuestionResponseDto } from '../dto/create-question-response.dto';
+import { CreateMultipleQuestionResponsesDto } from '../dto/create-multiple-question-responses.dto';
+import { UpdateQuestionResponseDto } from '../dto/update-question-response.dto';
 
 @Injectable()
 export class QuestionResponsesService {

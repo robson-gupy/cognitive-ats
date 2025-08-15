@@ -9,12 +9,12 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { JobsService } from './jobs.service';
-import { CreateJobDto } from './dto/create-job.dto';
-import { UpdateJobDto } from './dto/update-job.dto';
-import { CreateJobWithAiDto } from './dto/create-job-with-ai.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
+import { JobsService } from '../services/jobs.service';
+import { CreateJobDto } from '../dto/create-job.dto';
+import { UpdateJobDto } from '../dto/update-job.dto';
+import { CreateJobWithAiDto } from '../dto/create-job-with-ai.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminAuthGuard } from '../../auth/guards/admin-auth.guard';
 
 @Controller('jobs')
 export class JobsController {

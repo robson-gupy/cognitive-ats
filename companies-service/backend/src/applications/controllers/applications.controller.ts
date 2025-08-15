@@ -15,18 +15,18 @@ import {
   Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApplicationsService } from './applications.service';
-import { ApplicationStageService } from './application-stage.service';
-import { CreateApplicationDto } from './dto/create-application.dto';
-import { UpdateApplicationDto } from './dto/update-application.dto';
-import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
-import { ChangeApplicationStageDto } from './dto/change-application-stage.dto';
-import { UploadResumeDto } from './dto/upload-resume.dto';
-import { UpdateApplicationEvaluationDto } from './dto/update-application-evaluation.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
-import { LocalAuthGuard } from '../auth/guards/local-auth.guard';
-import { CandidateEvaluationService } from './candidate-evaluation.service';
+import { ApplicationsService } from '../services/applications.service';
+import { ApplicationStageService } from '../services/application-stage.service';
+import { CreateApplicationDto } from '../dto/create-application.dto';
+import { UpdateApplicationDto } from '../dto/update-application.dto';
+import { UpdateApplicationScoreDto } from '../dto/update-application-score.dto';
+import { ChangeApplicationStageDto } from '../dto/change-application-stage.dto';
+import { UploadResumeDto } from '../../resumes/dto/upload-resume.dto';
+import { UpdateApplicationEvaluationDto } from '../dto/update-application-evaluation.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminAuthGuard } from '../../auth/guards/admin-auth.guard';
+import { LocalAuthGuard } from '../../auth/guards/local-auth.guard';
+import { CandidateEvaluationService } from '../services/candidate-evaluation.service';
 
 @Controller('jobs/:jobId/applications')
 export class ApplicationsController {

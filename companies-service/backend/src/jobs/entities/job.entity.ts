@@ -16,7 +16,7 @@ import { Department } from '../../departments/entities/department.entity';
 import { JobQuestion } from './job-question.entity';
 import { JobStage } from './job-stage.entity';
 import { JobLog } from './job-log.entity';
-import { Application } from './application.entity';
+import { Application } from '../../applications/entities/application.entity';
 
 export enum JobStatus {
   DRAFT = 'DRAFT',

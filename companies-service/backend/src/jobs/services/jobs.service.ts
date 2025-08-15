@@ -5,15 +5,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Job, JobStatus } from './entities/job.entity';
-import { JobQuestion } from './entities/job-question.entity';
-import { JobStage } from './entities/job-stage.entity';
-import { JobLog } from './entities/job-log.entity';
-import { CreateJobDto } from './dto/create-job.dto';
-import { UpdateJobDto } from './dto/update-job.dto';
-import { CreateJobWithAiDto } from './dto/create-job-with-ai.dto';
-import { User } from '../users/entities/user.entity';
-import { AiServiceClient, JobCreationRequest } from './ai-service.client';
+import { Job, JobStatus } from '../entities/job.entity';
+import { JobQuestion } from '../entities/job-question.entity';
+import { JobStage } from '../entities/job-stage.entity';
+import { JobLog } from '../entities/job-log.entity';
+import { CreateJobDto } from '../dto/create-job.dto';
+import { UpdateJobDto } from '../dto/update-job.dto';
+import { CreateJobWithAiDto } from '../dto/create-job-with-ai.dto';
+import { User } from '../../users/entities/user.entity';
+import { AiServiceClient, JobCreationRequest } from '../../shared/ai/ai-service.client';
 
 @Injectable()
 export class JobsService {

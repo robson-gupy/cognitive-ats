@@ -8,7 +8,7 @@ import {
   Index,
 } from 'typeorm';
 import { Application } from './application.entity';
-import { JobStage } from './job-stage.entity';
+import { JobStage } from '../../jobs/entities/job-stage.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('application_stage_history')

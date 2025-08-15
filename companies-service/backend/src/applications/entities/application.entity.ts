@@ -10,11 +10,11 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { Job } from './job.entity';
+import { Job } from '../../jobs/entities/job.entity';
 import { Company } from '../../companies/entities/company.entity';
-import { Resume } from './resume.entity';
+import { Resume } from '../../resumes/entities/resume.entity';
 import { ApplicationQuestionResponse } from './application-question-response.entity';
-import { JobStage } from './job-stage.entity';
+import { JobStage } from '../../jobs/entities/job-stage.entity';
 import { ApplicationStageHistory } from './application-stage-history.entity';
 
 @Entity('applications')

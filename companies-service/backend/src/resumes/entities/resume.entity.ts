@@ -9,7 +9,7 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { Application } from './application.entity';
+import { Application } from '../../applications/entities/application.entity';
 import { ResumeProfessionalExperience } from './resume-professional-experience.entity';
 import { ResumeAcademicFormation } from './resume-academic-formation.entity';
 import { ResumeAchievement } from './resume-achievement.entity';

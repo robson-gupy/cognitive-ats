@@ -9,7 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { Application } from './application.entity';
-import { JobQuestion } from './job-question.entity';
+import { JobQuestion } from '../../jobs/entities/job-question.entity';
 import { Company } from '../../companies/entities/company.entity';
 
 @Entity('application_question_responses')

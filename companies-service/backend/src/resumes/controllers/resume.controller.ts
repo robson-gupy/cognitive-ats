@@ -8,13 +8,13 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { ResumeService } from './resume.service';
-import { CreateResumeDto } from './dto/create-resume.dto';
-import { UpdateResumeDto } from './dto/update-resume.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ResumeService } from '../services/resume.service';
+import { CreateResumeDto } from '../dto/create-resume.dto';
+import { UpdateResumeDto } from '../dto/update-resume.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Application } from './entities/application.entity';
+import { Application } from '../../applications/entities/application.entity';
 
 @Controller('resumes')
 export class ResumeController {

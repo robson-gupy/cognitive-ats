@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Application } from './entities/application.entity';
-import { Job } from './entities/job.entity';
-import { Resume } from './entities/resume.entity';
-import { ApplicationQuestionResponse } from './entities/application-question-response.entity';
-import { AiServiceClient, CandidateEvaluationRequest } from './ai-service.client';
-import { UpdateApplicationEvaluationDto } from './dto/update-application-evaluation.dto';
+import { Application } from '../entities/application.entity';
+import { Job } from '../../jobs/entities/job.entity';
+import { Resume } from '../../resumes/entities/resume.entity';
+import { ApplicationQuestionResponse } from '../entities/application-question-response.entity';
+import { AiServiceClient, CandidateEvaluationRequest } from '../../shared/ai/ai-service.client';
+import { UpdateApplicationEvaluationDto } from '../dto/update-application-evaluation.dto';
 
 @Injectable()
 export class CandidateEvaluationService {
