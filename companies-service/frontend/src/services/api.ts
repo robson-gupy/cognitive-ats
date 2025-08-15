@@ -4,8 +4,13 @@ import type { Company, CreateCompanyData, UpdateCompanyData } from '../types/Com
 import type { Department, CreateDepartmentRequest, UpdateDepartmentRequest } from '../types/Department';
 import type { Role, CreateRoleRequest, UpdateRoleRequest } from '../types/Role';
 import type { Application, CreateApplicationData, UpdateApplicationData, UpdateApplicationScoreData, ChangeApplicationStageData } from '../types/Application';
+import { appConfig, getCurrentConfig } from '../config/config';
 
-const API_BASE_URL = 'http://localhost:3000';
+// URL base da API - agora é dinâmica baseada no subdomínio
+const getApiBaseUrl = (): string => {
+  const config = getCurrentConfig();
+  return config.backendUrl;
+};
 
 export class ApiService {
   private getAuthHeaders(): HeadersInit {
@@ -19,7 +24,7 @@ export class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const headers = this.getAuthHeaders();
     
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       headers,
       ...options,
     });
@@ -85,7 +90,7 @@ export class ApiService {
 
   async checkSlugAvailability(slug: string): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE_URL}/companies/check-slug/${slug}`, {
+      const response = await fetch(`${getApiBaseUrl()}/companies/check-slug/${slug}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

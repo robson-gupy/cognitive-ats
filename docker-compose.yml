@@ -133,9 +133,30 @@ services:
       - cognitive-ats-network
     restart: unless-stopped
 
+  # Caddy - Proxy Reverso
+  caddy-proxy:
+    image: caddy:2.7-alpine
+    container_name: cognitive-ats-caddy-proxy
+    ports:
+      - "${CADDY_PORT_HTTP}:80"
+      - "${CADDY_PORT_HTTPS}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - companies-frontend
+      - companies-backend
+      - ai-service
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   localstack_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   cognitive-ats-network:

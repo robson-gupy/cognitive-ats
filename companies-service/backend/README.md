@@ -31,6 +31,30 @@
 $ npm install
 ```
 
+## Configuração do CORS
+
+O CORS (Cross-Origin Resource Sharing) é configurável através de variáveis de ambiente. Para mais detalhes, consulte o arquivo [CORS_CONFIGURATION.md](./CORS_CONFIGURATION.md).
+
+### Exemplo de configuração básica:
+
+```bash
+# .env
+CORS_ORIGIN=http://localhost:5173,http://localhost:3000
+CORS_METHODS=GET,POST,PUT,DELETE,PATCH,OPTIONS
+CORS_ALLOWED_HEADERS=Content-Type,Authorization
+CORS_CREDENTIALS=true
+```
+
+### Configuração para produção:
+
+```bash
+# .env
+CORS_ORIGIN=https://meudominio.com,https://app.meudominio.com
+CORS_METHODS=GET,POST,PUT,DELETE
+CORS_ALLOWED_HEADERS=Content-Type,Authorization,X-Requested-With
+CORS_CREDENTIALS=true
+```
+
 ## Compile and run the project
 
 ```bash

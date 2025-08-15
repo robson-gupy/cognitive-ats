@@ -57,10 +57,21 @@ cognitive-ats/
 
 ## Acessos
 
+### Desenvolvimento Local (sem Caddy)
 - **Frontend:** http://localhost:8080
 - **Backend:** http://localhost:3000
 - **AI Service:** http://localhost:8000
-- **API via Frontend:** http://localhost:8080/api/ (proxy configurado no nginx)
+
+### Desenvolvimento com Caddy (Proxy Reverso)
+- **Frontend:** http://gupy.localhost (ou slug-da-empresa.localhost)
+- **Backend:** http://gupy.localhost/api (ou slug-da-empresa.localhost/api)
+- **AI Service:** http://ai.localhost
+
+### Portas dos Containers
+- **Caddy:** 80 (HTTP) e 443 (HTTPS)
+- **Frontend:** 5173 (interno)
+- **Backend:** 3000 (interno)
+- **AI Service:** 8000 (interno)
 
 ## Configurações
 
@@ -70,10 +81,16 @@ cognitive-ats/
 - Linguagem: TypeScript
 
 ### Frontend (React)
-- Porta: 8080
+- Porta: 5173 (container) / 8080 (host)
 - Framework: React + Vite
-- Servidor: Nginx
-- Proxy configurado para API
+- Servidor: Vite Dev Server (desenvolvimento)
+- Proxy configurado via Caddy para API
+
+### Caddy (Proxy Reverso)
+- Porta: 80 (HTTP) e 443 (HTTPS)
+- Roteamento baseado em path para backend (/api/*)
+- Roteamento direto para frontend (/*)
+- Suporte a múltiplos subdomínios de empresas
 
 ### AI Service (FastAPI)
 - Porta: 8000

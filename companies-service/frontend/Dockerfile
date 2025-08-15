@@ -1,5 +1,5 @@
-# Dockerfile para o frontend React com Vite
-FROM node:20-alpine as build
+# Dockerfile para o frontend React com Vite (Desenvolvimento)
+FROM node:20-alpine
 
 # Definir diretório de trabalho
 WORKDIR /app
@@ -13,20 +13,8 @@ RUN npm ci
 # Copiar código fonte
 COPY . .
 
-# Compilar a aplicação
-RUN npm run build
+# Expor porta do Vite Dev Server
+EXPOSE 5173
 
-# Estágio de produção com nginx
-FROM nginx:alpine
-
-# Copiar arquivos compilados
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copiar configuração do nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expor porta
-EXPOSE 80
-
-# Comando para executar o nginx
-CMD ["nginx", "-g", "daemon off;"] 
+# Comando para executar o servidor de desenvolvimento
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"] 

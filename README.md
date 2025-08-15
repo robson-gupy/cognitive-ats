@@ -57,6 +57,18 @@ docker-compose up -d
 # - Backend: http://localhost:3000
 # - AI Service: http://localhost:8000
 # - LocalStack: http://localhost:4566
+
+### Proxy Reverso (Caddy)
+O projeto inclui um proxy reverso configurado com Caddy que permite acesso organizado através de subdomínios:
+
+```bash
+# URLs com Caddy (após docker-compose up -d):
+# - Frontend empresas: http://gupy.admin.localhost
+# - Backend empresas: http://gupy.api.localhost  
+# - AI Service: http://ai.localhost
+```
+
+Para mais detalhes sobre o Caddy, consulte [CADDY_README.md](./CADDY_README.md).
 ```
 
 ### Desenvolvimento Local
