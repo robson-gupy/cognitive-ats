@@ -44,7 +44,8 @@ export class AuthController {
       cnpj: registerDto.cnpj,
       businessArea: registerDto.businessArea,
       description: registerDto.companyDescription,
-      slug: generateSlug(registerDto.companyName),
+      // Usar slug personalizado se fornecido, ou gerar automaticamente
+      slug: registerDto.companySlug || generateSlug(registerDto.companyName),
     };
 
     const company = await this.companiesService.create(companyData);

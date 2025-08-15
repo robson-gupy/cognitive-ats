@@ -1,6 +1,7 @@
 export interface LoginData {
   email: string;
   password: string;
+  companySlug?: string; // Campo opcional para especificar o subdomínio da empresa
 }
 
 export interface RegisterData {

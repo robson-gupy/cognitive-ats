@@ -5,6 +5,7 @@ import {
   MinLength,
   MaxLength,
   IsOptional,
+  Matches,
 } from 'class-validator';
 
 export class RegisterDto {
@@ -14,6 +15,15 @@ export class RegisterDto {
   @MinLength(2)
   @MaxLength(255)
   companyName: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  @Matches(/^[a-z0-9-]+$/, {
+    message: 'O identificador deve conter apenas letras minúsculas, números e hífens',
+  })
+  companySlug?: string; // Campo opcional para slug personalizado
 
   @IsNotEmpty()
   @IsString()

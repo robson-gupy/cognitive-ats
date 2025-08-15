@@ -2,6 +2,7 @@
 export interface AppConfig {
   backendUrl: string;
   companySlug: string;
+  hasSubdomain: boolean; // Indica se há um subdomínio ativo
 }
 
 // Função para obter o slug da empresa do subdomínio atual
@@ -28,6 +29,28 @@ function getCompanySlugFromDomain(): string {
   return import.meta.env.VITE_DEFAULT_COMPANY_SLUG || 'gupy';
 }
 
+// Função para verificar se há um subdomínio ativo
+function hasActiveSubdomain(): boolean {
+  const hostname = window.location.hostname;
+  
+  // Se estamos em localhost ou 127.0.0.1, não há subdomínio
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return false;
+  }
+  
+  // Se há um ponto no hostname e não é localhost, há subdomínio
+  if (hostname.includes('.') && !hostname.includes('.localhost')) {
+    return true;
+  }
+  
+  // Se é um subdomínio .localhost, há subdomínio
+  if (hostname.match(/^[^.]+\.localhost$/)) {
+    return true;
+  }
+  
+  return false;
+}
+
 // Função para construir a URL do backend baseada no slug da empresa
 function buildBackendUrl(companySlug: string): string {
   const hostname = window.location.hostname;
@@ -40,7 +63,7 @@ function buildBackendUrl(companySlug: string): string {
   
   // Se estamos em localhost, usar a configuração padrão
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:3000';
+    return 'http://localhost/api';
   }
   
   // Novo padrão: mesmo domínio com /api/ para o backend
@@ -55,13 +78,14 @@ function buildBackendUrl(companySlug: string): string {
   }
   
   // Fallback para desenvolvimento local
-  return 'http://localhost:3000';
+  return 'http://localhost/api';
 }
 
 // Configuração da aplicação
 export const appConfig: AppConfig = {
   companySlug: getCompanySlugFromDomain(),
   backendUrl: buildBackendUrl(getCompanySlugFromDomain()),
+  hasSubdomain: hasActiveSubdomain(),
 };
 
 // Função para obter a configuração atualizada (útil para mudanças dinâmicas)
@@ -70,6 +94,7 @@ export function getCurrentConfig(): AppConfig {
   return {
     companySlug,
     backendUrl: buildBackendUrl(companySlug),
+    hasSubdomain: hasActiveSubdomain(),
   };
 }
 
@@ -96,4 +121,5 @@ if (import.meta.env.DEV) {
   console.log('🌐 Hostname atual:', window.location.hostname);
   console.log('🏢 Slug da empresa:', appConfig.companySlug);
   console.log('🔗 URL do backend:', appConfig.backendUrl);
+  console.log('📍 Tem subdomínio:', appConfig.hasSubdomain);
 }

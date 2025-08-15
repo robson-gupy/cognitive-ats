@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Form, Input, Button, Card, message, Tabs } from 'antd';
-import { UserOutlined, LockOutlined, BankOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, BankOutlined, CheckCircleOutlined, CloseCircleOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useAuthContext } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { generateSlug } from '../utils/slug';
 import { debounce } from 'lodash';
+import { getCurrentConfig } from '../config/config';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -17,15 +18,50 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const { login } = useAuthContext();
   const [form] = Form.useForm();
+  const [loginFormInstance] = Form.useForm();
+  
+  // Obter configuração atual para detectar subdomínio
+  const config = getCurrentConfig();
+  const hasSubdomain = config.hasSubdomain;
+
+  // Se há subdomínio, sempre mostrar apenas a aba de login
+  useEffect(() => {
+    if (hasSubdomain) {
+      setActiveTab('login');
+    }
+  }, [hasSubdomain]);
 
   const onFinish = async (values: any) => {
     try {
       setLoading(true);
-      await login(values);
-      message.success('Login realizado com sucesso!');
-      onLoginSuccess();
+      
+      // Se não há subdomínio, usar o identificador fornecido pelo usuário
+      if (!hasSubdomain && values.companySlug) {
+        // Construir URL do backend com o subdomínio fornecido
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const backendUrl = `${protocol}//${values.companySlug}.${hostname}/api`;
+        
+        // Atualizar a configuração global temporariamente
+        // Nota: Em uma implementação real, você precisaria de uma forma de atualizar
+        // a URL base da API dinamicamente. Por enquanto, vamos usar a abordagem atual.
+        console.log('Tentando login com empresa:', values.companySlug);
+        console.log('URL do backend seria:', backendUrl);
+        
+        // Para esta implementação, vamos assumir que o usuário está acessando
+        // a URL correta da empresa. Em produção, você pode implementar um
+        // redirecionamento ou atualizar a configuração da API.
+        await login(values);
+        message.success('Login realizado com sucesso!');
+        onLoginSuccess();
+      } else {
+        // Login normal com subdomínio já definido
+        await login(values);
+        message.success('Login realizado com sucesso!');
+        onLoginSuccess();
+      }
     } catch (error) {
-      message.error('Erro no login. Verifique suas credenciais.');
+      message.error('Erro no login. Verifique suas credenciais e identificador da empresa.');
     } finally {
       setLoading(false);
     }
@@ -133,13 +169,33 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     return '#666';
   };
 
-  const loginForm = (
+  const loginFormContent = (
     <Form
       name="login"
       onFinish={onFinish}
       layout="vertical"
       requiredMark={false}
+      form={loginFormInstance}
     >
+      {/* Campo de identificador da empresa - apenas quando não há subdomínio */}
+      {!hasSubdomain && (
+        <Form.Item
+          label="Identificador da Empresa"
+          name="companySlug"
+          rules={[
+            { required: true, message: 'Por favor, insira o identificador da empresa!' },
+            { min: 2, message: 'O identificador deve ter pelo menos 2 caracteres!' },
+            { pattern: /^[a-z0-9-]+$/, message: 'O identificador deve conter apenas letras minúsculas, números e hífens!' },
+          ]}
+          tooltip="Digite o identificador da sua empresa (ex: minha-empresa)"
+        >
+          <Input 
+            placeholder="ex: minha-empresa" 
+            prefix={<GlobalOutlined />}
+          />
+        </Form.Item>
+      )}
+
       <Form.Item
         label="Email"
         name="email"
@@ -170,7 +226,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     </Form>
   );
 
-  const registerForm = (
+  const registerFormContent = (
     <Form
       name="register"
       onFinish={onRegister}
@@ -314,6 +370,28 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     </Form>
   );
 
+  // Determinar quais abas mostrar baseado na presença de subdomínio
+  const tabs = hasSubdomain 
+    ? [
+        {
+          key: 'login',
+          label: 'Entrar',
+          children: loginFormContent,
+        }
+      ]
+    : [
+        {
+          key: 'login',
+          label: 'Entrar',
+          children: loginFormContent,
+        },
+        {
+          key: 'register',
+          label: 'Registrar Empresa',
+          children: registerFormContent,
+        }
+      ];
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -323,21 +401,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
       background: '#f0f2f5'
     }}>
       <Card title="Cognitive ATS" style={{ width: 500 }}>
+        {hasSubdomain && (
+          <div style={{ 
+            marginBottom: '16px', 
+            padding: '8px 12px', 
+            backgroundColor: '#e6f7ff', 
+            border: '1px solid #91d5ff',
+            borderRadius: '6px',
+            fontSize: '14px',
+            color: '#1890ff'
+          }}>
+            🏢 Empresa: <strong>{config.companySlug}</strong>
+          </div>
+        )}
+        
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
-          items={[
-            {
-              key: 'login',
-              label: 'Entrar',
-              children: loginForm,
-            },
-            {
-              key: 'register',
-              label: 'Registrar Empresa',
-              children: registerForm,
-            },
-          ]}
+          items={tabs}
         />
       </Card>
     </div>

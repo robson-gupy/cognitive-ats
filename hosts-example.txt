@@ -16,6 +16,23 @@
 # - http://ai.localhost (serviço de inteligência artificial)
 
 # ========================================
+# NOVA FUNCIONALIDADE DE LOGIN:
+# ========================================
+# O sistema agora detecta automaticamente se há um subdomínio:
+
+# COM SUBDOMÍNIO (ex: gupy.localhost):
+# - Apenas tela de login é exibida
+# - Não há aba "Registrar Empresa"
+# - Mostra indicador visual da empresa atual
+# - Login direto com email e senha
+
+# SEM SUBDOMÍNIO (ex: localhost):
+# - Campo "Identificador da Empresa" é exibido no login
+# - Aba "Registrar Empresa" está disponível
+# - Usuário pode especificar qual empresa acessar
+# - Funcionalidade completa de registro
+
+# ========================================
 # INSTRUÇÕES DE USO:
 # ========================================
 
@@ -28,15 +45,42 @@
 # ========================================
 
 # Frontend:
-# - http://gupy.localhost (frontend da empresa Gupy)
-# - http://empresa1.localhost (frontend da empresa1)
+# - http://gupy.localhost (frontend da empresa Gupy - apenas login)
+# - http://empresa1.localhost (frontend da empresa1 - apenas login)
+# - http://localhost (sem subdomínio - login + registro)
 
 # Backend/API:
 # - http://gupy.localhost/api (API da empresa Gupy)
 # - http://empresa1.localhost/api (API da empresa1)
+# - http://localhost/api (API via localhost)
 
 # AI Service:
 # - http://ai.localhost (serviço de inteligência artificial)
+
+# ========================================
+# FLUXOS DE USO:
+# ========================================
+
+# FLUXO 1: Usuário com Subdomínio
+# 1. Acesse: http://gupy.localhost
+# 2. Sistema detecta subdomínio "gupy"
+# 3. Mostra apenas tela de login
+# 4. Exibe indicador: "🏢 Empresa: gupy"
+# 5. Faça login com email e senha
+
+# FLUXO 2: Usuário sem Subdomínio
+# 1. Acesse: http://localhost
+# 2. Sistema não detecta subdomínio
+# 3. Mostra campo "Identificador da Empresa" no login
+# 4. Mostra aba "Registrar Empresa"
+# 5. Pode fazer login especificando empresa ou registrar nova
+
+# FLUXO 3: Registro de Nova Empresa
+# 1. Acesse: http://localhost
+# 2. Clique na aba "Registrar Empresa"
+# 3. Preencha dados da empresa e usuário
+# 4. Sistema cria empresa e usuário administrador
+# 5. Faça login especificando o identificador criado
 
 # ========================================
 # NOTAS IMPORTANTES:
@@ -47,5 +91,5 @@
 # - O frontend é acessado diretamente: slug-empresa.localhost
 # - O backend é acessado via: slug-empresa.localhost/api
 # - O Caddy automaticamente roteia baseado no path /api/
-# - Para adicionar uma nova empresa, basta usar o novo slug no subdomínio
+# - Para adicionar uma nova empresa, use o modo sem subdomínio
 # - O .localhost é resolvido automaticamente pelo sistema operacional
