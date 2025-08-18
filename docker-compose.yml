@@ -91,6 +91,24 @@ services:
     restart: unless-stopped
     command: [ "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
 
+  # Candidates Service (NestJS + React SSR)
+  candidates-service:
+    build:
+      context: ./candidates-service
+      dockerfile: Dockerfile.dev
+    container_name: cognitive-ats-candidates-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=3001
+    volumes:
+      - ./candidates-service:/app
+      - /app/node_modules
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
   # SQS Listener Service
   sqs-listener:
     build:
@@ -148,6 +166,7 @@ services:
       - companies-frontend
       - companies-backend
       - ai-service
+      - candidates-service
     networks:
       - cognitive-ats-network
     restart: unless-stopped

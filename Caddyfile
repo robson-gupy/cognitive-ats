@@ -1,115 +1,62 @@
-# Proxy Reverso para Cognitive ATS
-# Configuração para roteamento baseado em path com mesmo domínio
-
-# Configuração global
 {
-    # Habilitar logs
     log {
         output stdout
         format console
         level INFO
     }
-    
-    # Configurações de segurança
+
     servers {
         protocols h1 h2
     }
-    
-    # Desabilitar HTTPS automático para desenvolvimento
+
     auto_https off
 }
 
-# Frontend das empresas - slug-empresa.localhost
-*.localhost {
-    # Configurações de CORS para desenvolvimento
-    header {
-        Access-Control-Allow-Origin *
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-        Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
-        Access-Control-Allow-Credentials true
-    }
-    
-    # Roteamento baseado em path
-    @api {
-        path /api/*
-    }
-    
-    @frontend {
-        not path /api/*
-    }
-    
-    # Proxy para o backend das empresas via /api/
-    handle @api {
-        # Remover o prefixo /api/ antes de encaminhar para o backend
-        uri strip_prefix /api
-        
-        reverse_proxy companies-backend:3000 {
-            # Configurações de proxy
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-Prefix /api
-        }
-    }
-    
-    # Proxy para o frontend das empresas (rota padrão)
-    handle @frontend {
-        reverse_proxy companies-frontend:5173 {
-            # Configurações de proxy
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-        }
-    }
-    
-    # Logs específicos
-    log {
-        output stdout
-        format console
-        level INFO
-    }
-}
-
-# Roteamento alternativo via localhost (para quando subdomínios não funcionam)
 :80 {
-    # Configurações de CORS para desenvolvimento
     header {
         Access-Control-Allow-Origin *
         Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
         Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
         Access-Control-Allow-Credentials true
     }
-    
-    # Roteamento baseado em path
+
+    # Matcher para *.jobs.localhost
+    @candidatesHost host *.jobs.localhost
+    handle @candidatesHost {
+        reverse_proxy candidates-service:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+        }
+    }
+
+    # Matcher para API no domínio principal
     @api {
         path /api/*
     }
-    
-    @frontend {
-        not path /api/*
-    }
-    
-    # Proxy para o backend das empresas via /api/
+
     handle @api {
-        # Remover o prefixo /api/ antes de encaminhar para o backend
         uri strip_prefix /api
-        
+
         reverse_proxy companies-backend:3000 {
-            # Configurações de proxy
             header_up Host {host}
             header_up X-Real-IP {remote}
             header_up X-Forwarded-Prefix /api
         }
     }
-    
-    # Proxy para o frontend das empresas (rota padrão)
+
+    # Matcher para frontend no domínio principal
+    @frontend {
+        not path /api/*
+        not host *.jobs.localhost
+    }
+
     handle @frontend {
         reverse_proxy companies-frontend:5173 {
-            # Configurações de proxy
             header_up Host {host}
             header_up X-Real-IP {remote}
         }
     }
-    
-    # Logs específicos
+
     log {
         output stdout
         format console
@@ -117,32 +64,6 @@
     }
 }
 
-# Serviço de IA - ai.localhost
-ai.localhost {
-    # Configurações de CORS para AI Service
-    header {
-        Access-Control-Allow-Origin *
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-        Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
-        Access-Control-Allow-Credentials true
-    }
-    
-    # Proxy para o serviço de IA
-    reverse_proxy ai-service:8000 {
-        # Configurações de proxy
-        header_up Host {host}
-        header_up X-Real-IP {remote}
-    }
-    
-    # Logs específicos para AI Service
-    log {
-        output stdout
-        format console
-        level INFO
-    }
-}
-
-# Página de status/health check global
 :8080 {
     respond "Cognitive ATS Proxy Reverso - Status: OK" 200
     header Content-Type "text/plain; charset=utf-8"

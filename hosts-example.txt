@@ -57,6 +57,11 @@
 # AI Service:
 # - http://ai.localhost (serviço de inteligência artificial)
 
+# Candidates Service:
+# - http://gupy.jobs.localhost (página de vagas da empresa Gupy)
+# - http://empresa1.jobs.localhost (página de vagas da empresa1)
+# - Formato: slug-empresa.jobs.localhost
+
 # ========================================
 # FLUXOS DE USO:
 # ========================================
@@ -93,3 +98,13 @@
 # - O Caddy automaticamente roteia baseado no path /api/
 # - Para adicionar uma nova empresa, use o modo sem subdomínio
 # - O .localhost é resolvido automaticamente pelo sistema operacional
+
+# ========================================
+# CANDIDATES SERVICE - PÁGINAS DE VAGAS:
+# ========================================
+# O Candidates Service é acessível via domínios específicos para vagas:
+# - Formato: slug-empresa.jobs.localhost
+# - Exemplo: http://gupy.jobs.localhost (página de vagas da Gupy)
+# - Exemplo: http://empresa1.jobs.localhost (página de vagas da empresa1)
+# - Este serviço renderiza páginas React no servidor (SSR)
+# - Ideal para SEO e performance de páginas de vagas públicas
