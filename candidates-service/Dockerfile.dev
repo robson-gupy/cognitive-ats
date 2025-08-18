@@ -14,7 +14,7 @@ COPY package*.json ./
 RUN npm install
 
 # Expor porta
-EXPOSE 3001
+EXPOSE 3002
 
 # Comando para iniciar em modo de desenvolvimento
 CMD ["npm", "run", "start:dev"]

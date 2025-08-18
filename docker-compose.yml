@@ -98,13 +98,16 @@ services:
       dockerfile: Dockerfile.dev
     container_name: cognitive-ats-candidates-service
     ports:
-      - "3001:3001"
+      - "${CANDIDATES_SERVICE_PORT}:3002"
     environment:
       - NODE_ENV=${NODE_ENV}
-      - PORT=3001
+      - PORT=3002
+      - COMPANIES_API_URL=http://companies-backend:3000
     volumes:
       - ./candidates-service:/app
       - /app/node_modules
+    depends_on:
+      - companies-backend
     networks:
       - cognitive-ats-network
     restart: unless-stopped

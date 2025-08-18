@@ -3,18 +3,19 @@ import { Injectable } from '@nestjs/common';
 import { renderToString } from 'react-dom/server';
 import { App } from './app.component';
 import React from 'react';
+import { CompanyJobsResponse } from '../app.service';
 
 @Injectable()
 export class ReactSsrService {
-    render(): string {
-        const content = renderToString(React.createElement(App));
+    render(slug?: string, companyJobs?: CompanyJobsResponse): string {
+        const content = renderToString(React.createElement(App, { slug, companyJobs }));
         return `
       <!DOCTYPE html>
       <html lang="pt-BR">
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>Gupy Candidates - Encontre as Melhores Oportunidades</title>
+          <title>${slug ? `${slug.charAt(0).toUpperCase() + slug.slice(1)} - ` : ''}Gupy Candidates - Encontre as Melhores Oportunidades</title>
           <meta name="description" content="Conectamos candidatos talentosos com empresas inovadoras através de inteligência artificial." />
           <script src="https://cdn.tailwindcss.com"></script>
           <script>
@@ -37,6 +38,12 @@ export class ReactSsrService {
         <body>
           <div id="root">${content}</div>
           <script>
+            // Passar dados da empresa para o React
+            window.COMPANY_DATA = {
+              slug: ${JSON.stringify(slug || null)},
+              jobs: ${JSON.stringify(companyJobs || null)}
+            };
+            
             // Hydration script for interactive elements
             document.addEventListener('DOMContentLoaded', function() {
               // Add click handlers for buttons

@@ -1,7 +1,16 @@
 // src/react/App.tsx
 import React from 'react';
+import { CompanyJobsResponse } from '../app.service';
 
-export function App() {
+interface AppProps {
+  slug?: string;
+  companyJobs?: CompanyJobsResponse;
+}
+
+export function App({ slug, companyJobs }: AppProps) {
+    const companyName = slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : 'Gupy';
+    const hasJobs = companyJobs && companyJobs.success && companyJobs.data.length > 0;
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
             {/* Header */}
@@ -11,11 +20,11 @@ export function App() {
                         <div className="flex items-center">
                             <div className="flex-shrink-0">
                                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                                    <span className="text-white font-bold text-lg">G</span>
+                                    <span className="text-white font-bold text-lg">{companyName.charAt(0)}</span>
                                 </div>
                             </div>
                             <div className="ml-3">
-                                <h1 className="text-xl font-semibold text-gray-900">Gupy Candidates</h1>
+                                <h1 className="text-xl font-semibold text-gray-900">{companyName} Candidates</h1>
                             </div>
                         </div>
                         <nav className="hidden md:flex space-x-8">
@@ -37,17 +46,20 @@ export function App() {
             <section className="relative py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-                        Encontre as Melhores
-                        <span className="text-indigo-600 block">Oportunidades</span>
+                        {slug ? `Vagas da ${companyName}` : 'Encontre as Melhores'}
+                        <span className="text-indigo-600 block">
+                            {slug ? 'Disponíveis' : 'Oportunidades'}
+                        </span>
                     </h1>
                     <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-                        Conectamos candidatos talentosos com empresas inovadoras. 
-                        Nossa plataforma utiliza inteligência artificial para criar 
-                        matches perfeitos entre perfis e vagas.
+                        {slug 
+                            ? `Descubra as melhores oportunidades de carreira na ${companyName}. Nossas vagas são cuidadosamente selecionadas para você.`
+                            : 'Conectamos candidatos talentosos com empresas inovadoras. Nossa plataforma utiliza inteligência artificial para criar matches perfeitos entre perfis e vagas.'
+                        }
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <button className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg">
-                            Buscar Vagas
+                            {slug ? 'Ver Todas as Vagas' : 'Buscar Vagas'}
                         </button>
                         <button className="bg-white text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors border-2 border-indigo-600 shadow-lg">
                             Cadastrar CV
@@ -56,12 +68,59 @@ export function App() {
                 </div>
             </section>
 
+            {/* Jobs Section - Only show if company has jobs */}
+            {hasJobs && (
+                <section className="py-20 bg-white">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                                Vagas Disponíveis na {companyName}
+                            </h2>
+                            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                                Encontramos {companyJobs.total} vaga{companyJobs.total !== 1 ? 's' : ''} disponível{companyJobs.total !== 1 ? 's' : ''} para você
+                            </p>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {companyJobs.data.map((job) => (
+                                <div key={job.id} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="mb-4">
+                                        <h3 className="text-xl font-semibold text-gray-900 mb-2">{job.title}</h3>
+                                        <p className="text-gray-600 text-sm mb-2">{job.location}</p>
+                                        <span className="inline-block bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">
+                                            {job.type}
+                                        </span>
+                                    </div>
+                                    
+                                    <p className="text-gray-600 mb-4 line-clamp-3">
+                                        {job.description.length > 150 
+                                            ? `${job.description.substring(0, 150)}...` 
+                                            : job.description
+                                        }
+                                    </p>
+                                    
+                                    {job.salary && (
+                                        <div className="mb-4">
+                                            <span className="text-green-600 font-semibold">{job.salary}</span>
+                                        </div>
+                                    )}
+                                    
+                                    <button className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors">
+                                        Candidatar-se
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {/* Features Section */}
             <section className="py-20 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                            Por que escolher a Gupy?
+                            Por que escolher a {companyName}?
                         </h2>
                         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                             Nossa plataforma oferece recursos avançados para otimizar 
@@ -159,9 +218,9 @@ export function App() {
                         <div>
                             <div className="flex items-center mb-4">
                                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                                    <span className="text-white font-bold text-lg">G</span>
+                                    <span className="text-white font-bold text-lg">{companyName.charAt(0)}</span>
                                 </div>
-                                <span className="text-xl font-semibold">Gupy Candidates</span>
+                                <span className="text-xl font-semibold">{companyName} Candidates</span>
                             </div>
                             <p className="text-gray-400">
                                 Conectando talentos com oportunidades através de tecnologia inovadora.
@@ -197,7 +256,7 @@ export function App() {
                     </div>
                     
                     <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                        <p>&copy; 2024 Gupy Candidates. Todos os direitos reservados.</p>
+                        <p>&copy; 2024 {companyName} Candidates. Todos os direitos reservados.</p>
                     </div>
                 </div>
             </footer>

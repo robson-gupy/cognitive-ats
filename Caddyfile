@@ -23,7 +23,7 @@
     # Matcher para *.jobs.localhost
     @candidatesHost host *.jobs.localhost
     handle @candidatesHost {
-        reverse_proxy candidates-service:3001 {
+        reverse_proxy candidates-service:3002 {
             header_up Host {host}
             header_up X-Real-IP {remote}
         }
