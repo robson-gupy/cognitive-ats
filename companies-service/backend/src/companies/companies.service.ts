@@ -71,6 +71,19 @@ export class CompaniesService {
     return company;
   }
 
+  async findBySlug(slug: string): Promise<Company> {
+    const company = await this.companiesRepository.findOne({
+      where: { slug },
+      relations: ['users'],
+    });
+
+    if (!company) {
+      throw new NotFoundException('Empresa não encontrada');
+    }
+
+    return company;
+  }
+
   async findByCnpj(cnpj: string): Promise<Company | null> {
     return await this.companiesRepository.findOne({
       where: { cnpj },

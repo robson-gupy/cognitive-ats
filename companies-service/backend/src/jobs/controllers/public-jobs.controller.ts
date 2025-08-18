@@ -19,32 +19,27 @@ export class PublicJobsController {
     private readonly companiesService: CompaniesService,
   ) {}
 
-  @Get(':companyId/jobs')
+  @Get(':slug/jobs')
   async findPublicJobsByCompany(
-    @Param('companyId') companyId: string,
+    @Param('slug') slug: string,
   ): Promise<PublicJobsResponseDto> {
-    // Validar se o companyId é um UUID válido
-    if (
-      !companyId ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        companyId,
-      )
-    ) {
-      throw new BadRequestException('ID da empresa inválido');
+    // Validar se o slug é válido (apenas letras, números e hífens)
+    if (!slug || !/^[a-z0-9-]+$/i.test(slug)) {
+      throw new BadRequestException('Slug da empresa inválido');
     }
 
     try {
-      // Verificar se a empresa existe
-      await this.companiesService.findOne(companyId);
+      // Verificar se a empresa existe pelo slug
+      const company = await this.companiesService.findBySlug(slug);
 
-      // Buscar vagas publicadas
-      const jobs = await this.jobsService.findPublishedJobsByCompany(companyId);
+      // Buscar vagas publicadas usando o ID da empresa
+      const jobs = await this.jobsService.findPublishedJobsByCompany(company.id);
 
       return {
         success: true,
         data: jobs,
         total: jobs.length,
-        companyId: companyId,
+        companyId: company.id,
         message:
           jobs.length > 0
             ? 'Vagas encontradas com sucesso'
@@ -52,9 +47,7 @@ export class PublicJobsController {
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
-        throw new NotFoundException(
-          `Empresa com ID ${companyId} não encontrada`,
-        );
+        throw new NotFoundException(`Empresa com slug ${slug} não encontrada`);
       }
       throw new NotFoundException(
         `Erro ao buscar vagas da empresa: ${error.message}`,
