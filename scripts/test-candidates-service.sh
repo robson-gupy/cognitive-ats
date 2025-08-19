@@ -6,7 +6,7 @@ echo "🧪 Testando Candidates Service..."
 # Verificar se o container está rodando
 if ! docker ps | grep -q "cognitive-ats-candidates-service"; then
     echo "❌ Candidates Service não está rodando. Iniciando..."
-    docker-compose up -d candidates-service
+    docker-compose -f ../config/docker-compose.yml up -d candidates-service
     sleep 10
 fi
 
@@ -34,6 +34,6 @@ fi
 
 # Verificar logs
 echo "📋 Últimos logs do Candidates Service:"
-docker-compose logs --tail=10 candidates-service
+docker-compose -f ../config/docker-compose.yml logs --tail=10 candidates-service
 
 echo "�� Teste concluído!"

@@ -29,18 +29,18 @@ echo "📁 Diretório atual: $(pwd)"
 echo ""
 
 # Verificar se o arquivo docker-compose.yml existe
-if [ ! -f "docker-compose.yml" ]; then
-    echo "❌ docker-compose.yml não encontrado"
+if [ ! -f "config/docker-compose.yml" ]; then
+    echo "❌ docker-compose.yml não encontrado em config/"
     exit 1
 fi
 
-echo "✅ docker-compose.yml encontrado"
+echo "✅ docker-compose.yml encontrado em config/"
 echo ""
 
 # Verificar se o arquivo .env existe
 if [ ! -f ".env" ]; then
-    echo "⚠️  Arquivo .env não encontrado. Copiando do env.example..."
-    cp env.example .env
+    echo "⚠️  Arquivo .env não encontrado. Copiando do config/env.example..."
+    cp config/env.example .env
     echo "✅ Arquivo .env criado. Edite-o com suas configurações se necessário."
     echo ""
 fi
@@ -50,12 +50,12 @@ echo ""
 
 # Parar containers existentes
 echo "🛑 Parando containers existentes..."
-docker-compose down
+docker-compose -f config/docker-compose.yml down
 echo ""
 
 # Construir e iniciar os serviços
 echo "🚀 Construindo e iniciando os serviços..."
-docker-compose up -d --build
+docker-compose -f config/docker-compose.yml up -d --build
 
 # Aguardar os serviços iniciarem
 echo ""
@@ -65,7 +65,7 @@ sleep 10
 # Verificar status dos containers
 echo ""
 echo "📊 Status dos containers:"
-docker-compose ps
+docker-compose -f config/docker-compose.yml ps
 
 echo ""
 
@@ -95,7 +95,7 @@ echo ""
 
 # Verificar logs do candidates-service
 echo "📋 Últimos logs do Candidates Service:"
-docker-compose logs --tail=10 candidates-service
+docker-compose -f config/docker-compose.yml logs --tail=10 candidates-service
 
 echo ""
 
@@ -116,9 +116,9 @@ echo "3. Ou acesse diretamente:"
 echo "   http://localhost:3002"
 echo ""
 echo "4. Para ver logs em tempo real:"
-echo "   docker-compose logs -f candidates-service"
+echo "   docker-compose -f config/docker-compose.yml logs -f candidates-service"
 echo ""
 echo "5. Para parar todos os serviços:"
-echo "   docker-compose down"
+echo "   docker-compose -f config/docker-compose.yml down"
 echo ""
 echo "�� Teste concluído!"

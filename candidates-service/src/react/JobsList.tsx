@@ -7,7 +7,7 @@ interface JobsListProps {
   companySlug: string;
 }
 
-export function JobsList({ jobs, companyName }: JobsListProps) {
+export function JobsList({ jobs, companyName, companySlug }: JobsListProps) {
   const [titleFilter, setTitleFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
 

@@ -6,13 +6,21 @@ Este projeto é composto por múltiplos serviços organizados de forma modular p
 
 ```
 cognitive-ats/
-├── companies-service/          # Serviço de Gestão de Empresas
-│   ├── backend/              # API NestJS para empresas
-│   └── frontend/             # Interface React para empresas
-├── ai-service/               # Serviço de IA (FastAPI)
-├── docker-compose.yml        # Orquestração dos serviços
-└── README-Docker.md         # Documentação Docker
+├── 📁 docs/                    # Documentação centralizada
+├── 📁 config/                  # Configurações (Docker, Caddy, env)
+├── 📁 scripts/                 # Scripts utilitários
+├── 📁 services/                # Serviços da aplicação
+│   ├── 📁 companies-service/   # Serviço de Gestão de Empresas
+│   │   ├── backend/           # API NestJS para empresas
+│   │   └── frontend/          # Interface React para empresas
+│   ├── 📁 ai-service/         # Serviço de IA (FastAPI)
+│   └── 📁 candidates-service/ # Serviço de Candidatos
+├── 📄 README.md               # Este arquivo
+└── 📄 .gitignore
 ```
+
+> 📚 **Documentação**: Veja a pasta [docs/](./docs/) para toda a documentação organizada
+> ⚙️ **Configurações**: Veja a pasta [config/](./config/) para arquivos de configuração
 
 ## Serviços
 
@@ -68,7 +76,7 @@ O projeto inclui um proxy reverso configurado com Caddy que permite acesso organ
 # - AI Service: http://ai.localhost
 ```
 
-Para mais detalhes sobre o Caddy, consulte [CADDY_README.md](./CADDY_README.md).
+Para mais detalhes sobre o Caddy, consulte [docs/CADDY_README.md](./docs/CADDY_README.md).
 ```
 
 ### Desenvolvimento Local
@@ -98,7 +106,7 @@ A estrutura está preparada para adicionar novos serviços como:
 
 ## Configuração de Ambiente
 
-Copie o arquivo `.env.example` para `.env` e configure as variáveis necessárias:
+Copie o arquivo `config/env.example` para `.env` na raiz do projeto e configure as variáveis necessárias:
 
 ```bash
 # Para o AI Service
