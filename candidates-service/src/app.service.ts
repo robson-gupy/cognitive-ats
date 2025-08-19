@@ -8,11 +8,17 @@ export interface Job {
   title: string;
   description: string;
   requirements: string;
-  salary: string;
-  location: string;
-  type: string;
+  expirationDate: string | null;
+  status: string;
+  departmentId: string | null;
   createdAt: string;
   updatedAt: string;
+  publishedAt: string | null;
+  department: {
+    id: string;
+    name: string;
+    description: string;
+  } | null;
 }
 
 export interface CompanyJobsResponse {
