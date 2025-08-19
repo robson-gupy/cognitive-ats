@@ -29,26 +29,26 @@ export function generateUniqueSlug(
 ): string {
   const slug = generateSlug(text);
   let counter = 1;
-  
+
   // Se há prefixo válido, sempre usar o formato com prefixo
   if (prefix && prefix.trim()) {
     let uniqueSlug = `${prefix}-${slug}`;
-    
+
     while (existingSlugs.includes(uniqueSlug)) {
       uniqueSlug = `${prefix}-${slug}-${counter}`;
       counter++;
     }
-    
+
     return uniqueSlug;
   } else {
     // Se não há prefixo, usar formato simples
     let uniqueSlug = slug;
-    
+
     while (existingSlugs.includes(uniqueSlug)) {
       uniqueSlug = `${slug}-${counter}`;
       counter++;
     }
-    
+
     return uniqueSlug;
   }
 }
