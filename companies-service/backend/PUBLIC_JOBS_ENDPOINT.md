@@ -7,17 +7,17 @@ Este endpoint permite listar vagas publicadas de uma empresa específica de form
 ## Endpoint
 
 ```
-GET /public/{companyId}/jobs
+GET /public/{companySlug}/jobs
 ```
 
 ### Parâmetros
 
-- `companyId` (string, obrigatório): UUID da empresa
+- `companySlug` (string, obrigatório): Slug da empresa (identificador legível)
 
 ### Exemplo de Uso
 
 ```bash
-curl -X GET "http://localhost:3000/public/123e4567-e89b-12d3-a456-426614174000/jobs"
+curl -X GET "http://localhost:3000/public/gupy/jobs"
 ```
 
 ## Resposta
@@ -61,12 +61,12 @@ curl -X GET "http://localhost:3000/public/123e4567-e89b-12d3-a456-426614174000/j
 }
 ```
 
-### Erro - ID inválido (400)
+### Erro - Slug inválido (400)
 
 ```json
 {
   "statusCode": 400,
-  "message": "ID da empresa inválido",
+  "message": "Slug da empresa inválido",
   "error": "Bad Request"
 }
 ```
@@ -74,7 +74,7 @@ curl -X GET "http://localhost:3000/public/123e4567-e89b-12d3-a456-426614174000/j
 ## Características
 
 - **Sem autenticação**: Endpoint totalmente público
-- **Validação de UUID**: Verifica se o ID da empresa é um UUID válido
+- **Validação de slug**: Verifica se o slug da empresa é válido (apenas letras, números e hífens)
 - **Verificação de existência**: Confirma se a empresa existe antes de buscar vagas
 - **Filtro automático**: Retorna apenas vagas com status "PUBLISHED"
 - **Ordenação**: Vagas ordenadas por data de publicação (mais recentes primeiro)
@@ -86,14 +86,15 @@ curl -X GET "http://localhost:3000/public/123e4567-e89b-12d3-a456-426614174000/j
 - Retorna apenas vagas publicadas (status = PUBLISHED)
 - Validação de entrada para prevenir injeção de SQL
 - Não requer tokens de autenticação
+- Validação de slug para prevenir caracteres maliciosos
 
 ## Uso em Frontend
 
 ```typescript
 // Exemplo de uso em React/TypeScript
-const fetchPublicJobs = async (companyId: string) => {
+const fetchPublicJobs = async (companySlug: string) => {
   try {
-    const response = await fetch(`/public/${companyId}/jobs`);
+    const response = await fetch(`/public/${companySlug}/jobs`);
     if (!response.ok) {
       throw new Error('Erro ao buscar vagas');
     }
@@ -110,6 +111,7 @@ const fetchPublicJobs = async (companyId: string) => {
 
 - Endpoint implementado em `PublicJobsController`
 - Utiliza `JobsService.findPublishedJobsByCompany()` para buscar vagas
-- Validação de empresa através de `CompaniesService.findOne()`
+- Validação de empresa através de `CompaniesService.findBySlug()`
 - Resposta padronizada com DTOs específicos
 - Testes unitários incluídos
+- Suporte a slug para URLs mais amigáveis

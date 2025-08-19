@@ -23,7 +23,6 @@ export class JobsController {
   @Post()
   @UseGuards(JwtAuthGuard, AdminAuthGuard)
   create(@Body() createJobDto: CreateJobDto, @Request() req) {
-    console.log('Controller - User from request:', req.user);
     return this.jobsService.create(createJobDto, req.user);
   }
 

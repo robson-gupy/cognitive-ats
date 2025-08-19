@@ -84,7 +84,7 @@ export class Job {
   @Column({ name: 'closed_at', type: 'timestamp', nullable: true })
   closedAt: Date;
 
-  @Column({ length: 255, unique: true })
+  @Column({ length: 500, unique: true })
   slug: string;
 
   @CreateDateColumn({ name: 'created_at' })

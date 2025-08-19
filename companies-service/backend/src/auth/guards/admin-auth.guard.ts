@@ -4,51 +4,24 @@ import {
   ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
-
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
+    const user = request.user;
 
-    if (!token) {
-      throw new ForbiddenException('Token não fornecido');
+    if (!user) {
+      throw new ForbiddenException('Usuário não autenticado');
     }
 
-    try {
-      const payload = await this.jwtService.verifyAsync(token);
-      const userRoleCode = payload.roleCode;
-
-      if (!userRoleCode || userRoleCode !== 'ADMIN') {
-        throw new ForbiddenException(
-          'Acesso negado: apenas administradores podem acessar este recurso',
-        );
-      }
-
-      // Adicionar informações completas do usuário ao request
-      request.user = {
-        id: payload.sub || payload.id,
-        companyId: payload.companyId,
-        email: payload.email,
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        roleCode: payload.roleCode,
-      };
-
-      return true;
-    } catch (error) {
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-      throw new ForbiddenException('Token inválido');
+    // Verificar se o usuário tem roleCode e se é ADMIN
+    if (!user.roleCode || user.roleCode !== 'ADMIN') {
+      throw new ForbiddenException(
+        'Acesso negado: apenas administradores podem acessar este recurso',
+      );
     }
-  }
 
-  private extractTokenFromHeader(request: any): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    return true;
   }
 }

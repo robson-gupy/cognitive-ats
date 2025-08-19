@@ -196,6 +196,7 @@ describe('ApiService', () => {
         corporateName: 'Nova Empresa LTDA',
         cnpj: '12345678901234',
         businessArea: 'Tecnologia',
+        slug: 'nova-empresa',
       })
 
       expect(mockFetch).toHaveBeenCalledWith(
@@ -207,6 +208,7 @@ describe('ApiService', () => {
             corporateName: 'Nova Empresa LTDA',
             cnpj: '12345678901234',
             businessArea: 'Tecnologia',
+            slug: 'nova-empresa',
           }),
         })
       )

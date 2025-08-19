@@ -35,6 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         companyId: user.companyId,
         roleId: user.roleId,
         roleCode: user.role?.code,
+        company: user.company, // Incluir a empresa completa
       };
     } catch (error) {
       throw new UnauthorizedException('Token inválido');

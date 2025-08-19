@@ -71,11 +71,11 @@ export class CreateJobDto {
   @IsUUID()
   departmentId?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(255)
-  slug: string;
+  slug?: string;
 
   @IsOptional()
   @IsArray()

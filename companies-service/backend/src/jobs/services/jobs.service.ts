@@ -3,21 +3,21 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Job, JobStatus } from '../entities/job.entity';
-import { JobQuestion } from '../entities/job-question.entity';
-import { JobStage } from '../entities/job-stage.entity';
-import { JobLog } from '../entities/job-log.entity';
-import { CreateJobDto } from '../dto/create-job.dto';
-import { UpdateJobDto } from '../dto/update-job.dto';
-import { CreateJobWithAiDto } from '../dto/create-job-with-ai.dto';
-import { User } from '../../users/entities/user.entity';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
+import {Job, JobStatus} from '../entities/job.entity';
+import {JobQuestion} from '../entities/job-question.entity';
+import {JobStage} from '../entities/job-stage.entity';
+import {JobLog} from '../entities/job-log.entity';
+import {CreateJobDto} from '../dto/create-job.dto';
+import {UpdateJobDto} from '../dto/update-job.dto';
+import {CreateJobWithAiDto} from '../dto/create-job-with-ai.dto';
+import {User} from '../../users/entities/user.entity';
 import {
   AiServiceClient,
   JobCreationRequest,
 } from '../../shared/ai/ai-service.client';
-import { generateUniqueSlug } from '../../shared/utils/slug.util';
+import {generateUniqueSlug} from '../../shared/utils/slug.util';
 
 @Injectable()
 export class JobsService {
@@ -31,7 +31,8 @@ export class JobsService {
     @InjectRepository(JobLog)
     private jobLogsRepository: Repository<JobLog>,
     private aiServiceClient: AiServiceClient,
-  ) {}
+  ) {
+  }
 
   async create(createJobDto: CreateJobDto, user: User): Promise<Job> {
     console.log('Creating job with user:', {
@@ -45,14 +46,18 @@ export class JobsService {
 
     // Se não foi fornecido um slug, gerar um baseado no título
     if (!createJobDto.slug) {
-      const allSlugs = await this.jobsRepository.find({ select: ['slug'] });
+      const allSlugs = await this.jobsRepository.find({select: ['slug']});
       const existingSlugs = allSlugs.map((j) => j.slug);
-      createJobDto.slug = generateUniqueSlug(createJobDto.title, existingSlugs);
+      createJobDto.slug = generateUniqueSlug(
+        user.company.slug,
+        createJobDto.title,
+        existingSlugs,
+      );
     }
 
     // Verificar se o slug já existe
     const existingSlug = await this.jobsRepository.findOne({
-      where: { slug: createJobDto.slug },
+      where: {slug: createJobDto.slug},
     });
 
     if (existingSlug) {
@@ -68,10 +73,10 @@ export class JobsService {
 
     const result: Job[] = await this.jobsRepository.query(
       `
-        INSERT INTO jobs (id, title, description, requirements, expiration_date, status, company_id, department_id,
-                          created_by, slug, created_at, updated_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, ${expirationDateValue}, $4, $5, ${departmentIdValue}, $6, $7, NOW(),
-                NOW()) RETURNING id, status, created_at, updated_at
+          INSERT INTO jobs (id, title, description, requirements, expiration_date, status, company_id, department_id,
+                            created_by, slug, created_at, updated_at)
+          VALUES (gen_random_uuid(), $1, $2, $3, ${expirationDateValue}, $4, $5, ${departmentIdValue}, $6, $7, NOW(),
+                  NOW()) RETURNING id, status, created_at, updated_at
       `,
       [
         createJobDto.title,
@@ -191,7 +196,7 @@ export class JobsService {
       description: aiResponse.description,
       requirements: aiResponse.requirements,
       status: JobStatus.DRAFT,
-      slug: generateUniqueSlug(aiResponse.title, []), // Gerar slug baseado no título
+      slug: generateUniqueSlug(user.company.slug, aiResponse.title, []), // Gerar slug baseado no título
       questions: aiResponse.questions?.map((q: any, index) => ({
         question: q.question,
         isRequired: q.isRequired,
@@ -214,30 +219,31 @@ export class JobsService {
   async findAll(userCompanyId: string): Promise<Job[]> {
     // Primeiro, buscar todos os jobs
     const jobs = await this.jobsRepository.find({
-      where: { companyId: userCompanyId },
+      where: {companyId: userCompanyId},
       relations: ['company', 'department', 'createdBy', 'questions', 'stages'],
-      order: { createdAt: 'DESC' },
+      order: {createdAt: 'DESC'},
     });
 
     console.log(`Found ${jobs.length} jobs for company ${userCompanyId}`);
 
     // Verificar se existem applications na tabela
     const totalApplications = await this.jobsRepository.query(`
-      SELECT COUNT(*) as total FROM applications
+        SELECT COUNT(*) as total
+        FROM applications
     `);
     console.log('Total applications in database:', totalApplications[0].total);
 
     // Buscar contagem de applications para cada job usando query SQL direta
     const applicationCounts = await this.jobsRepository.query(
       `
-      SELECT 
-        j.id as "jobId",
-        COALESCE(COUNT(a.id), 0) as count
-      FROM jobs j
-      LEFT JOIN applications a ON j.id = a.job_id
-      WHERE j.company_id = $1
-      GROUP BY j.id
-    `,
+          SELECT j.id as "jobId",
+                 COALESCE(COUNT(a.id), 0) as count
+          FROM jobs j
+              LEFT JOIN applications a
+          ON j.id = a.job_id
+          WHERE j.company_id = $1
+          GROUP BY j.id
+      `,
       [userCompanyId],
     );
 
@@ -296,7 +302,7 @@ export class JobsService {
     user: User,
   ): Promise<Job> {
     const job = await this.findOne(id, user.companyId);
-    const oldValues = { ...job };
+    const oldValues = {...job};
     const logsToCreate: Array<{
       description: string;
       fieldName?: string;
@@ -318,7 +324,7 @@ export class JobsService {
     if (updateJobDto.slug && updateJobDto.slug !== job.slug) {
       // Verificar se o slug já existe
       const existingSlug = await this.jobsRepository.findOne({
-        where: { slug: updateJobDto.slug },
+        where: {slug: updateJobDto.slug},
       });
 
       if (existingSlug) {
@@ -340,9 +346,9 @@ export class JobsService {
       updateJobDto.title &&
       updateJobDto.title !== job.title
     ) {
-      const allSlugs = await this.jobsRepository.find({ select: ['slug'] });
+      const allSlugs = await this.jobsRepository.find({select: ['slug']});
       const existingSlugs = allSlugs.map((j) => j.slug);
-      const newSlug = generateUniqueSlug(updateJobDto.title, existingSlugs);
+      const newSlug = generateUniqueSlug('', updateJobDto.title, existingSlugs);
 
       job.slug = newSlug;
       logsToCreate.push({
@@ -456,8 +462,8 @@ export class JobsService {
         // Só atualizar stages se realmente houver mudanças
         if (updateJobDto.stages && updateJobDto.stages.length > 0) {
           const existingStages = await this.jobStagesRepository.find({
-            where: { jobId: job.id },
-            order: { orderIndex: 'ASC' },
+            where: {jobId: job.id},
+            order: {orderIndex: 'ASC'},
           });
 
           // Verificar se há mudanças reais nos stages
@@ -515,8 +521,8 @@ export class JobsService {
   ): Promise<void> {
     // Buscar stages existentes
     const existingStages = await this.jobStagesRepository.find({
-      where: { jobId },
-      order: { orderIndex: 'ASC' },
+      where: {jobId},
+      order: {orderIndex: 'ASC'},
     });
 
     // Se não há stages para atualizar, não fazer nada
@@ -661,7 +667,7 @@ export class JobsService {
         existingStage.name !== newStage.name ||
         existingStage.description !== newStage.description ||
         existingStage.orderIndex !==
-          (newStage.orderIndex ?? existingStage.orderIndex) ||
+        (newStage.orderIndex ?? existingStage.orderIndex) ||
         existingStage.isActive !== (newStage.isActive ?? existingStage.isActive)
       ) {
         return true;
@@ -704,9 +710,9 @@ export class JobsService {
   async getLogs(jobId: string, userCompanyId: string): Promise<JobLog[]> {
     await this.findOne(jobId, userCompanyId); // Verificar permissões
     return await this.jobLogsRepository.find({
-      where: { jobId },
+      where: {jobId},
       relations: ['user'],
-      order: { createdAt: 'DESC' },
+      order: {createdAt: 'DESC'},
     });
   }
 
@@ -763,24 +769,24 @@ export class JobsService {
   async findPublishedJobsByCompany(companyId: string): Promise<any[]> {
     const jobs = await this.jobsRepository.query(
       `
-      SELECT 
-        j.id,
-        j.title,
-        j.description,
-        j.requirements,
-        j.expiration_date as "expirationDate",
-        j.status,
-        j.department_id as "departmentId",
-        j.created_at as "createdAt",
-        j.updated_at as "updatedAt",
-        j.published_at as "publishedAt",
-        d.name as "departmentName",
-        d.description as "departmentDescription"
-      FROM jobs j
-      LEFT JOIN departments d ON j.department_id = d.id
-      WHERE j.company_id = $1 AND j.status = $2
-      ORDER BY j.published_at DESC
-    `,
+          SELECT j.id,
+                 j.title,
+                 j.description,
+                 j.requirements,
+                 j.expiration_date as "expirationDate",
+                 j.status,
+                 j.department_id   as "departmentId",
+                 j.created_at      as "createdAt",
+                 j.updated_at      as "updatedAt",
+                 j.published_at    as "publishedAt",
+                 d.name            as "departmentName",
+                 d.description     as "departmentDescription"
+          FROM jobs j
+                   LEFT JOIN departments d ON j.department_id = d.id
+          WHERE j.company_id = $1
+            AND j.status = $2
+          ORDER BY j.published_at DESC
+      `,
       [companyId, JobStatus.PUBLISHED],
     );
 
@@ -797,35 +803,37 @@ export class JobsService {
       publishedAt: job.publishedAt,
       department: job.departmentId
         ? {
-            id: job.departmentId,
-            name: job.departmentName,
-            description: job.departmentDescription,
-          }
+          id: job.departmentId,
+          name: job.departmentName,
+          description: job.departmentDescription,
+        }
         : null,
     }));
   }
 
-  async findPublicJobById(companyId: string, jobId: string): Promise<any> {
+  async findPublicJobById(companySlug: string, jobId: string): Promise<any> {
     const job = await this.jobsRepository.query(
       `
-      SELECT 
-        j.id,
-        j.title,
-        j.description,
-        j.requirements,
-        j.expiration_date as "expirationDate",
-        j.status,
-        j.department_id as "departmentId",
-        j.created_at as "createdAt",
-        j.updated_at as "updatedAt",
-        j.published_at as "publishedAt",
-        d.name as "departmentName",
-        d.description as "departmentDescription"
-      FROM jobs j
-      LEFT JOIN departments d ON j.department_id = d.id
-      WHERE j.company_id = $1 AND j.id = $2 AND j.status = $3
-    `,
-      [companyId, jobId, JobStatus.PUBLISHED],
+          SELECT j.id,
+                 j.title,
+                 j.description,
+                 j.requirements,
+                 j.expiration_date as "expirationDate",
+                 j.status,
+                 j.department_id   as "departmentId",
+                 j.created_at      as "createdAt",
+                 j.updated_at      as "updatedAt",
+                 j.published_at    as "publishedAt",
+                 d.name            as "departmentName",
+                 d.description     as "departmentDescription"
+          FROM jobs j
+                   LEFT JOIN departments d ON j.department_id = d.id
+                   LEFT JOIN companies c ON j.company_id = c.id
+          WHERE c.slug = $1
+            AND j.id = $2
+            AND j.status = $3
+      `,
+      [companySlug, jobId, JobStatus.PUBLISHED],
     );
 
     if (!job || job.length === 0) {
@@ -846,10 +854,10 @@ export class JobsService {
       publishedAt: jobData.publishedAt,
       department: jobData.departmentId
         ? {
-            id: jobData.departmentId,
-            name: jobData.departmentName,
-            description: jobData.departmentDescription,
-          }
+          id: jobData.departmentId,
+          name: jobData.departmentName,
+          description: jobData.departmentDescription,
+        }
         : null,
     };
   }

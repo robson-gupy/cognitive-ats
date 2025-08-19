@@ -84,7 +84,6 @@ export interface CreateJobData {
   requirements: string;
   expirationDate: string;
   departmentId?: string;
-  slug: string;
   questions?: JobQuestion[];
   stages?: JobStage[];
 }
@@ -96,7 +95,6 @@ export interface UpdateJobData {
   expirationDate?: string;
   status?: JobStatus;
   departmentId?: string;
-  slug?: string;
   questions?: JobQuestion[];
   stages?: JobStage[];
 } 

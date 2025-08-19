@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PublicJobsController } from './public-jobs.controller';
-import { JobsService } from './jobs.service';
-import { CompaniesService } from '../companies/companies.service';
+import { JobsService } from '../services/jobs.service';
+import { CompaniesService } from '../../companies/companies.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('PublicJobsController', () => {
@@ -16,6 +16,7 @@ describe('PublicJobsController', () => {
 
   const mockCompaniesService = {
     findOne: jest.fn(),
+    findBySlug: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -37,10 +38,10 @@ describe('PublicJobsController', () => {
   });
 
   describe('findPublicJobsByCompany', () => {
-    const validCompanyId = '123e4567-e89b-12d3-a456-426614174000';
-    const invalidCompanyId = 'invalid-uuid';
+    const validCompanySlug = 'test-company';
+    const invalidCompanySlug = 'invalid-slug!';
 
-    it('should return jobs for a valid company ID', async () => {
+    it('should return jobs for a valid company slug', async () => {
       const mockJobs = [
         {
           id: 'job-1',
@@ -60,48 +61,48 @@ describe('PublicJobsController', () => {
         },
       ];
 
-      mockCompaniesService.findOne.mockResolvedValue({
-        id: validCompanyId,
+      mockCompaniesService.findBySlug.mockResolvedValue({
+        id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Test Company',
       });
       mockJobsService.findPublishedJobsByCompany.mockResolvedValue(mockJobs);
 
-      const result = await controller.findPublicJobsByCompany(validCompanyId);
+      const result = await controller.findPublicJobsByCompany(validCompanySlug);
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockJobs);
       expect(result.total).toBe(1);
-      expect(result.companyId).toBe(validCompanyId);
-      expect(companiesService.findOne).toHaveBeenCalledWith(validCompanyId);
+      expect(result.companyId).toBe('123e4567-e89b-12d3-a456-426614174000');
+      expect(companiesService.findBySlug).toHaveBeenCalledWith(validCompanySlug);
       expect(jobsService.findPublishedJobsByCompany).toHaveBeenCalledWith(
-        validCompanyId,
+        '123e4567-e89b-12d3-a456-426614174000',
       );
     });
 
-    it('should throw BadRequestException for invalid UUID', async () => {
+    it('should throw BadRequestException for invalid slug', async () => {
       await expect(
-        controller.findPublicJobsByCompany(invalidCompanyId),
+        controller.findPublicJobsByCompany(invalidCompanySlug),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException when company does not exist', async () => {
-      mockCompaniesService.findOne.mockRejectedValue(
+      mockCompaniesService.findBySlug.mockRejectedValue(
         new NotFoundException('Empresa não encontrada'),
       );
 
       await expect(
-        controller.findPublicJobsByCompany(validCompanyId),
+        controller.findPublicJobsByCompany(validCompanySlug),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should return empty jobs array when company has no published jobs', async () => {
-      mockCompaniesService.findOne.mockResolvedValue({
-        id: validCompanyId,
+      mockCompaniesService.findBySlug.mockResolvedValue({
+        id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Test Company',
       });
       mockJobsService.findPublishedJobsByCompany.mockResolvedValue([]);
 
-      const result = await controller.findPublicJobsByCompany(validCompanyId);
+      const result = await controller.findPublicJobsByCompany(validCompanySlug);
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual([]);
@@ -109,7 +110,7 @@ describe('PublicJobsController', () => {
       expect(result.message).toContain('Nenhuma vaga publicada encontrada');
     });
 
-    it('should return a specific job when valid company and job IDs are provided', async () => {
+    it('should return a specific job when valid company slug and job ID are provided', async () => {
       const validJobId = '123e4567-e89b-12d3-a456-426614174001';
       const mockJob = {
         id: validJobId,
@@ -129,38 +130,38 @@ describe('PublicJobsController', () => {
         },
       };
 
-      mockCompaniesService.findOne.mockResolvedValue({
-        id: validCompanyId,
+      mockCompaniesService.findBySlug.mockResolvedValue({
+        id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Test Company',
       });
       mockJobsService.findPublicJobById.mockResolvedValue(mockJob);
 
       const result = await controller.findPublicJobById(
-        validCompanyId,
+        validCompanySlug,
         validJobId,
       );
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockJob);
-      expect(result.companyId).toBe(validCompanyId);
+      expect(result.companyId).toBe('123e4567-e89b-12d3-a456-426614174000');
       expect(result.message).toBe('Vaga encontrada com sucesso');
-      expect(companiesService.findOne).toHaveBeenCalledWith(validCompanyId);
+      expect(companiesService.findBySlug).toHaveBeenCalledWith(validCompanySlug);
       expect(jobsService.findPublicJobById).toHaveBeenCalledWith(
-        validCompanyId,
+        validCompanySlug,
         validJobId,
       );
     });
 
     it('should throw BadRequestException for invalid job UUID', async () => {
       await expect(
-        controller.findPublicJobById(validCompanyId, 'invalid-job-id'),
+        controller.findPublicJobById(validCompanySlug, 'invalid-job-id'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException when job does not exist', async () => {
       const validJobId = '123e4567-e89b-12d3-a456-426614174001';
-      mockCompaniesService.findOne.mockResolvedValue({
-        id: validCompanyId,
+      mockCompaniesService.findBySlug.mockResolvedValue({
+        id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Test Company',
       });
       mockJobsService.findPublicJobById.mockRejectedValue(
@@ -168,7 +169,7 @@ describe('PublicJobsController', () => {
       );
 
       await expect(
-        controller.findPublicJobById(validCompanyId, validJobId),
+        controller.findPublicJobById(validCompanySlug, validJobId),
       ).rejects.toThrow(NotFoundException);
     });
   });

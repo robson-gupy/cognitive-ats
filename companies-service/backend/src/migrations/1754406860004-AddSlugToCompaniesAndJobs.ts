@@ -9,13 +9,13 @@ export class AddSlugToCompaniesAndJobs1754406860004
     // Adicionar campo slug à tabela companies com valor padrão aleatório
     await queryRunner.query(`
       ALTER TABLE "companies" 
-      ADD COLUMN "slug" character varying(255) NOT NULL DEFAULT 'company-' || substr(md5(random()::text), 1, 8)
+      ADD COLUMN "slug" character varying(500) NOT NULL DEFAULT 'company-' || substr(md5(random()::text), 1, 8)
     `);
 
     // Adicionar campo slug à tabela jobs com valor padrão aleatório
     await queryRunner.query(`
       ALTER TABLE "jobs" 
-      ADD COLUMN "slug" character varying(255) NOT NULL DEFAULT 'job-' || substr(md5(random()::text), 1, 8)
+      ADD COLUMN "slug" character varying(500) NOT NULL DEFAULT 'job-' || substr(md5(random()::text), 1, 8)
     `);
 
     // Criar índices únicos para os campos slug

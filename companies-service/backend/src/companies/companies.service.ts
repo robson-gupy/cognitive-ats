@@ -45,6 +45,7 @@ export class CompaniesService {
       });
       const existingSlugs = allSlugs.map((c) => c.slug);
       createCompanyDto.slug = generateUniqueSlug(
+        null, // Sem prefixo para empresas
         createCompanyDto.name,
         existingSlugs,
       );
@@ -138,6 +139,7 @@ export class CompaniesService {
       });
       const existingSlugs = allSlugs.map((c) => c.slug);
       updateCompanyDto.slug = generateUniqueSlug(
+        null, // Sem prefixo para empresas
         updateCompanyDto.name,
         existingSlugs,
       );
