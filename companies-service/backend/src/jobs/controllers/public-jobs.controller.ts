@@ -33,7 +33,9 @@ export class PublicJobsController {
       const company = await this.companiesService.findBySlug(slug);
 
       // Buscar vagas publicadas usando o ID da empresa
-      const jobs = await this.jobsService.findPublishedJobsByCompany(company.id);
+      const jobs = await this.jobsService.findPublishedJobsByCompany(
+        company.id,
+      );
 
       return {
         success: true,
@@ -55,31 +57,27 @@ export class PublicJobsController {
     }
   }
 
-  @Get(':companySlug/jobs/:jobId')
-  async findPublicJobById(
+  @Get(':companySlug/jobs/:jobSlug')
+  async findPublicJobBySlug(
     @Param('companySlug') companySlug: string,
-    @Param('jobId') jobId: string,
+    @Param('jobSlug') jobSlug: string,
   ): Promise<PublicJobResponseDto> {
-    // Validar se o slug é válido (apenas letras, números e hífens)
+    // Validar se o slug da empresa é válido (apenas letras, números e hífens)
     if (!companySlug || !/^[a-z0-9-]+$/i.test(companySlug)) {
       throw new BadRequestException('Slug da empresa inválido');
     }
 
-    if (
-      !jobId ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        jobId,
-      )
-    ) {
-      throw new BadRequestException('ID da vaga inválido');
+    // Validar se o slug da vaga é válido (apenas letras, números e hífens)
+    if (!jobSlug || !/^[a-z0-9-]+$/i.test(jobSlug)) {
+      throw new BadRequestException('Slug da vaga inválido');
     }
 
     try {
       // Verificar se a empresa existe pelo slug
       const company = await this.companiesService.findBySlug(companySlug);
 
-      // Buscar vaga específica
-      const job = await this.jobsService.findPublicJobById(companySlug, jobId);
+      // Buscar vaga específica pelo slug
+      const job = await this.jobsService.findPublicJobBySlug(companySlug, jobSlug);
 
       return {
         success: true,

@@ -12,6 +12,7 @@ describe('PublicJobsController', () => {
   const mockJobsService = {
     findPublishedJobsByCompany: jest.fn(),
     findPublicJobById: jest.fn(),
+    findPublicJobBySlug: jest.fn(),
   };
 
   const mockCompaniesService = {
@@ -51,8 +52,7 @@ describe('PublicJobsController', () => {
           expirationDate: null,
           status: 'PUBLISHED',
           departmentId: 'dept-1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          slug: 'desenvolvedor-full-stack',
           department: {
             id: 'dept-1',
             name: 'Tecnologia',
@@ -110,18 +110,17 @@ describe('PublicJobsController', () => {
       expect(result.message).toContain('Nenhuma vaga publicada encontrada');
     });
 
-    it('should return a specific job when valid company slug and job ID are provided', async () => {
-      const validJobId = '123e4567-e89b-12d3-a456-426614174001';
+    it('should return a specific job when valid company slug and job slug are provided', async () => {
+      const validJobSlug = 'desenvolvedor-full-stack';
       const mockJob = {
-        id: validJobId,
+        id: '123e4567-e89b-12d3-a456-426614174001',
         title: 'Desenvolvedor Full Stack',
         description: 'Vaga para desenvolvedor full stack',
         requirements: 'React, Node.js, PostgreSQL',
         expirationDate: null,
         status: 'PUBLISHED',
         departmentId: 'dept-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        slug: validJobSlug,
         publishedAt: new Date(),
         department: {
           id: 'dept-1',
@@ -134,11 +133,11 @@ describe('PublicJobsController', () => {
         id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Test Company',
       });
-      mockJobsService.findPublicJobById.mockResolvedValue(mockJob);
+      mockJobsService.findPublicJobBySlug.mockResolvedValue(mockJob);
 
-      const result = await controller.findPublicJobById(
+      const result = await controller.findPublicJobBySlug(
         validCompanySlug,
-        validJobId,
+        validJobSlug,
       );
 
       expect(result.success).toBe(true);
@@ -146,30 +145,30 @@ describe('PublicJobsController', () => {
       expect(result.companyId).toBe('123e4567-e89b-12d3-a456-426614174000');
       expect(result.message).toBe('Vaga encontrada com sucesso');
       expect(companiesService.findBySlug).toHaveBeenCalledWith(validCompanySlug);
-      expect(jobsService.findPublicJobById).toHaveBeenCalledWith(
+      expect(jobsService.findPublicJobBySlug).toHaveBeenCalledWith(
         validCompanySlug,
-        validJobId,
+        validJobSlug,
       );
     });
 
-    it('should throw BadRequestException for invalid job UUID', async () => {
+    it('should throw BadRequestException for invalid job slug', async () => {
       await expect(
-        controller.findPublicJobById(validCompanySlug, 'invalid-job-id'),
+        controller.findPublicJobBySlug(validCompanySlug, 'invalid-job-slug!'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException when job does not exist', async () => {
-      const validJobId = '123e4567-e89b-12d3-a456-426614174001';
+      const validJobSlug = 'desenvolvedor-full-stack';
       mockCompaniesService.findBySlug.mockResolvedValue({
         id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Test Company',
       });
-      mockJobsService.findPublicJobById.mockRejectedValue(
+      mockJobsService.findPublicJobBySlug.mockRejectedValue(
         new NotFoundException('Vaga não encontrada ou não está publicada'),
       );
 
       await expect(
-        controller.findPublicJobById(validCompanySlug, validJobId),
+        controller.findPublicJobBySlug(validCompanySlug, validJobSlug),
       ).rejects.toThrow(NotFoundException);
     });
   });

@@ -37,5 +37,5 @@ export function App({ slug, companyJobs }: AppProps) {
     }
 
     // Se há vagas, mostrar a lista
-    return <JobsList jobs={companyJobs.data} companyName={companyName} />;
+    return <JobsList jobs={companyJobs.data} companyName={companyName} companySlug={slug} />;
 }

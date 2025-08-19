@@ -776,8 +776,7 @@ export class JobsService {
                  j.expiration_date as "expirationDate",
                  j.status,
                  j.department_id   as "departmentId",
-                 j.created_at      as "createdAt",
-                 j.updated_at      as "updatedAt",
+                 j.slug,
                  j.published_at    as "publishedAt",
                  d.name            as "departmentName",
                  d.description     as "departmentDescription"
@@ -798,8 +797,7 @@ export class JobsService {
       expirationDate: job.expirationDate,
       status: job.status,
       departmentId: job.departmentId,
-      createdAt: job.createdAt,
-      updatedAt: job.updatedAt,
+      slug: job.slug,
       publishedAt: job.publishedAt,
       department: job.departmentId
         ? {
@@ -821,8 +819,7 @@ export class JobsService {
                  j.expiration_date as "expirationDate",
                  j.status,
                  j.department_id   as "departmentId",
-                 j.created_at      as "createdAt",
-                 j.updated_at      as "updatedAt",
+                 j.slug,
                  j.published_at    as "publishedAt",
                  d.name            as "departmentName",
                  d.description     as "departmentDescription"
@@ -849,8 +846,56 @@ export class JobsService {
       expirationDate: jobData.expirationDate,
       status: jobData.status,
       departmentId: jobData.departmentId,
-      createdAt: jobData.createdAt,
-      updatedAt: jobData.updatedAt,
+      slug: jobData.slug,
+      publishedAt: jobData.publishedAt,
+      department: jobData.departmentId
+        ? {
+          id: jobData.departmentId,
+          name: jobData.departmentName,
+          description: jobData.departmentDescription,
+        }
+        : null,
+    };
+  }
+
+  async findPublicJobBySlug(companySlug: string, jobSlug: string): Promise<any> {
+    const job = await this.jobsRepository.query(
+      `
+          SELECT j.id,
+                 j.title,
+                 j.description,
+                 j.requirements,
+                 j.expiration_date as "expirationDate",
+                 j.status,
+                 j.department_id   as "departmentId",
+                 j.slug,
+                 j.published_at    as "publishedAt",
+                 d.name            as "departmentName",
+                 d.description     as "departmentDescription"
+          FROM jobs j
+                   LEFT JOIN departments d ON j.department_id = d.id
+                   LEFT JOIN companies c ON j.company_id = c.id
+          WHERE c.slug = $1
+            AND j.slug = $2
+            AND j.status = $3
+      `,
+      [companySlug, jobSlug, JobStatus.PUBLISHED],
+    );
+
+    if (!job || job.length === 0) {
+      throw new NotFoundException('Vaga não encontrada ou não está publicada');
+    }
+
+    const jobData = job[0];
+    return {
+      id: jobData.id,
+      title: jobData.title,
+      description: jobData.description,
+      requirements: jobData.requirements,
+      expirationDate: jobData.expirationDate,
+      status: jobData.status,
+      departmentId: jobData.departmentId,
+      slug: jobData.slug,
       publishedAt: jobData.publishedAt,
       department: jobData.departmentId
         ? {

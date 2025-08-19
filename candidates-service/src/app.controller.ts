@@ -1,5 +1,5 @@
 // src/app.controller.ts
-import { Controller, Get, Res, Req } from '@nestjs/common';
+import { Controller, Get, Res, Req, Param } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { ReactSsrService } from './react/react-ssr.service';
 import { AppService } from './app.service';
@@ -36,6 +36,36 @@ export class AppController {
       res.send(html);
     } catch (error) {
       console.error('Erro ao renderizar home:', error);
+      res.status(500).send('Erro interno do servidor');
+    }
+  }
+
+  @Get(':jobSlug')
+  async renderJob(@Res() res: Response, @Req() req: Request, @Param('jobSlug') jobSlug: string) {
+    try {
+      // Extrair o slug da empresa do subdomínio
+      const host = req.get('host') || '';
+      const companySlug = this.extractCompanySlug(host);
+      
+      if (!companySlug) {
+        return res.status(400).send('Subdomínio da empresa não encontrado');
+      }
+
+      try {
+        // Buscar detalhes da vaga
+        const jobData = await this.appService.getJob(companySlug, jobSlug);
+        const html = this.reactSsr.renderJob(companySlug, jobData);
+        res.setHeader('Content-Type', 'text/html');
+        res.send(html);
+      } catch (error) {
+        console.error('Erro ao buscar vaga:', error);
+        // Se não conseguir buscar a vaga, renderiza página de erro
+        const html = this.reactSsr.renderJobError(companySlug, jobSlug, error instanceof Error ? error.message : 'Erro desconhecido');
+        res.setHeader('Content-Type', 'text/html');
+        res.send(html);
+      }
+    } catch (error) {
+      console.error('Erro ao renderizar vaga:', error);
       res.status(500).send('Erro interno do servidor');
     }
   }

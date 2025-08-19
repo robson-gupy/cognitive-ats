@@ -29,8 +29,7 @@ curl -X GET "http://localhost:3000/jobs/company/123e4567-e89b-12d3-a456-42661417
     "expirationDate": "2024-12-31",
     "status": "PUBLISHED",
     "departmentId": "789e0123-e89b-12d3-a456-426614174002",
-    "createdAt": "2024-01-10T14:20:00.000Z",
-    "updatedAt": "2024-01-15T10:30:00.000Z",
+    "slug": "desenvolvedor-full-stack",
     "department": {
       "id": "789e0123-e89b-12d3-a456-426614174002",
       "name": "Tecnologia",

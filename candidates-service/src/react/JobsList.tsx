@@ -4,6 +4,7 @@ import { Job } from '../app.service';
 interface JobsListProps {
   jobs: Job[];
   companyName: string;
+  companySlug: string;
 }
 
 export function JobsList({ jobs, companyName }: JobsListProps) {
@@ -220,9 +221,17 @@ export function JobsList({ jobs, companyName }: JobsListProps) {
                     </div>
                   )}
                   
-                  <button className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors">
-                    Candidatar-se
-                  </button>
+                  <div className="flex gap-2">
+                    <a 
+                      href={`http://${companySlug}.jobs.localhost/${job.slug}`}
+                      className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors text-center"
+                    >
+                      Ver Mais Informações
+                    </a>
+                    <button className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors">
+                      Candidatar-se
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

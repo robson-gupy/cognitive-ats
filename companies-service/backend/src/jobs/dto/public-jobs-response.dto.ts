@@ -6,8 +6,7 @@ export class PublicJobDto {
   expirationDate: Date | null;
   status: string;
   departmentId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  slug: string;
   publishedAt: Date | null;
   department: {
     id: string;

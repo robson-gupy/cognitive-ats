@@ -43,6 +43,7 @@ As vagas agora seguem um formato de slug padronizado que inclui o slug da empres
 ### 2. **URLs Amigáveis**
 - URLs mais descritivas e SEO-friendly
 - Exemplo: `/public/gupy/jobs/gupy-desenvolvedor-full-stack`
+- **Novo**: Endpoint para buscar vaga específica: `/public/{companySlug}/jobs/{jobSlug}`
 
 ### 3. **Unicidade Garantida**
 - Sistema automático de contadores para evitar conflitos
