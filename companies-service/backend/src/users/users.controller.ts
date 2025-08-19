@@ -15,6 +15,15 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminAuthGuard } from '../auth/guards/admin-auth.guard';
 
+// Interface para tipar o request com user
+interface AuthenticatedRequest extends Request {
+  user: {
+    companyId: string;
+    id: string;
+    [key: string]: any;
+  };
+}
+
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
@@ -28,14 +37,14 @@ export class UsersController {
 
   @Get()
   @UseGuards(AdminAuthGuard)
-  findAll(@Request() req) {
+  findAll(@Request() req: AuthenticatedRequest) {
     const userCompanyId = req.user.companyId;
     return this.usersService.findAll(userCompanyId);
   }
 
   @Get(':id')
   @UseGuards(AdminAuthGuard)
-  findOne(@Param('id') id: string, @Request() req) {
+  findOne(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     const userCompanyId = req.user.companyId;
     return this.usersService.findOne(id, userCompanyId);
   }
@@ -45,7 +54,7 @@ export class UsersController {
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userCompanyId = req.user.companyId;
     return this.usersService.update(id, updateUserDto, userCompanyId);
@@ -53,7 +62,7 @@ export class UsersController {
 
   @Delete(':id')
   @UseGuards(AdminAuthGuard)
-  async remove(@Param('id') id: string, @Request() req) {
+  async remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     const userCompanyId = req.user.companyId;
     await this.usersService.remove(id, userCompanyId);
     return { message: 'Usuário excluído com sucesso' };

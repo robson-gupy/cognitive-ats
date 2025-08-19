@@ -7,7 +7,6 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
-  OneToOne,
   Index,
 } from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';

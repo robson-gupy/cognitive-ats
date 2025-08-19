@@ -1,39 +1,46 @@
 import {
   Injectable,
-  UnauthorizedException,
   ExecutionContext,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { User } from '../../users/entities/user.entity';
-
-// Interface para o usuário autenticado
-interface AuthenticatedUser {
-  id: string;
-  email: string;
-  companyId: string;
-  [key: string]: unknown;
-}
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  handleRequest<TUser = AuthenticatedUser>(
-    err: unknown,
-    user: AuthenticatedUser | null,
-    info: unknown,
-    context: ExecutionContext,
-  ): TUser {
-    // Se há erro na validação do token
-    if (err || !user) {
-      throw new UnauthorizedException('Token inválido ou expirado');
+  constructor(private readonly jwtService: JwtService) {
+    super();
+  }
+
+  private extractTokenFromHeader(request: any): string | undefined {
+    const authHeader = request.headers?.authorization;
+    if (!authHeader || typeof authHeader !== 'string') return undefined;
+
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2) return undefined;
+
+    const [type, token] = parts;
+    return type === 'Bearer' ? token : undefined;
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const token = this.extractTokenFromHeader(request);
+
+    if (!token) {
+      throw new UnauthorizedException('Token não fornecido');
     }
 
-    // Validar se o usuário tem os dados mínimos necessários
-    if (!user.id || !user.email || !user.companyId) {
-      throw new UnauthorizedException(
-        'Token inválido - dados do usuário incompletos',
-      );
-    }
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: process.env.JWT_SECRET,
+      });
 
-    return user as TUser;
+      // Adicionar o payload do JWT ao request
+      request.user = payload;
+      return true;
+    } catch {
+      throw new UnauthorizedException('Token inválido');
+    }
   }
 }

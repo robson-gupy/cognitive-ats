@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -81,17 +80,12 @@ export class ApplicationStageService {
     application.currentStageId = changeStageDto.toStageId;
 
     // Forçar uma atualização direta no banco para garantir que os dados estão persistidos
-    console.log(
-      'Executando update direto no banco para currentStageId:',
-      changeStageDto.toStageId,
-    );
     await this.applicationsRepository
       .createQueryBuilder()
       .update(Application)
       .set({ currentStageId: changeStageDto.toStageId })
       .where('id = :id', { id: applicationId })
       .execute();
-    console.log('Update direto executado com sucesso');
 
     // Retornar a aplicação atualizada com as relações
     const updatedApplication = await this.applicationsRepository.findOne({

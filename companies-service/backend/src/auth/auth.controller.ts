@@ -2,72 +2,54 @@ import {
   Controller,
   Post,
   Body,
-  UseGuards,
-  Request,
   Get,
   Patch,
+  UseGuards,
+  Request,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { LoginResponseDto } from './dto/login-response.dto';
-import { RegisterDto } from './dto/register.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
 import { CompaniesService } from '../companies/companies.service';
-import { RolesService } from '../roles/roles.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { CreateCompanyDto } from '../companies/dto/create-company.dto';
+import { LoginDto } from './dto/login.dto';
+import { LoginResponseDto } from './dto/login-response.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { generateSlug } from '../shared/utils/slug.util';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+
+// Interface para tipar o request com user do JWT
+interface JwtRequest extends Request {
+  user: {
+    sub: string;
+    email: string;
+    companyId: string;
+    [key: string]: any;
+  };
+}
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private authService: AuthService,
-    private usersService: UsersService,
-    private companiesService: CompaniesService,
-    private rolesService: RolesService,
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+    private readonly companiesService: CompaniesService,
   ) {}
 
   @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
-    // Criar roles padrão se não existirem
-    await this.rolesService.createDefaultRoles();
+  async register(
+    @Body() registerData: { company: CreateCompanyDto; user: CreateUserDto },
+  ) {
+    const { company: companyData, user: userData } = registerData;
 
     // Criar empresa primeiro
-    const companyData: CreateCompanyDto = {
-      name: registerDto.companyName,
-      corporateName: registerDto.corporateName,
-      cnpj: registerDto.cnpj,
-      businessArea: registerDto.businessArea,
-      description: registerDto.companyDescription,
-      // Usar slug personalizado se fornecido, ou gerar automaticamente
-      slug: registerDto.companySlug || generateSlug(registerDto.companyName),
-    };
-
     const company = await this.companiesService.create(companyData);
 
-    // Buscar role de Administrador
-    const adminRole = await this.rolesService.findByCode('ADMIN');
-    if (!adminRole) {
-      throw new Error('Role de Administrador não encontrado');
-    }
-
-    // Criar usuário vinculado à empresa com role de Administrador
-    const userData: CreateUserDto = {
-      firstName: registerDto.firstName,
-      lastName: registerDto.lastName,
-      email: registerDto.email,
-      password: registerDto.password,
-      companyId: company.id,
-      roleId: adminRole.id,
-    };
-
+    // Criar usuário associado à empresa
+    userData.companyId = company.id;
     const user = await this.usersService.create(userData);
-    const { password, ...result } = user;
+    const { password: _, ...result } = user;
 
     return {
       message: 'Empresa e usuário registrados com sucesso!',
@@ -83,7 +65,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfile(@Request() req) {
+  async getProfile(@Request() req: JwtRequest) {
     // Validar se temos os dados necessários do usuário
     if (!req.user || !req.user.sub || !req.user.companyId) {
       throw new UnauthorizedException(
@@ -102,7 +84,7 @@ export class AuthController {
       throw new UnauthorizedException('Token inválido - email não corresponde');
     }
 
-    const { password, ...result } = user;
+    const { password: _, ...result } = user;
 
     // Adicionar roleCode para compatibilidade com o frontend
     const response = {
@@ -116,7 +98,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
   async updateProfile(
-    @Request() req,
+    @Request() req: JwtRequest,
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     // Validar se temos os dados necessários do usuário
@@ -133,7 +115,7 @@ export class AuthController {
       updateProfileDto,
     );
 
-    const { password, ...result } = updatedUser;
+    const { password: _, ...result } = updatedUser;
 
     return {
       ...result,
@@ -144,7 +126,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
   async changePassword(
-    @Request() req,
+    @Request() req: JwtRequest,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     // Validar se temos os dados necessários do usuário

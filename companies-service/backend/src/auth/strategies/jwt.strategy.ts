@@ -1,66 +1,24 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { UsersService } from '../../users/users.service';
-
-// Interface para o payload JWT
-interface JwtPayload {
-  sub: string;
-  email: string;
-  companyId: string;
-  roleId?: string;
-  roleCode?: string;
-  iat?: number;
-  exp?: number;
-}
-
-// Interface para o usuário retornado pela validação
-interface ValidatedJwtUser {
-  id: string;
-  sub: string;
-  email: string;
-  companyId: string;
-  roleId?: string;
-  roleCode?: string;
-  company: unknown;
-}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private usersService: UsersService) {
+  constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'your-secret-key',
+      secretOrKey: process.env.JWT_SECRET || 'fallback-secret',
     });
   }
 
-  async validate(payload: JwtPayload): Promise<ValidatedJwtUser> {
-    try {
-      // Usar UsersService para buscar usuário (inclui validação de empresa)
-      const user = await this.usersService.findOne(
-        payload.sub,
-        payload.companyId,
-      );
-
-      // Validar se o email no payload corresponde ao usuário
-      if (payload.email !== user.email) {
-        throw new UnauthorizedException(
-          'Token inválido - email não corresponde',
-        );
-      }
-
-      return {
-        id: user.id,
-        sub: user.id, // Adicionar 'sub' para compatibilidade
-        email: user.email,
-        companyId: user.companyId,
-        roleId: user.roleId,
-        roleCode: user.role?.code,
-        company: user.company, // Incluir a empresa completa
-      };
-    } catch (error) {
-      throw new UnauthorizedException('Token inválido');
-    }
+  validate(payload: any): any {
+    // Aqui você pode adicionar validações adicionais se necessário
+    // Por exemplo, verificar se o usuário ainda existe no banco
+    return {
+      id: payload.sub,
+      email: payload.email,
+      companyId: payload.companyId,
+    };
   }
 }

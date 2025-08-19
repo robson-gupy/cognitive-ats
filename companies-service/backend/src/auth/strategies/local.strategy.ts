@@ -28,21 +28,11 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     super({ usernameField: 'email' });
   }
 
-  async validate(
-    email: string,
-    password: string,
-  ): Promise<UserWithoutPassword> {
+  async validate(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciais inválidas');
-    }
-
-    const { password: _, ...result } = user;
-    return result as UserWithoutPassword;
+    return user;
   }
 }

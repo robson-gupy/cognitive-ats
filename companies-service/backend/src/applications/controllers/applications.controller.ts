@@ -12,7 +12,6 @@ import {
   HttpStatus,
   UseInterceptors,
   UploadedFile,
-  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicationsService } from '../services/applications.service';
@@ -22,12 +21,19 @@ import { UpdateApplicationDto } from '../dto/update-application.dto';
 import { UpdateApplicationScoreDto } from '../dto/update-application-score.dto';
 import { ChangeApplicationStageDto } from '../dto/change-application-stage.dto';
 import { UploadResumeDto } from '../../resumes/dto/upload-resume.dto';
-import { UpdateApplicationEvaluationDto } from '../dto/update-application-evaluation.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AdminAuthGuard } from '../../auth/guards/admin-auth.guard';
-import { LocalAuthGuard } from '../../auth/guards/local-auth.guard';
 import { CandidateEvaluationService } from '../services/candidate-evaluation.service';
 import { ResumeFile } from '../services/applications.service';
+
+// Interface para tipar o request com user
+interface AuthenticatedRequest extends Request {
+  user: {
+    companyId: string;
+    id: string;
+    [key: string]: any;
+  };
+}
 
 @Controller('jobs/:jobId/applications')
 export class ApplicationsController {
@@ -69,7 +75,10 @@ export class ApplicationsController {
 
   @Get()
   @UseGuards(JwtAuthGuard, AdminAuthGuard)
-  async findAll(@Param('jobId') jobId: string, @Request() req) {
+  async findAll(
+    @Param('jobId') jobId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const companyId = req.user.companyId;
     return this.applicationsService.findByJobId(jobId, companyId);
   }
@@ -78,7 +87,7 @@ export class ApplicationsController {
   @UseGuards(JwtAuthGuard, AdminAuthGuard)
   async findAllWithQuestionResponses(
     @Param('jobId') jobId: string,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const companyId = req.user.companyId;
     return this.applicationsService.findByJobIdWithQuestionResponses(
@@ -92,7 +101,7 @@ export class ApplicationsController {
   async findOne(
     @Param('jobId') jobId: string,
     @Param('id') id: string,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const companyId = req.user.companyId;
     return this.applicationsService.findOneByJobId(id, jobId, companyId);
@@ -104,7 +113,7 @@ export class ApplicationsController {
     @Param('jobId') jobId: string,
     @Param('id') id: string,
     @Body() updateApplicationDto: UpdateApplicationDto,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const companyId = req.user.companyId;
     return this.applicationsService.updateByJobId(
@@ -121,7 +130,7 @@ export class ApplicationsController {
   async remove(
     @Param('jobId') jobId: string,
     @Param('id') id: string,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const companyId = req.user.companyId;
     return this.applicationsService.removeByJobId(id, jobId, companyId);
@@ -133,7 +142,7 @@ export class ApplicationsController {
     @Param('jobId') jobId: string,
     @Param('id') id: string,
     @Body() updateScoreDto: UpdateApplicationScoreDto,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const companyId = req.user.companyId;
     return this.applicationsService.updateAiScoreByJobId(
@@ -150,15 +159,17 @@ export class ApplicationsController {
     @Param('jobId') jobId: string,
     @Param('id') id: string,
     @Body() changeStageDto: ChangeApplicationStageDto,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const companyId = req.user.companyId;
+    // Criar um objeto User mínimo com apenas o ID necessário
+    const user = { id: req.user.id } as any;
     return this.applicationStageService.changeStage(
       id,
       jobId,
       companyId,
       changeStageDto,
-      req.user,
+      user,
     );
   }
 
@@ -167,7 +178,7 @@ export class ApplicationsController {
   async getStageHistory(
     @Param('jobId') jobId: string,
     @Param('id') id: string,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     const companyId = req.user.companyId;
     return this.applicationStageService.getStageHistory(id, jobId, companyId);
@@ -190,16 +201,46 @@ export class ApplicationsController {
 
   @Post(':id/evaluate')
   @UseGuards(JwtAuthGuard, AdminAuthGuard)
-  @HttpCode(HttpStatus.OK)
   async evaluateApplication(
-    @Param('id') id: string,
     @Param('jobId') jobId: string,
-    @Query('companyId') companyId: string,
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
   ) {
-    // Primeiro verificar se a application existe e pertence à company
+    const companyId = req.user.companyId;
+    // Verificar se a application existe e pertence à company
     await this.applicationsService.findOneByJobId(id, jobId, companyId);
 
     // Avaliar a application
     return this.candidateEvaluationService.evaluateApplication(id);
+  }
+
+  @Get(':id/evaluation')
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
+  async getCandidateEvaluation(
+    @Param('jobId') jobId: string,
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    const companyId = req.user.companyId;
+    // Buscar a application com os scores de avaliação
+    return this.applicationsService.findOneByJobId(id, jobId, companyId);
+  }
+
+  @Patch(':id/evaluation')
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
+  async updateCandidateEvaluation(
+    @Param('jobId') jobId: string,
+    @Param('id') id: string,
+    @Body() updateEvaluationDto: any,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    const companyId = req.user.companyId;
+    // Atualizar a application com os novos dados de avaliação
+    return this.applicationsService.updateByJobId(
+      id,
+      jobId,
+      updateEvaluationDto,
+      companyId,
+    );
   }
 }
