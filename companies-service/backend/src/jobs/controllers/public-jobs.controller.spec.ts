@@ -73,7 +73,9 @@ describe('PublicJobsController', () => {
       expect(result.data).toEqual(mockJobs);
       expect(result.total).toBe(1);
       expect(result.companyId).toBe('123e4567-e89b-12d3-a456-426614174000');
-      expect(companiesService.findBySlug).toHaveBeenCalledWith(validCompanySlug);
+      expect(companiesService.findBySlug).toHaveBeenCalledWith(
+        validCompanySlug,
+      );
       expect(jobsService.findPublishedJobsByCompany).toHaveBeenCalledWith(
         '123e4567-e89b-12d3-a456-426614174000',
       );
@@ -144,7 +146,9 @@ describe('PublicJobsController', () => {
       expect(result.data).toEqual(mockJob);
       expect(result.companyId).toBe('123e4567-e89b-12d3-a456-426614174000');
       expect(result.message).toBe('Vaga encontrada com sucesso');
-      expect(companiesService.findBySlug).toHaveBeenCalledWith(validCompanySlug);
+      expect(companiesService.findBySlug).toHaveBeenCalledWith(
+        validCompanySlug,
+      );
       expect(jobsService.findPublicJobBySlug).toHaveBeenCalledWith(
         validCompanySlug,
         validJobSlug,

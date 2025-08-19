@@ -17,6 +17,17 @@ import { ApplicationQuestionResponse } from './application-question-response.ent
 import { JobStage } from '../../jobs/entities/job-stage.entity';
 import { ApplicationStageHistory } from './application-stage-history.entity';
 
+// Interface para os detalhes de avaliação
+export interface EvaluationDetails {
+  overall_score?: number;
+  question_responses_score?: number;
+  education_score?: number;
+  experience_score?: number;
+  provider?: string;
+  model?: string;
+  [key: string]: unknown;
+}
+
 @Entity('applications')
 @Index(['jobId'])
 @Index(['companyId'])
@@ -117,7 +128,7 @@ export class Application {
     type: 'jsonb',
     nullable: true,
   })
-  evaluationDetails: any;
+  evaluationDetails: EvaluationDetails;
 
   @Column({
     name: 'evaluated_at',

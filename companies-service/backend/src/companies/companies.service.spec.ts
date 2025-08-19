@@ -75,10 +75,10 @@ describe('CompaniesService', () => {
     it('should create a company successfully with slug provided', async () => {
       // Mock: CNPJ não existe
       mockRepository.findOne.mockResolvedValueOnce(null);
-      
+
       // Mock: Slug não existe
       mockRepository.findOne.mockResolvedValueOnce(null);
-      
+
       // Mock: Criação da empresa
       mockRepository.create.mockReturnValue(mockCompany);
       mockRepository.save.mockResolvedValue(mockCompany);
@@ -100,17 +100,20 @@ describe('CompaniesService', () => {
       const dtoWithoutSlug = { ...createCompanyDto };
       delete dtoWithoutSlug.slug;
 
-      const mockCompanyWithoutSlug = { ...mockCompany, slug: 'auto-generated-slug' };
+      const mockCompanyWithoutSlug = {
+        ...mockCompany,
+        slug: 'auto-generated-slug',
+      };
 
       // Mock: CNPJ não existe
       mockRepository.findOne.mockResolvedValueOnce(null);
-      
+
       // Mock: Buscar slugs existentes
       mockRepository.find.mockResolvedValueOnce([]);
-      
+
       // Mock: Função de geração de slug
       (generateUniqueSlug as jest.Mock).mockReturnValue('auto-generated-slug');
-      
+
       // Mock: Criação da empresa
       mockRepository.create.mockReturnValue(mockCompanyWithoutSlug);
       mockRepository.save.mockResolvedValue(mockCompanyWithoutSlug);
@@ -121,7 +124,7 @@ describe('CompaniesService', () => {
       expect(generateUniqueSlug).toHaveBeenCalledWith(
         null,
         dtoWithoutSlug.name,
-        []
+        [],
       );
       expect(mockRepository.create).toHaveBeenCalledWith({
         ...dtoWithoutSlug,
@@ -134,7 +137,7 @@ describe('CompaniesService', () => {
       mockRepository.findOne.mockResolvedValueOnce(mockCompany);
 
       await expect(service.create(createCompanyDto)).rejects.toThrow(
-        ConflictException
+        ConflictException,
       );
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
@@ -147,12 +150,12 @@ describe('CompaniesService', () => {
     it('should throw ConflictException when slug already exists', async () => {
       // Mock: CNPJ não existe
       mockRepository.findOne.mockResolvedValueOnce(null);
-      
+
       // Mock: Slug já existe
       mockRepository.findOne.mockResolvedValueOnce(mockCompany);
 
       await expect(service.create(createCompanyDto)).rejects.toThrow(
-        ConflictException
+        ConflictException,
       );
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
@@ -174,12 +177,12 @@ describe('CompaniesService', () => {
 
       // Mock: CNPJ não existe
       mockRepository.findOne.mockResolvedValueOnce(null);
-      
+
       // Mock: Buscar slugs existentes
       mockRepository.find.mockResolvedValueOnce(
-        existingSlugs.map(slug => ({ 
-          id: '1', 
-          name: 'Test Company', 
+        existingSlugs.map((slug) => ({
+          id: '1',
+          name: 'Test Company',
           corporateName: 'Test Company LTDA',
           cnpj: '12345678901234',
           businessArea: 'Technology',
@@ -189,13 +192,13 @@ describe('CompaniesService', () => {
           updatedAt: new Date(),
           users: [],
           departments: [],
-          jobs: []
-        }))
+          jobs: [],
+        })),
       );
-      
+
       // Mock: Função de geração de slug
       (generateUniqueSlug as jest.Mock).mockReturnValue('test-company-2');
-      
+
       // Mock: Criação da empresa
       mockRepository.create.mockReturnValue(mockCompanyWithNewSlug);
       mockRepository.save.mockResolvedValue(mockCompanyWithNewSlug);
@@ -206,7 +209,7 @@ describe('CompaniesService', () => {
       expect(generateUniqueSlug).toHaveBeenCalledWith(
         null,
         dtoWithoutSlug.name,
-        existingSlugs
+        existingSlugs,
       );
     });
 
@@ -218,12 +221,12 @@ describe('CompaniesService', () => {
 
       // Mock: CNPJ não existe
       mockRepository.findOne.mockResolvedValueOnce(null);
-      
+
       // Mock: Buscar slugs existentes (incluindo o slug base)
       mockRepository.find.mockResolvedValueOnce([
-        { 
-          id: '1', 
-          name: 'Test Company', 
+        {
+          id: '1',
+          name: 'Test Company',
           corporateName: 'Test Company LTDA',
           cnpj: '12345678901234',
           businessArea: 'Technology',
@@ -233,13 +236,13 @@ describe('CompaniesService', () => {
           updatedAt: new Date(),
           users: [],
           departments: [],
-          jobs: []
-        }
+          jobs: [],
+        },
       ]);
-      
+
       // Mock: Função de geração de slug
       (generateUniqueSlug as jest.Mock).mockReturnValue('test-company-1');
-      
+
       // Mock: Criação da empresa
       mockRepository.create.mockReturnValue(mockCompanyWithoutSlug);
       mockRepository.save.mockResolvedValue(mockCompanyWithoutSlug);
@@ -250,7 +253,7 @@ describe('CompaniesService', () => {
       expect(generateUniqueSlug).toHaveBeenCalledWith(
         null,
         dtoWithoutSlug.name,
-        ['test-company']
+        ['test-company'],
       );
     });
   });
@@ -258,8 +261,8 @@ describe('CompaniesService', () => {
   describe('findAll', () => {
     it('should return all companies', async () => {
       const mockCompanies = [
-        { 
-          id: '1', 
+        {
+          id: '1',
           name: 'Company 1',
           corporateName: 'Company 1 LTDA',
           cnpj: '12345678901234',
@@ -270,10 +273,10 @@ describe('CompaniesService', () => {
           updatedAt: new Date(),
           users: [],
           departments: [],
-          jobs: []
+          jobs: [],
         },
-        { 
-          id: '2', 
+        {
+          id: '2',
           name: 'Company 2',
           corporateName: 'Company 2 LTDA',
           cnpj: '12345678901235',
@@ -284,7 +287,7 @@ describe('CompaniesService', () => {
           updatedAt: new Date(),
           users: [],
           departments: [],
-          jobs: []
+          jobs: [],
         },
       ];
 
@@ -299,8 +302,8 @@ describe('CompaniesService', () => {
 
   describe('findOne', () => {
     it('should return a company by id', async () => {
-      const mockCompany = { 
-        id: '1', 
+      const mockCompany = {
+        id: '1',
         name: 'Company 1',
         corporateName: 'Company 1 LTDA',
         cnpj: '12345678901234',
@@ -311,7 +314,7 @@ describe('CompaniesService', () => {
         updatedAt: new Date(),
         users: [],
         departments: [],
-        jobs: []
+        jobs: [],
       };
 
       mockRepository.findOne.mockResolvedValue(mockCompany);
@@ -328,8 +331,8 @@ describe('CompaniesService', () => {
 
   describe('findBySlug', () => {
     it('should return a company by slug', async () => {
-      const mockCompany = { 
-        id: '1', 
+      const mockCompany = {
+        id: '1',
         name: 'Company 1',
         corporateName: 'Company 1 LTDA',
         cnpj: '12345678901234',
@@ -340,7 +343,7 @@ describe('CompaniesService', () => {
         updatedAt: new Date(),
         users: [],
         departments: [],
-        jobs: []
+        jobs: [],
       };
 
       mockRepository.findOne.mockResolvedValue(mockCompany);
@@ -368,7 +371,7 @@ describe('CompaniesService', () => {
     });
 
     it('should return false when slug is not available', async () => {
-      const mockCompany = { 
+      const mockCompany = {
         id: '1',
         name: 'Company 1',
         corporateName: 'Company 1 LTDA',
@@ -380,7 +383,7 @@ describe('CompaniesService', () => {
         updatedAt: new Date(),
         users: [],
         departments: [],
-        jobs: []
+        jobs: [],
       };
 
       mockRepository.findOne.mockResolvedValue(mockCompany);

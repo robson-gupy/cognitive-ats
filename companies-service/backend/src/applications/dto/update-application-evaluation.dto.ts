@@ -6,6 +6,17 @@ import {
   IsDateString,
 } from 'class-validator';
 
+// Interface para os detalhes de avaliação
+interface EvaluationDetails {
+  overall_score?: number;
+  question_responses_score?: number;
+  education_score?: number;
+  experience_score?: number;
+  provider?: string;
+  model?: string;
+  [key: string]: unknown;
+}
+
 export class UpdateApplicationEvaluationDto {
   @IsOptional()
   @IsNumber()
@@ -33,7 +44,7 @@ export class UpdateApplicationEvaluationDto {
 
   @IsOptional()
   @IsObject()
-  evaluationDetails?: any;
+  evaluationDetails?: EvaluationDetails;
 
   @IsOptional()
   @IsDateString()

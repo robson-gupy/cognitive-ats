@@ -17,6 +17,13 @@ import { CandidateEvaluationService } from './candidate-evaluation.service';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 
+// Interface para o arquivo de currículo
+export interface ResumeFile {
+  originalname: string;
+  mimetype: string;
+  buffer: Buffer;
+}
+
 @Injectable()
 export class ApplicationsService {
   /**
@@ -127,7 +134,7 @@ export class ApplicationsService {
 
   async createWithResume(
     createApplicationDto: CreateApplicationDto,
-    resumeFile: any,
+    resumeFile: ResumeFile,
   ): Promise<Application> {
     // Buscar a job para obter o companyId
     const job = await this.jobsRepository.findOne({

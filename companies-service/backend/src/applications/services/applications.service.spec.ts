@@ -2,13 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApplicationsService } from './applications.service';
-import { Application } from './entities/application.entity';
-import { Job } from './entities/job.entity';
-import { CreateApplicationDto } from './dto/create-application.dto';
-import { UpdateApplicationScoreDto } from './dto/update-application-score.dto';
+import { Application } from '../entities/application.entity';
+import { Job } from '../../jobs/entities/job.entity';
+import { CreateApplicationDto } from '../dto/create-application.dto';
+import { UpdateApplicationScoreDto } from '../dto/update-application-score.dto';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { S3ClientService } from '../shared/services/s3-client.service';
-import { SqsClientService } from '../shared/services/sqs-client.service';
+import { S3ClientService } from '../../shared/services/s3-client.service';
+import { SqsClientService } from '../../shared/services/sqs-client.service';
 import { CandidateEvaluationService } from './candidate-evaluation.service';
 
 describe('ApplicationsService', () => {

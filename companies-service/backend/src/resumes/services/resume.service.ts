@@ -8,6 +8,7 @@ import { UpdateResumeDto } from '../dto/update-resume.dto';
 import { AiServiceClient } from '../../shared/ai/ai-service.client';
 
 import { QuestionResponsesService } from '../../applications/services/question-responses.service';
+import { EvaluationDetails } from '../../applications/entities/application.entity';
 
 @Injectable()
 export class ResumeService {
@@ -178,9 +179,10 @@ export class ResumeService {
         experienceScore: Number(evaluationResult.experience_score),
         evaluationProvider: evaluationResult.provider,
         evaluationModel: evaluationResult.model,
-        evaluationDetails: evaluationResult.evaluation_details,
+        evaluationDetails:
+          evaluationResult.evaluation_details as EvaluationDetails,
         evaluatedAt: new Date(),
-      };
+      } as any;
 
       console.log(
         `🔄 Atualizando aplicação ${applicationId} com scores:`,

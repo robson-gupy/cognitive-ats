@@ -4,7 +4,25 @@ import { UsersService } from '../users/users.service';
 import { RolesService } from '../roles/roles.service';
 import { LoginDto } from './dto/login.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
+import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
+
+// Interface para o usuário validado sem senha
+interface ValidatedUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  companyId: string;
+  company: User['company'];
+  departmentId: string | null;
+  department: User['department'];
+  roleId: string | null;
+  role: User['role'];
+  createdAt: Date;
+  updatedAt: Date;
+  createdJobs: User['createdJobs'];
+}
 
 @Injectable()
 export class AuthService {
@@ -14,11 +32,14 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<ValidatedUser | null> {
     const user = await this.usersService.findByEmail(email);
     if (user && (await bcrypt.compare(password, user.password))) {
-      const { password, ...result } = user;
-      return result;
+      const { password: _, ...result } = user;
+      return result as ValidatedUser;
     }
     return null;
   }
@@ -63,7 +84,7 @@ export class AuthService {
         lastName: user.lastName,
         email: user.email,
         companyId: user.companyId,
-        roleId: user.roleId,
+        roleId: user.roleId || undefined,
         roleCode: roleCode || undefined,
       },
     };

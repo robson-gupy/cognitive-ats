@@ -25,78 +25,97 @@ describe('Slug Utils', () => {
     it('should generate unique slug without prefix when prefix is null', () => {
       const existingSlugs = ['test-company'];
       const result = generateUniqueSlug(null, 'Test Company', existingSlugs);
-      
+
       expect(result).toBe('test-company-1');
     });
 
     it('should generate unique slug without prefix when prefix is undefined', () => {
       const existingSlugs = ['test-company'];
-      const result = generateUniqueSlug(undefined, 'Test Company', existingSlugs);
-      
+      const result = generateUniqueSlug(
+        undefined,
+        'Test Company',
+        existingSlugs,
+      );
+
       expect(result).toBe('test-company-1');
     });
 
     it('should generate unique slug without prefix when prefix is empty string', () => {
       const existingSlugs = ['test-company'];
       const result = generateUniqueSlug('', 'Test Company', existingSlugs);
-      
+
       expect(result).toBe('test-company-1');
     });
 
     it('should generate unique slug without prefix when prefix is whitespace', () => {
       const existingSlugs = ['test-company'];
       const result = generateUniqueSlug('   ', 'Test Company', existingSlugs);
-      
+
       expect(result).toBe('test-company-1');
     });
 
     it('should generate unique slug with prefix when prefix is provided', () => {
       const existingSlugs = ['gupy-test-company'];
       const result = generateUniqueSlug('gupy', 'Test Company', existingSlugs);
-      
+
       expect(result).toBe('gupy-test-company-1');
     });
 
     it('should generate base slug when no conflicts exist', () => {
       const existingSlugs: string[] = [];
       const result = generateUniqueSlug(null, 'Test Company', existingSlugs);
-      
+
       expect(result).toBe('test-company');
     });
 
     it('should generate base slug with prefix when no conflicts exist', () => {
       const existingSlugs: string[] = [];
       const result = generateUniqueSlug('gupy', 'Test Company', existingSlugs);
-      
+
       expect(result).toBe('gupy-test-company');
     });
 
     it('should handle multiple conflicts without prefix', () => {
-      const existingSlugs = ['test-company', 'test-company-1', 'test-company-2'];
+      const existingSlugs = [
+        'test-company',
+        'test-company-1',
+        'test-company-2',
+      ];
       const result = generateUniqueSlug(null, 'Test Company', existingSlugs);
-      
+
       expect(result).toBe('test-company-3');
     });
 
     it('should handle multiple conflicts with prefix', () => {
-      const existingSlugs = ['gupy-test-company', 'gupy-test-company-1', 'gupy-test-company-2'];
+      const existingSlugs = [
+        'gupy-test-company',
+        'gupy-test-company-1',
+        'gupy-test-company-2',
+      ];
       const result = generateUniqueSlug('gupy', 'Test Company', existingSlugs);
-      
+
       expect(result).toBe('gupy-test-company-3');
     });
 
     it('should handle complex text with special characters', () => {
       const existingSlugs = ['gupy-empresa-tecnologia-ltda'];
-      const result = generateUniqueSlug('gupy', 'Empresa & Tecnologia Ltda.', existingSlugs);
-      
+      const result = generateUniqueSlug(
+        'gupy',
+        'Empresa & Tecnologia Ltda.',
+        existingSlugs,
+      );
+
       expect(result).toBe('gupy-empresa-tecnologia-ltda-1');
     });
 
     it('should handle very long text', () => {
-      const longText = 'Esta é uma empresa com um nome muito longo que deve ser convertido em um slug apropriado';
+      const longText =
+        'Esta é uma empresa com um nome muito longo que deve ser convertido em um slug apropriado';
       const result = generateUniqueSlug('gupy', longText, []);
-      
-      expect(result).toBe('gupy-esta-e-uma-empresa-com-um-nome-muito-longo-que-deve-ser-convertido-em-um-slug-apropriado');
+
+      expect(result).toBe(
+        'gupy-esta-e-uma-empresa-com-um-nome-muito-longo-que-deve-ser-convertido-em-um-slug-apropriado',
+      );
     });
   });
 });

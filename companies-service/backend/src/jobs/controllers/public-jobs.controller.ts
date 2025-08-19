@@ -77,7 +77,10 @@ export class PublicJobsController {
       const company = await this.companiesService.findBySlug(companySlug);
 
       // Buscar vaga específica pelo slug
-      const job = await this.jobsService.findPublicJobBySlug(companySlug, jobSlug);
+      const job = await this.jobsService.findPublicJobBySlug(
+        companySlug,
+        jobSlug,
+      );
 
       return {
         success: true,

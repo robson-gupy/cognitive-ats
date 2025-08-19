@@ -3,6 +3,28 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../../users/users.service';
 
+// Interface para o payload JWT
+interface JwtPayload {
+  sub: string;
+  email: string;
+  companyId: string;
+  roleId?: string;
+  roleCode?: string;
+  iat?: number;
+  exp?: number;
+}
+
+// Interface para o usuário retornado pela validação
+interface ValidatedJwtUser {
+  id: string;
+  sub: string;
+  email: string;
+  companyId: string;
+  roleId?: string;
+  roleCode?: string;
+  company: unknown;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private usersService: UsersService) {
@@ -13,7 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload): Promise<ValidatedJwtUser> {
     try {
       // Usar UsersService para buscar usuário (inclui validação de empresa)
       const user = await this.usersService.findOne(

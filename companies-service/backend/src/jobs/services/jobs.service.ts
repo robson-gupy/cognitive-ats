@@ -3,21 +3,86 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import {InjectRepository} from '@nestjs/typeorm';
-import {Repository} from 'typeorm';
-import {Job, JobStatus} from '../entities/job.entity';
-import {JobQuestion} from '../entities/job-question.entity';
-import {JobStage} from '../entities/job-stage.entity';
-import {JobLog} from '../entities/job-log.entity';
-import {CreateJobDto} from '../dto/create-job.dto';
-import {UpdateJobDto} from '../dto/update-job.dto';
-import {CreateJobWithAiDto} from '../dto/create-job-with-ai.dto';
-import {User} from '../../users/entities/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Job, JobStatus } from '../entities/job.entity';
+import { JobQuestion } from '../entities/job-question.entity';
+import { JobStage } from '../entities/job-stage.entity';
+import { JobLog } from '../entities/job-log.entity';
+import { CreateJobDto } from '../dto/create-job.dto';
+import { UpdateJobDto } from '../dto/update-job.dto';
+import { CreateJobWithAiDto } from '../dto/create-job-with-ai.dto';
+import { User } from '../../users/entities/user.entity';
 import {
   AiServiceClient,
   JobCreationRequest,
 } from '../../shared/ai/ai-service.client';
-import {generateUniqueSlug} from '../../shared/utils/slug.util';
+import { generateUniqueSlug } from '../../shared/utils/slug.util';
+
+// Interface para o resultado da query SQL
+interface JobQueryResult {
+  id: string;
+  title: string;
+  description: string;
+  requirements: string;
+  expirationDate: Date | null;
+  status: string;
+  departmentId: string | null;
+  slug: string;
+  publishedAt: Date | null;
+  departmentName: string | null;
+  departmentDescription: string | null;
+}
+
+// Interface para o job retornado pela função
+export interface PublishedJob {
+  id: string;
+  title: string;
+  description: string;
+  requirements: string;
+  expirationDate: Date | null;
+  status: string;
+  departmentId: string | null;
+  slug: string;
+  publishedAt: Date | null;
+  department: {
+    id: string;
+    name: string;
+    description: string;
+  } | null;
+}
+
+// Interface para o job público retornado pela função
+export interface PublicJob extends PublishedJob {
+  // Herda de PublishedJob, mas pode ter campos adicionais se necessário
+}
+
+// Interfaces para os dados de AI
+interface AiQuestion {
+  question: string;
+  isRequired: boolean;
+}
+
+interface AiStage {
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+// Interfaces para dados de entrada das funções de update
+interface UpdateQuestionData {
+  question: string;
+  orderIndex?: number;
+  isRequired?: boolean;
+}
+
+interface UpdateStageData {
+  id?: string;
+  name: string;
+  description?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
 
 @Injectable()
 export class JobsService {
@@ -31,8 +96,7 @@ export class JobsService {
     @InjectRepository(JobLog)
     private jobLogsRepository: Repository<JobLog>,
     private aiServiceClient: AiServiceClient,
-  ) {
-  }
+  ) {}
 
   async create(createJobDto: CreateJobDto, user: User): Promise<Job> {
     console.log('Creating job with user:', {
@@ -46,7 +110,7 @@ export class JobsService {
 
     // Se não foi fornecido um slug, gerar um baseado no título
     if (!createJobDto.slug) {
-      const allSlugs = await this.jobsRepository.find({select: ['slug']});
+      const allSlugs = await this.jobsRepository.find({ select: ['slug'] });
       const existingSlugs = allSlugs.map((j) => j.slug);
       createJobDto.slug = generateUniqueSlug(
         user.company.slug,
@@ -57,7 +121,7 @@ export class JobsService {
 
     // Verificar se o slug já existe
     const existingSlug = await this.jobsRepository.findOne({
-      where: {slug: createJobDto.slug},
+      where: { slug: createJobDto.slug },
     });
 
     if (existingSlug) {
@@ -197,12 +261,12 @@ export class JobsService {
       requirements: aiResponse.requirements,
       status: JobStatus.DRAFT,
       slug: generateUniqueSlug(user.company.slug, aiResponse.title, []), // Gerar slug baseado no título
-      questions: aiResponse.questions?.map((q: any, index) => ({
+      questions: aiResponse.questions?.map((q: AiQuestion, index) => ({
         question: q.question,
         isRequired: q.isRequired,
         orderIndex: index,
       })),
-      stages: aiResponse.stages?.map((s: any, index) => ({
+      stages: aiResponse.stages?.map((s: AiStage, index) => ({
         name: s.name,
         description: s.description,
         isActive: s.isActive,
@@ -219,9 +283,9 @@ export class JobsService {
   async findAll(userCompanyId: string): Promise<Job[]> {
     // Primeiro, buscar todos os jobs
     const jobs = await this.jobsRepository.find({
-      where: {companyId: userCompanyId},
+      where: { companyId: userCompanyId },
       relations: ['company', 'department', 'createdBy', 'questions', 'stages'],
-      order: {createdAt: 'DESC'},
+      order: { createdAt: 'DESC' },
     });
 
     console.log(`Found ${jobs.length} jobs for company ${userCompanyId}`);
@@ -302,7 +366,7 @@ export class JobsService {
     user: User,
   ): Promise<Job> {
     const job = await this.findOne(id, user.companyId);
-    const oldValues = {...job};
+    const oldValues = { ...job };
     const logsToCreate: Array<{
       description: string;
       fieldName?: string;
@@ -324,7 +388,7 @@ export class JobsService {
     if (updateJobDto.slug && updateJobDto.slug !== job.slug) {
       // Verificar se o slug já existe
       const existingSlug = await this.jobsRepository.findOne({
-        where: {slug: updateJobDto.slug},
+        where: { slug: updateJobDto.slug },
       });
 
       if (existingSlug) {
@@ -346,7 +410,7 @@ export class JobsService {
       updateJobDto.title &&
       updateJobDto.title !== job.title
     ) {
-      const allSlugs = await this.jobsRepository.find({select: ['slug']});
+      const allSlugs = await this.jobsRepository.find({ select: ['slug'] });
       const existingSlugs = allSlugs.map((j) => j.slug);
       const newSlug = generateUniqueSlug('', updateJobDto.title, existingSlugs);
 
@@ -462,8 +526,8 @@ export class JobsService {
         // Só atualizar stages se realmente houver mudanças
         if (updateJobDto.stages && updateJobDto.stages.length > 0) {
           const existingStages = await this.jobStagesRepository.find({
-            where: {jobId: job.id},
-            order: {orderIndex: 'ASC'},
+            where: { jobId: job.id },
+            order: { orderIndex: 'ASC' },
           });
 
           // Verificar se há mudanças reais nos stages
@@ -484,7 +548,7 @@ export class JobsService {
 
   async updateQuestions(
     jobId: string,
-    questions: any[],
+    questions: UpdateQuestionData[],
     userId: string,
   ): Promise<void> {
     // Remover perguntas existentes usando query direta para evitar problemas de cascade
@@ -495,7 +559,7 @@ export class JobsService {
 
     // Criar novas perguntas
     if (questions.length > 0) {
-      const newQuestions = questions.map((q: any, index) =>
+      const newQuestions = questions.map((q: UpdateQuestionData, index) =>
         this.jobQuestionsRepository.create({
           question: q.question,
           orderIndex: q.orderIndex ?? index,
@@ -516,13 +580,13 @@ export class JobsService {
 
   async updateStages(
     jobId: string,
-    stages: any[],
+    stages: UpdateStageData[],
     userId: string,
   ): Promise<void> {
     // Buscar stages existentes
     const existingStages = await this.jobStagesRepository.find({
-      where: {jobId},
-      order: {orderIndex: 'ASC'},
+      where: { jobId },
+      order: { orderIndex: 'ASC' },
     });
 
     // Se não há stages para atualizar, não fazer nada
@@ -530,8 +594,8 @@ export class JobsService {
       return;
     }
 
-    const stagesToUpdate: any[] = [];
-    const stagesToCreate: any[] = [];
+    const stagesToUpdate: UpdateStageData[] = [];
+    const stagesToCreate: UpdateStageData[] = [];
     const stagesToDelete: string[] = [];
 
     // Mapear stages existentes por ID
@@ -540,7 +604,7 @@ export class JobsService {
     );
 
     // Processar stages enviados
-    stages.forEach((stageData: any, index) => {
+    stages.forEach((stageData: UpdateStageData, index) => {
       if (stageData.id && existingStagesMap.has(stageData.id)) {
         // Stage existente - atualizar apenas se houver mudanças
         const existingStage = existingStagesMap.get(stageData.id)!;
@@ -571,7 +635,6 @@ export class JobsService {
           description: stageData.description,
           orderIndex: stageData.orderIndex ?? index,
           isActive: stageData.isActive ?? true,
-          jobId,
         });
       }
     });
@@ -637,7 +700,7 @@ export class JobsService {
 
   private hasStageChanges(
     existingStages: JobStage[],
-    newStages: any[],
+    newStages: UpdateStageData[],
   ): boolean {
     // Se o número de stages mudou, há mudanças
     if (existingStages.length !== newStages.length) {
@@ -667,7 +730,7 @@ export class JobsService {
         existingStage.name !== newStage.name ||
         existingStage.description !== newStage.description ||
         existingStage.orderIndex !==
-        (newStage.orderIndex ?? existingStage.orderIndex) ||
+          (newStage.orderIndex ?? existingStage.orderIndex) ||
         existingStage.isActive !== (newStage.isActive ?? existingStage.isActive)
       ) {
         return true;
@@ -710,9 +773,9 @@ export class JobsService {
   async getLogs(jobId: string, userCompanyId: string): Promise<JobLog[]> {
     await this.findOne(jobId, userCompanyId); // Verificar permissões
     return await this.jobLogsRepository.find({
-      where: {jobId},
+      where: { jobId },
       relations: ['user'],
-      order: {createdAt: 'DESC'},
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -766,8 +829,8 @@ export class JobsService {
     return this.findOne(id, user.companyId);
   }
 
-  async findPublishedJobsByCompany(companyId: string): Promise<any[]> {
-    const jobs = await this.jobsRepository.query(
+  async findPublishedJobsByCompany(companyId: string): Promise<PublishedJob[]> {
+    const jobs: JobQueryResult[] = await this.jobsRepository.query(
       `
           SELECT j.id,
                  j.title,
@@ -789,28 +852,33 @@ export class JobsService {
       [companyId, JobStatus.PUBLISHED],
     );
 
-    return jobs.map((job) => ({
-      id: job.id,
-      title: job.title,
-      description: job.description,
-      requirements: job.requirements,
-      expirationDate: job.expirationDate,
-      status: job.status,
-      departmentId: job.departmentId,
-      slug: job.slug,
-      publishedAt: job.publishedAt,
-      department: job.departmentId
-        ? {
-          id: job.departmentId,
-          name: job.departmentName,
-          description: job.departmentDescription,
-        }
-        : null,
-    }));
+    return jobs.map(
+      (job: JobQueryResult): PublishedJob => ({
+        id: job.id,
+        title: job.title,
+        description: job.description,
+        requirements: job.requirements,
+        expirationDate: job.expirationDate,
+        status: job.status,
+        departmentId: job.departmentId,
+        slug: job.slug,
+        publishedAt: job.publishedAt,
+        department: job.departmentId
+          ? {
+              id: job.departmentId,
+              name: job.departmentName || '',
+              description: job.departmentDescription || '',
+            }
+          : null,
+      }),
+    );
   }
 
-  async findPublicJobById(companySlug: string, jobId: string): Promise<any> {
-    const job = await this.jobsRepository.query(
+  async findPublicJobById(
+    companySlug: string,
+    jobId: string,
+  ): Promise<PublicJob> {
+    const job: JobQueryResult[] = await this.jobsRepository.query(
       `
           SELECT j.id,
                  j.title,
@@ -837,7 +905,7 @@ export class JobsService {
       throw new NotFoundException('Vaga não encontrada ou não está publicada');
     }
 
-    const jobData = job[0];
+    const jobData: JobQueryResult = job[0];
     return {
       id: jobData.id,
       title: jobData.title,
@@ -850,16 +918,19 @@ export class JobsService {
       publishedAt: jobData.publishedAt,
       department: jobData.departmentId
         ? {
-          id: jobData.departmentId,
-          name: jobData.departmentName,
-          description: jobData.departmentDescription,
-        }
+            id: jobData.departmentId,
+            name: jobData.departmentName || '',
+            description: jobData.departmentDescription || '',
+          }
         : null,
     };
   }
 
-  async findPublicJobBySlug(companySlug: string, jobSlug: string): Promise<any> {
-    const job = await this.jobsRepository.query(
+  async findPublicJobBySlug(
+    companySlug: string,
+    jobSlug: string,
+  ): Promise<PublicJob> {
+    const job: JobQueryResult[] = await this.jobsRepository.query(
       `
           SELECT j.id,
                  j.title,
@@ -886,7 +957,7 @@ export class JobsService {
       throw new NotFoundException('Vaga não encontrada ou não está publicada');
     }
 
-    const jobData = job[0];
+    const jobData: JobQueryResult = job[0];
     return {
       id: jobData.id,
       title: jobData.title,
@@ -899,10 +970,10 @@ export class JobsService {
       publishedAt: jobData.publishedAt,
       department: jobData.departmentId
         ? {
-          id: jobData.departmentId,
-          name: jobData.departmentName,
-          description: jobData.departmentDescription,
-        }
+            id: jobData.departmentId,
+            name: jobData.departmentName || '',
+            description: jobData.departmentDescription || '',
+          }
         : null,
     };
   }

@@ -27,6 +27,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AdminAuthGuard } from '../../auth/guards/admin-auth.guard';
 import { LocalAuthGuard } from '../../auth/guards/local-auth.guard';
 import { CandidateEvaluationService } from '../services/candidate-evaluation.service';
+import { ResumeFile } from '../services/applications.service';
 
 @Controller('jobs/:jobId/applications')
 export class ApplicationsController {
@@ -53,7 +54,7 @@ export class ApplicationsController {
   async createWithResume(
     @Param('jobId') jobId: string,
     @Body() uploadResumeDto: UploadResumeDto,
-    @UploadedFile() resumeFile: any,
+    @UploadedFile() resumeFile: ResumeFile,
   ) {
     // Criar um objeto com jobId para passar ao serviço
     const createApplicationDto = {

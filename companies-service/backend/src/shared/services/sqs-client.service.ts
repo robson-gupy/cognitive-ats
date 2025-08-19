@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
 
+// Interface genérica para o corpo da mensagem
+interface MessageBody {
+  [key: string]: unknown;
+}
+
 @Injectable()
 export class SqsClientService {
   private readonly logger = new Logger(SqsClientService.name);
@@ -18,7 +23,10 @@ export class SqsClientService {
     });
   }
 
-  async sendMessage(queueName: string, messageBody: any): Promise<void> {
+  async sendMessage(
+    queueName: string,
+    messageBody: MessageBody,
+  ): Promise<void> {
     try {
       // Determinar a URL da fila baseada no ambiente
       let queueUrl: string;

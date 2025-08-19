@@ -2,13 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JobsService } from './jobs.service';
-import { Job, JobStatus } from './entities/job.entity';
-import { JobQuestion } from './entities/job-question.entity';
-import { JobStage } from './entities/job-stage.entity';
-import { JobLog } from './entities/job-log.entity';
-import { Application } from './entities/application.entity';
-import { ApplicationStageHistory } from './entities/application-stage-history.entity';
-import { AiServiceClient } from './ai-service.client';
+import { Job, JobStatus } from '../entities/job.entity';
+import { JobQuestion } from '../entities/job-question.entity';
+import { JobStage } from '../entities/job-stage.entity';
+import { JobLog } from '../entities/job-log.entity';
+import { Application } from '../../applications/entities/application.entity';
+import { ApplicationStageHistory } from '../../applications/entities/application-stage-history.entity';
+import { AiServiceClient } from '../../shared/ai/ai-service.client';
 import { BadRequestException } from '@nestjs/common';
 
 describe('JobsService', () => {

@@ -1,9 +1,27 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ExecutionContext,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { User } from '../../users/entities/user.entity';
+
+// Interface para o usuário autenticado
+interface AuthenticatedUser {
+  id: string;
+  email: string;
+  companyId: string;
+  [key: string]: unknown;
+}
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  handleRequest(err: any, user: any, info: any, context: any) {
+  handleRequest<TUser = AuthenticatedUser>(
+    err: unknown,
+    user: AuthenticatedUser | null,
+    info: unknown,
+    context: ExecutionContext,
+  ): TUser {
     // Se há erro na validação do token
     if (err || !user) {
       throw new UnauthorizedException('Token inválido ou expirado');
@@ -16,6 +34,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       );
     }
 
-    return user;
+    return user as TUser;
   }
 }

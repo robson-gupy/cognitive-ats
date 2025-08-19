@@ -8,9 +8,9 @@ export interface CorsConfig {
 }
 
 export const corsConfig: CorsConfig = {
-  origin: process.env.CORS_ORIGIN 
-    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-    : process.env.NODE_ENV === 'production' 
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+    : process.env.NODE_ENV === 'production'
       ? [
           // Produção: origens específicas
           'https://meudominio.com',
@@ -34,15 +34,19 @@ export const corsConfig: CorsConfig = {
           'https://teste.localhost',
           'https://ai.localhost',
         ],
-  methods: process.env.CORS_METHODS 
-    ? process.env.CORS_METHODS.split(',').map(method => method.trim())
+  methods: process.env.CORS_METHODS
+    ? process.env.CORS_METHODS.split(',').map((method) => method.trim())
     : ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: process.env.CORS_ALLOWED_HEADERS 
-    ? process.env.CORS_ALLOWED_HEADERS.split(',').map(header => header.trim())
+  allowedHeaders: process.env.CORS_ALLOWED_HEADERS
+    ? process.env.CORS_ALLOWED_HEADERS.split(',').map((header) => header.trim())
     : ['Content-Type', 'Authorization'],
-  credentials: process.env.CORS_CREDENTIALS ? process.env.CORS_CREDENTIALS === 'true' : true,
-  optionsSuccessStatus: process.env.CORS_OPTIONS_SUCCESS_STATUS 
+  credentials: process.env.CORS_CREDENTIALS
+    ? process.env.CORS_CREDENTIALS === 'true'
+    : true,
+  optionsSuccessStatus: process.env.CORS_OPTIONS_SUCCESS_STATUS
     ? parseInt(process.env.CORS_OPTIONS_SUCCESS_STATUS) || 204
     : 204,
-  preflightContinue: process.env.CORS_PREFLIGHT_CONTINUE ? process.env.CORS_PREFLIGHT_CONTINUE === 'true' : false,
+  preflightContinue: process.env.CORS_PREFLIGHT_CONTINUE
+    ? process.env.CORS_PREFLIGHT_CONTINUE === 'true'
+    : false,
 };

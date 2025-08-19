@@ -30,7 +30,7 @@ export interface JobCreationResponse {
 }
 
 export interface ResumeData {
-  personal_info?: any;
+  personal_info?: Record<string, unknown>;
   education?: Array<{
     degree: string;
     institution: string;
@@ -82,7 +82,13 @@ export interface CandidateEvaluationResponse {
   experience_score: number;
   provider: string;
   model?: string;
-  evaluation_details?: any;
+  evaluation_details?: Record<string, unknown>;
+}
+
+// Interface para dados de resposta de erro
+interface ErrorResponseData {
+  detail?: string;
+  [key: string]: unknown;
 }
 
 @Injectable()
@@ -120,15 +126,19 @@ export class AiServiceClient {
         questions: responseData.questions,
         stages: responseData.stages,
       } as JobCreationResponse;
-    } catch (error: any) {
-      if (error.response) {
+    } catch (error: unknown) {
+      // Verificar se é um erro do axios
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as {
+          response?: { data?: ErrorResponseData; status?: number };
+        };
         const message =
-          error.response?.data?.detail ||
-          error.message ||
+          axiosError.response?.data?.detail ||
+          (error as any)?.message ||
           'Erro ao comunicar com o AI Service';
         throw new HttpException(
           message,
-          error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+          axiosError.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
       throw new HttpException(
@@ -154,15 +164,19 @@ export class AiServiceClient {
       );
 
       return response.data as CandidateEvaluationResponse;
-    } catch (error: any) {
-      if (error.response) {
+    } catch (error: unknown) {
+      // Verificar se é um erro do axios
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as {
+          response?: { data?: ErrorResponseData; status?: number };
+        };
         const message =
-          error.response?.data?.detail ||
-          error.message ||
+          axiosError.response?.data?.detail ||
+          (error as any)?.message ||
           'Erro ao avaliar candidato com o AI Service';
         throw new HttpException(
           message,
-          error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+          axiosError.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
       throw new HttpException(
