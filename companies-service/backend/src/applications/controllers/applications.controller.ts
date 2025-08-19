@@ -163,7 +163,7 @@ export class ApplicationsController {
   ) {
     const companyId = req.user.companyId;
     // Criar um objeto User mínimo com apenas o ID necessário
-    const user = { id: req.user.id } as any;
+    const user = { id: req.user.sub } as any;
     return this.applicationStageService.changeStage(
       id,
       jobId,
