@@ -17,7 +17,8 @@ import {
   Descriptions,
   Timeline,
   Row,
-  Col
+  Col,
+  Tabs
 } from 'antd';
 import { 
   UserOutlined, 
@@ -56,8 +57,8 @@ const { TextArea } = Input;
 
 interface DraggableApplicationCardProps {
   application: Application;
-  onViewResume?: () => void;
-  onViewResponses?: () => void;
+  onViewResume?: (application: Application) => void;
+  onViewResponses?: (application: Application) => void;
   onCardClick?: () => void;
   hasPendingChange?: boolean;
 }
@@ -231,7 +232,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
             type="text" 
             size="small" 
             icon={<FileTextOutlined />}
-            onClick={onViewResume}
+            onClick={() => onViewResume?.(application)}
             style={{ padding: '0 4px' }}
           >
             CV
@@ -241,7 +242,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
           <Button 
             type="text" 
             size="small" 
-            onClick={onViewResponses}
+            onClick={() => onViewResponses?.(application)}
             style={{ padding: '0 4px' }}
           >
             {application.questionResponses.length} respostas
@@ -377,6 +378,13 @@ export const ApplicationsList: React.FC = () => {
   const [resumeData, setResumeData] = useState<any>(null);
   const [resumeLoading, setResumeLoading] = useState(false);
   
+  // Estado para controlar as abas ativas
+  const [activeTab, setActiveTab] = useState<string>('resume');
+  
+  // Estado para armazenar o histórico de estágios
+  const [stageHistory, setStageHistory] = useState<any[]>([]);
+  const [stageHistoryLoading, setStageHistoryLoading] = useState(false);
+  
   const [changeStageModal, setChangeStageModal] = useState<{
     visible: boolean;
     application: Application | null;
@@ -423,8 +431,13 @@ export const ApplicationsList: React.FC = () => {
           application,
         });
         
-        // Buscar os dados do resume
-        loadResumeData(application.id);
+        // Carregar dados do currículo automaticamente
+        if (application.resumeUrl) {
+          handleViewResume(application);
+        }
+        
+        // Resetar aba para currículo
+        setActiveTab('resume');
       }
     }
   }, [applicationId, applications]);
@@ -437,6 +450,13 @@ export const ApplicationsList: React.FC = () => {
       navigate(newUrl, { replace: true });
     }
   }, [applicationDetailsDrawer.visible, applicationDetailsDrawer.application, jobId, navigate]);
+
+  // useEffect para carregar dados específicos da aba quando for ativada
+  useEffect(() => {
+    if (activeTab === 'stageHistory' && applicationDetailsDrawer.application && stageHistory.length === 0) {
+      loadStageHistory(applicationDetailsDrawer.application.id);
+    }
+  }, [activeTab, applicationDetailsDrawer.application, stageHistory.length]);
 
   // useEffect para lidar com o botão voltar do navegador
   useEffect(() => {
@@ -561,11 +581,51 @@ export const ApplicationsList: React.FC = () => {
     }
   };
 
-  const handleViewResume = (application: Application) => {
+  // Função para carregar dados do resume
+  const handleViewResume = async (application: Application, openInNewTab: boolean = false) => {
     if (application.resumeUrl) {
-      // Abre o CV em uma nova aba usando o path relativo
-      // O Caddyfile já está configurado para redirecionar /cognitive-ats-uploads/* para localstack:4566
-      window.open(application.resumeUrl, '_blank');
+      if (openInNewTab) {
+        // Abrir o CV em uma nova aba
+        window.open(application.resumeUrl, '_blank');
+      } else {
+        // Carregar dados do currículo para exibir no drawer
+        setResumeLoading(true);
+        try {
+          const resumeData = await apiService.getApplicationResume(application.id);
+          setResumeData(resumeData);
+        } catch (error) {
+          console.error('Erro ao carregar resume:', error);
+          message.error('Erro ao carregar dados do currículo');
+        } finally {
+          setResumeLoading(false);
+        }
+      }
+    }
+  };
+
+  // Função para carregar histórico de estágios
+  const loadStageHistory = async (applicationId: string) => {
+    if (!jobId) return;
+    
+    setStageHistoryLoading(true);
+    try {
+      const history = await apiService.getApplicationStageHistory(jobId, applicationId);
+      setStageHistory(history);
+    } catch (error) {
+      console.error('Erro ao carregar histórico de estágios:', error);
+      message.error('Erro ao carregar histórico de estágios');
+    } finally {
+      setStageHistoryLoading(false);
+    }
+  };
+
+  // Função para lidar com mudança de aba
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    
+    // Carregar dados específicos da aba quando for ativada
+    if (key === 'stageHistory' && applicationDetailsDrawer.application) {
+      loadStageHistory(applicationDetailsDrawer.application.id);
     }
   };
 
@@ -576,34 +636,20 @@ export const ApplicationsList: React.FC = () => {
     });
   };
 
+  // Função para abrir o drawer de detalhes da aplicação
   const handleApplicationCardClick = (application: Application) => {
     setApplicationDetailsDrawer({
       visible: true,
       application,
     });
     
-    // Atualizar a URL para incluir o applicationId no path
-    const newUrl = `/jobs/${jobId}/applications/${application.id}`;
-    navigate(newUrl, { replace: true });
-
-    // Buscar os dados do resume
-    loadResumeData(application.id);
-  };
-
-  const loadResumeData = async (applicationId: string) => {
-    try {
-      setResumeLoading(true);
-      setResumeData(null);
-      
-      const resume = await apiService.getApplicationResume(applicationId);
-      setResumeData(resume);
-    } catch (error) {
-      console.error('Erro ao carregar dados do resume:', error);
-      // Não mostrar erro para o usuário, apenas log
-      setResumeData(null);
-    } finally {
-      setResumeLoading(false);
+    // Carregar dados do currículo automaticamente
+    if (application.resumeUrl) {
+      handleViewResume(application);
     }
+    
+    // Resetar aba para currículo
+    setActiveTab('resume');
   };
 
   const handleCloseApplicationDrawer = () => {
@@ -868,160 +914,251 @@ export const ApplicationsList: React.FC = () => {
               </Row>
             </Card>
 
-            {/* Resume/CV */}
-            {resumeData && (
-              <Card size="small" style={{ marginBottom: '24px' }} title="Currículo">
-                {resumeData.summary && (
-                  <div style={{ marginBottom: '16px' }}>
-                    <Text strong>Resumo:</Text>
-                    <div style={{ marginTop: '8px', padding: '12px', backgroundColor: '#fafafa', borderRadius: '6px' }}>
-                      {resumeData.summary}
-                    </div>
-                  </div>
-                )}
-
-                {resumeData.professionalExperiences && resumeData.professionalExperiences.length > 0 && (
-                  <div style={{ marginBottom: '16px' }}>
-                    <Text strong>Experiência Profissional:</Text>
-                    <Timeline style={{ marginTop: '8px' }}>
-                      {resumeData.professionalExperiences.map((exp: any) => (
-                        <Timeline.Item 
-                          key={exp.id} 
-                          dot={<TrophyOutlined style={{ color: '#1890ff' }} />}
-                        >
-                          <div>
-                            <Text strong>{exp.position}</Text>
-                            <br />
-                            <Text type="secondary">{exp.company}</Text>
-                            <br />
-                            <Text type="secondary">
-                              {new Date(exp.startDate).toLocaleDateString('pt-BR')} - 
-                              {exp.endDate ? new Date(exp.endDate).toLocaleDateString('pt-BR') : 'Atual'}
-                            </Text>
-                            {exp.description && (
-                              <div style={{ marginTop: '8px', color: '#666' }}>
-                                {exp.description}
+            {/* Abas para Currículo e Histórico */}
+            <Tabs 
+              activeKey={activeTab} 
+              onChange={handleTabChange}
+              items={[
+                {
+                  key: 'resume',
+                  label: (
+                    <span>
+                      <FileTextOutlined style={{ marginRight: '8px' }} />
+                      Currículo
+                    </span>
+                  ),
+                  children: (
+                    <div>
+                      {/* Resume/CV */}
+                      {resumeData && (
+                        <Card size="small" style={{ marginBottom: '24px' }} title="Currículo">
+                          {resumeData.summary && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <Text strong>Resumo:</Text>
+                              <div style={{ marginTop: '8px', padding: '12px', backgroundColor: '#fafafa', borderRadius: '6px' }}>
+                                {resumeData.summary}
                               </div>
-                            )}
-                          </div>
-                        </Timeline.Item>
-                      ))}
-                    </Timeline>
-                  </div>
-                )}
-
-                {resumeData.academicFormations && resumeData.academicFormations.length > 0 && (
-                  <div style={{ marginBottom: '16px' }}>
-                    <Text strong>Formação Acadêmica:</Text>
-                    <Timeline style={{ marginTop: '8px' }}>
-                      {resumeData.academicFormations.map((formation: any) => (
-                        <Timeline.Item 
-                          key={formation.id} 
-                          dot={<BookOutlined style={{ color: '#52c41a' }} />}
-                        >
-                          <div>
-                            <Text strong>{formation.course}</Text>
-                            <br />
-                            <Text type="secondary">{formation.institution}</Text>
-                            <br />
-                            <Text type="secondary">
-                              {formation.degree} • {new Date(formation.startDate).toLocaleDateString('pt-BR')} - 
-                              {formation.endDate ? new Date(formation.endDate).toLocaleDateString('pt-BR') : 'Atual'}
-                            </Text>
-                          </div>
-                        </Timeline.Item>
-                      ))}
-                    </Timeline>
-                  </div>
-                )}
-
-                {resumeData.achievements && resumeData.achievements.length > 0 && (
-                  <div style={{ marginBottom: '16px' }}>
-                    <Text strong>Conquistas:</Text>
-                    <div style={{ marginTop: '8px' }}>
-                      {resumeData.achievements.map((achievement: any) => (
-                        <div key={achievement.id} style={{ 
-                          padding: '8px 12px', 
-                          backgroundColor: '#fff7e6', 
-                          borderRadius: '6px', 
-                          marginBottom: '8px',
-                          border: '1px solid #ffe58f'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <StarOutlined style={{ color: '#faad14', marginRight: '8px' }} />
-                            <div>
-                              <Text strong>{achievement.title}</Text>
-                              {achievement.year && (
-                                <Text type="secondary" style={{ marginLeft: '8px' }}>
-                                  ({achievement.year})
-                                </Text>
-                              )}
-                            </div>
-                          </div>
-                          {achievement.description && (
-                            <div style={{ marginTop: '4px', color: '#666', fontSize: '12px' }}>
-                              {achievement.description}
                             </div>
                           )}
-                        </div>
-                      ))}
+
+                          {resumeData.professionalExperiences && resumeData.professionalExperiences.length > 0 && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <Text strong>Experiência Profissional:</Text>
+                              <Timeline style={{ marginTop: '8px' }}>
+                                {resumeData.professionalExperiences.map((exp: any) => (
+                                  <Timeline.Item 
+                                    key={exp.id} 
+                                    dot={<TrophyOutlined style={{ color: '#1890ff' }} />}
+                                  >
+                                    <div>
+                                      <Text strong>{exp.position}</Text>
+                                      <br />
+                                      <Text type="secondary">{exp.company}</Text>
+                                      <br />
+                                      <Text type="secondary">
+                                        {new Date(exp.startDate).toLocaleDateString('pt-BR')} - 
+                                        {exp.endDate ? new Date(exp.endDate).toLocaleDateString('pt-BR') : 'Atual'}
+                                      </Text>
+                                      {exp.description && (
+                                        <div style={{ marginTop: '8px', color: '#666' }}>
+                                          {exp.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </Timeline.Item>
+                                ))}
+                              </Timeline>
+                            </div>
+                          )}
+
+                          {resumeData.academicFormations && resumeData.academicFormations.length > 0 && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <Text strong>Formação Acadêmica:</Text>
+                              <Timeline style={{ marginTop: '8px' }}>
+                                {resumeData.academicFormations.map((formation: any) => (
+                                  <Timeline.Item 
+                                    key={formation.id} 
+                                    dot={<BookOutlined style={{ color: '#52c41a' }} />}
+                                  >
+                                    <div>
+                                      <Text strong>{formation.course}</Text>
+                                      <br />
+                                      <Text type="secondary">{formation.institution}</Text>
+                                      <br />
+                                      <Text type="secondary">
+                                        {formation.degree} • {new Date(formation.startDate).toLocaleDateString('pt-BR')} - 
+                                        {formation.endDate ? new Date(formation.endDate).toLocaleDateString('pt-BR') : 'Atual'}
+                                      </Text>
+                                    </div>
+                                  </Timeline.Item>
+                                ))}
+                              </Timeline>
+                            </div>
+                          )}
+
+                          {resumeData.achievements && resumeData.achievements.length > 0 && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <Text strong>Conquistas:</Text>
+                              <div style={{ marginTop: '8px' }}>
+                                {resumeData.achievements.map((achievement: any) => (
+                                  <div key={achievement.id} style={{ 
+                                    padding: '8px 12px', 
+                                    backgroundColor: '#fff7e6', 
+                                    borderRadius: '6px', 
+                                    marginBottom: '8px',
+                                    border: '1px solid #ffe58f'
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                      <StarOutlined style={{ color: '#faad14', marginRight: '8px' }} />
+                                      <div>
+                                        <Text strong>{achievement.title}</Text>
+                                        {achievement.year && (
+                                          <Text type="secondary" style={{ marginLeft: '8px' }}>
+                                            ({achievement.year})
+                                          </Text>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {achievement.description && (
+                                      <div style={{ marginTop: '4px', color: '#666', fontSize: '12px' }}>
+                                        {achievement.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {resumeData.languages && resumeData.languages.length > 0 && (
+                            <div>
+                              <Text strong>Idiomas:</Text>
+                              <div style={{ marginTop: '8px' }}>
+                                {resumeData.languages.map((language: any) => (
+                                  <Tag key={language.id} icon={<GlobalOutlined />} style={{ marginBottom: '4px' }}>
+                                    {language.language} - {language.level}
+                                  </Tag>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {applicationDetailsDrawer.application?.resumeUrl && (
+                            <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                              <Button 
+                                type="primary" 
+                                icon={<FileTextOutlined />}
+                                onClick={() => handleViewResume(applicationDetailsDrawer.application!, true)}
+                              >
+                                Visualizar CV Completo
+                              </Button>
+                            </div>
+                          )}
+                        </Card>
+                      )}
+
+                      {/* Loading do Resume */}
+                      {resumeLoading && (
+                        <Card size="small" style={{ marginBottom: '24px' }} title="Currículo">
+                          <div style={{ textAlign: 'center', padding: '20px' }}>
+                            <Spin size="large" />
+                            <div style={{ marginTop: '16px' }}>Carregando dados do currículo...</div>
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Fallback para quando não há resume */}
+                      {!resumeData && !resumeLoading && (
+                        <Card size="small" style={{ marginBottom: '24px' }} title="Currículo">
+                          <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                            <FileTextOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
+                            <div>Nenhum currículo encontrado para este candidato.</div>
+                            <div style={{ fontSize: '12px', marginTop: '8px' }}>
+                              O currículo pode não ter sido processado ainda ou não foi enviado.
+                            </div>
+                          </div>
+                        </Card>
+                      )}
                     </div>
-                  </div>
-                )}
-
-                {resumeData.languages && resumeData.languages.length > 0 && (
-                  <div>
-                    <Text strong>Idiomas:</Text>
-                    <div style={{ marginTop: '8px' }}>
-                      {resumeData.languages.map((language: any) => (
-                        <Tag key={language.id} icon={<GlobalOutlined />} style={{ marginBottom: '4px' }}>
-                          {language.language} - {language.level}
-                        </Tag>
-                      ))}
+                  )
+                },
+                {
+                  key: 'stageHistory',
+                  label: (
+                    <span>
+                      <CalendarOutlined style={{ marginRight: '8px' }} />
+                      Histórico de Movimentações
+                    </span>
+                  ),
+                  children: (
+                    <div>
+                      {/* Histórico de mudanças de etapa */}
+                      {stageHistoryLoading ? (
+                        <Card size="small" style={{ marginBottom: '24px' }} title="Histórico de Movimentações">
+                          <div style={{ textAlign: 'center', padding: '20px' }}>
+                            <Spin size="large" />
+                            <div style={{ marginTop: '16px' }}>Carregando histórico de movimentações...</div>
+                          </div>
+                        </Card>
+                      ) : stageHistory.length > 0 ? (
+                        <Card size="small" title="Histórico de Mudanças de Etapa">
+                          <Timeline>
+                            {stageHistory.map((history, index) => (
+                              <Timeline.Item 
+                                key={history.id}
+                                color={index === 0 ? '#52c41a' : '#1890ff'}
+                              >
+                                <div>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Text strong>
+                                      {history.fromStage ? `${history.fromStage.name} → ${history.toStage?.name || 'Etapa não definida'}` : `→ ${history.toStage?.name || 'Etapa não definida'}`}
+                                    </Text>
+                                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                                      {new Date(history.createdAt).toLocaleDateString('pt-BR')}
+                                    </Text>
+                                  </div>
+                                  {history.changedBy && (
+                                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                                      Alterado por: {history.changedBy.firstName} {history.changedBy.lastName}
+                                    </Text>
+                                  )}
+                                  {history.notes && (
+                                    <div style={{ 
+                                      marginTop: '8px', 
+                                      padding: '8px 12px', 
+                                      backgroundColor: '#f6ffed', 
+                                      borderRadius: '4px',
+                                      fontSize: '12px',
+                                      color: '#666'
+                                    }}>
+                                      <Text strong>Observações:</Text> {history.notes}
+                                    </div>
+                                  )}
+                                </div>
+                              </Timeline.Item>
+                            ))}
+                          </Timeline>
+                        </Card>
+                      ) : (
+                        <Card size="small" style={{ marginBottom: '24px' }} title="Histórico de Movimentações">
+                          <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                            <CalendarOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
+                            <div>Nenhuma movimentação encontrada para este candidato.</div>
+                            <div style={{ fontSize: '12px', marginTop: '8px' }}>
+                              O histórico de mudanças de etapa aparecerá aqui quando houver alterações.
+                            </div>
+                          </div>
+                        </Card>
+                      )}
                     </div>
-                  </div>
-                )}
-
-                {applicationDetailsDrawer.application?.resumeUrl && (
-                  <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                    <Button 
-                      type="primary" 
-                      icon={<FileTextOutlined />}
-                      onClick={() => handleViewResume(applicationDetailsDrawer.application!)}
-                    >
-                      Visualizar CV Completo
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            )}
-
-            {/* Loading do Resume */}
-            {resumeLoading && (
-              <Card size="small" style={{ marginBottom: '24px' }} title="Currículo">
-                <div style={{ textAlign: 'center', padding: '20px' }}>
-                  <Spin size="large" />
-                  <div style={{ marginTop: '16px' }}>Carregando dados do currículo...</div>
-                </div>
-              </Card>
-            )}
-
-            {/* Fallback para quando não há resume */}
-            {!resumeData && !resumeLoading && (
-              <Card size="small" style={{ marginBottom: '24px' }} title="Currículo">
-                <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-                  <FileTextOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
-                  <div>Nenhum currículo encontrado para este candidato.</div>
-                  <div style={{ fontSize: '12px', marginTop: '8px' }}>
-                    O currículo pode não ter sido processado ainda ou não foi enviado.
-                  </div>
-                </div>
-              </Card>
-            )}
+                  )
+                }
+              ]}
+            />
 
             {/* Respostas das perguntas */}
             {applicationDetailsDrawer.application.questionResponses && applicationDetailsDrawer.application.questionResponses.length > 0 && (
-              <Card size="small" title="Respostas das Perguntas da Vaga">
+              <Card size="small" title="Respostas das Perguntas da Vaga" style={{ marginTop: '24px' }}>
                 {applicationDetailsDrawer.application.questionResponses.map((response, index) => (
                   <div key={response.id} style={{ marginBottom: '16px' }}>
                     <div style={{ 
@@ -1069,48 +1206,6 @@ export const ApplicationsList: React.FC = () => {
                     </div>
                   </div>
                 ))}
-              </Card>
-            )}
-
-            {/* Histórico de mudanças de etapa */}
-            {applicationDetailsDrawer.application.stageHistory && applicationDetailsDrawer.application.stageHistory.length > 0 && (
-              <Card size="small" title="Histórico de Mudanças de Etapa">
-                <Timeline>
-                  {applicationDetailsDrawer.application.stageHistory.map((history, index) => (
-                    <Timeline.Item 
-                      key={history.id}
-                      color={index === 0 ? '#52c41a' : '#1890ff'}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text strong>
-                            {history.fromStage ? `${history.fromStage.name} → ${history.toStage?.name || 'Etapa não definida'}` : `→ ${history.toStage?.name || 'Etapa não definida'}`}
-                          </Text>
-                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                            {new Date(history.createdAt).toLocaleDateString('pt-BR')}
-                          </Text>
-                        </div>
-                        {history.changedBy && (
-                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                            Alterado por: {history.changedBy.firstName} {history.changedBy.lastName}
-                          </Text>
-                        )}
-                        {history.notes && (
-                          <div style={{ 
-                            marginTop: '8px', 
-                            padding: '8px 12px', 
-                            backgroundColor: '#f6ffed', 
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            color: '#666'
-                          }}>
-                            <Text strong>Observações:</Text> {history.notes}
-                          </div>
-                        )}
-                      </div>
-                    </Timeline.Item>
-                  ))}
-                </Timeline>
               </Card>
             )}
           </div>
