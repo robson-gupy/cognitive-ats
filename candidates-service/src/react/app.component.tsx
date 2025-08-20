@@ -15,18 +15,18 @@ export function App({ slug, companyJobs }: AppProps) {
     // Se não há vagas, mostrar mensagem simples
     if (!hasJobs) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <div className="text-center max-w-md mx-auto px-6">
+                    <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                        {companyName} - Vagas
+                    <h1 className="text-2xl font-light text-gray-800 mb-3">
+                        {companyName}
                     </h1>
-                    <p className="text-gray-600 mb-4">
-                        Esta empresa ainda não possui vagas publicadas.
+                    <p className="text-gray-600 mb-6 leading-relaxed">
+                        Esta empresa ainda não possui vagas publicadas no momento.
                     </p>
                     <div className="text-sm text-gray-500">
                         Volte mais tarde para ver as oportunidades disponíveis.

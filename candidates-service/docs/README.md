@@ -241,9 +241,9 @@ docker-compose down
 
 ## 📖 Documentação Adicional
 
-- [Integração com Subdomínios](./SUBDOMAIN_INTEGRATION.md)
-- [README Docker](./README-DOCKER.md)
-- [React Home](./REACT_HOME.md)
+- [Integração com Subdomínios](SUBDOMAIN_INTEGRATION.md)
+- [README Docker](README-DOCKER.md)
+- [React Home](REACT_HOME.md)
 
 ## 🤝 Contribuindo
 
