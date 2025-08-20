@@ -31,7 +31,8 @@ import {
   BookOutlined,
   GlobalOutlined,
   StarOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  WhatsAppOutlined
 } from '@ant-design/icons';
 import {
   DndContext,
@@ -54,6 +55,23 @@ import type { Job, JobStage } from '../types/Job';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+
+// Função para formatar número de telefone com máscara
+const formatPhoneNumber = (phone: string) => {
+  // Remove todos os caracteres não numéricos
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  // Aplica a máscara (11) 99999-9999
+  if (cleanPhone.length === 11) {
+    return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 7)}-${cleanPhone.slice(7)}`;
+  } else if (cleanPhone.length === 10) {
+    // Para números com 10 dígitos (11) 9999-9999
+    return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 6)}-${cleanPhone.slice(6)}`;
+  }
+  
+  // Se não conseguir formatar, retorna o número original
+  return phone;
+};
 
 interface DraggableApplicationCardProps {
   application: Application;
@@ -131,7 +149,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   const formatContactInfo = (application: Application) => {
     const contactInfo = [];
     if (application.email) contactInfo.push(application.email);
-    if (application.phone) contactInfo.push(application.phone);
+    if (application.phone) contactInfo.push(formatPhoneNumber(application.phone));
     return contactInfo.join(' • ') || 'Nenhum contato informado';
   };
 
@@ -864,11 +882,47 @@ export const ApplicationsList: React.FC = () => {
                 <Col span={12}>
                   <Descriptions size="small" column={1}>
                     <Descriptions.Item label="Email">
-                      {applicationDetailsDrawer.application.email || 'Não informado'}
+                      {applicationDetailsDrawer.application?.email ? (
+                        <a
+                          href={`mailto:${applicationDetailsDrawer.application.email}?subject=Candidatura para vaga&body=Olá ${applicationDetailsDrawer.application.firstName}!%0D%0A%0D%0AVi sua candidatura para a vaga e gostaria de conversar com você.%0D%0A%0D%0AAtenciosamente,`}
+                          style={{ 
+                            color: '#1890ff', 
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Enviar email"
+                        >
+                          {applicationDetailsDrawer.application.email}
+                          <span style={{ fontSize: '14px' }}>📧</span>
+                        </a>
+                      ) : (
+                        'Não informado'
+                      )}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Telefone">
-                      {applicationDetailsDrawer.application.phone || 'Não informado'}
-                    </Descriptions.Item>
+                                          <Descriptions.Item label="Telefone">
+                        {applicationDetailsDrawer.application?.phone ? (
+                          <a
+                            href={`https://wa.me/55${applicationDetailsDrawer.application?.phone.replace(/\D/g, '')}?text=Olá ${applicationDetailsDrawer.application?.firstName}! Vi sua candidatura para a vaga e gostaria de conversar com você.`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ 
+                              color: '#25D366', 
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title="Abrir WhatsApp"
+                          >
+                            {formatPhoneNumber(applicationDetailsDrawer.application.phone)}
+                            <WhatsAppOutlined style={{ fontSize: '14px', color: '#25D366' }} />
+                          </a>
+                        ) : (
+                          'Não informado'
+                        )}
+                      </Descriptions.Item>
                   </Descriptions>
                 </Col>
                 <Col span={12}>
