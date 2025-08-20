@@ -20,6 +20,18 @@
         Access-Control-Allow-Credentials true
     }
 
+    # Matcher para *.localhost/cognitive-ats-uploads/* - redireciona para localstack
+    @localstackUploads {
+        path /cognitive-ats-uploads/*
+    }
+    
+    handle @localstackUploads {
+        reverse_proxy localstack:4566 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+        }
+    }
+
     # Matcher para *.jobs.localhost/jobs/* - redireciona para companies-backend
     @jobsApi {
         host *.jobs.localhost
@@ -64,6 +76,7 @@
     # Matcher para frontend no domínio principal
     @frontend {
         not path /api/*
+        not path /cognitive-ats-uploads/*
         not host *.jobs.localhost
     }
 

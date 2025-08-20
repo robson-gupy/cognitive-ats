@@ -343,11 +343,24 @@ async def process_resume_message(message_data: dict, ai_service: AIService, retr
         if not application_id:
             raise Exception("applicationId não encontrado na mensagem")
         
-        print(f"🔄 Processando currículo para aplicação: {application_id}")
-        print(f"   URL: {resume_url}")
+        # Constrói a URL completa do S3 usando a variável de ambiente
+        s3_endpoint = os.getenv('AWS_ENDPOINT_URL', 'http://localhost:4566')
         
-        # Faz download do PDF
-        pdf_path = download_pdf_from_url(resume_url)
+        # Se o resume_url já é uma URL completa, usa como está
+        if resume_url.startswith('http'):
+            full_resume_url = resume_url
+        else:
+            # Se é apenas um path, constrói a URL completa
+            # Remove a barra inicial se existir para evitar duplicação
+            path = resume_url.lstrip('/')
+            full_resume_url = f"{s3_endpoint}/{path}"
+        
+        print(f"🔄 Processando currículo para aplicação: {application_id}")
+        print(f"   Path original: {resume_url}")
+        print(f"   URL completa: {full_resume_url}")
+        
+        # Faz download do PDF usando a URL completa
+        pdf_path = download_pdf_from_url(full_resume_url)
         
         try:
             # Cria o parser de currículos

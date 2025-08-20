@@ -73,12 +73,18 @@ As mensagens devem ter o seguinte formato JSON:
 
 ```json
 {
-  "resumeUrl": "https://example.com/path/to/resume.pdf",
+  "resumeUrl": "/resumes/resume.pdf",
   "applicationId": "123e4567-e89b-12d3-a456-426614174000",
   "timestamp": "2024-01-15T10:30:00Z",
   "priority": "high"
 }
 ```
+
+**Nota sobre `resumeUrl`:**
+- **Path relativo** (ex: `/resumes/resume.pdf`): O sistema constrói automaticamente a URL completa usando a variável de ambiente `AWS_ENDPOINT_URL`
+- **URL completa** (ex: `https://s3.amazonaws.com/bucket/resume.pdf`): Usada diretamente pelo sistema
+
+Para desenvolvimento local, o `AWS_ENDPOINT_URL` deve ser configurado como `http://localhost:4566` (LocalStack).
 
 ## Fluxo de Processamento
 
@@ -105,24 +111,12 @@ O sistema gera logs detalhados:
 📝 Processando mensagem #1:
    ID: 12345678-1234-1234-1234-123456789012
    Receipt Handle: AQEB...
-   Corpo: {"resumeUrl": "https://...", "applicationId": "..."}
+   Corpo: {"resumeUrl": "/resumes/resume.pdf", "applicationId": "..."}
 🔄 Mensagem de currículo detectada!
-📥 Fazendo download do PDF: https://...
+📥 Fazendo download do PDF: http://localhost:4566/resumes/resume.pdf
 ✅ PDF salvo em: /tmp/tmp123456.pdf
 🔄 Processando currículo para aplicação: test-application-123
 ✅ Currículo processado com sucesso!
-   - Resumo: 150 caracteres
-   - Experiências: 3
-   - Formações: 2
-   - Conquistas: 5
-   - Idiomas: 2
-📤 Enviando dados do currículo para o backend...
-   URL: http://localhost:3000/resumes/test-application-123
-   Application ID: test-application-123
-✅ Dados do currículo enviados com sucesso!
-   Status: 201
-🗑️ Arquivo temporário removido: /tmp/tmp123456.pdf
-✅ Currículo processado e enviado ao backend com sucesso!
 ```
 
 ## Tratamento de Erros
@@ -228,8 +222,8 @@ python -c "import boto3; print('SQS OK')"
 # Testar OpenAI
 python -c "import openai; print('OpenAI OK')"
 
-# Testar download
-curl -I https://example.com/resume.pdf
+# Testar download (usando path relativo)
+curl -I http://localhost:4566/resumes/resume.pdf
 ```
 
 ## Desenvolvimento

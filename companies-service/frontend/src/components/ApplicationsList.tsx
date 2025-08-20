@@ -464,6 +464,8 @@ export const ApplicationsList: React.FC = () => {
 
   const handleViewResume = (application: Application) => {
     if (application.resumeUrl) {
+      // Abre o CV em uma nova aba usando o path relativo
+      // O Caddyfile já está configurado para redirecionar /cognitive-ats-uploads/* para localstack:4566
       window.open(application.resumeUrl, '_blank');
     }
   };

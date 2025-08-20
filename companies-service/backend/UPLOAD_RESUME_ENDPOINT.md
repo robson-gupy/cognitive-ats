@@ -71,12 +71,16 @@ curl -X POST http://localhost:3000/applications/upload-resume \
   "lastName": "Silva",
   "email": "joao.silva@email.com",
   "phone": null,
-  "resumeUrl": "http://localhost:9000/resumes/resume_1700000000000_curriculo.pdf",
+  "resumeUrl": "/resumes/resume_1700000000000_curriculo.pdf",
   "aiScore": null,
   "createdAt": "2024-01-01T12:00:00.000Z",
   "updatedAt": "2024-01-01T12:00:00.000Z"
 }
 ```
+
+**Nota:** O campo `resumeUrl` agora retorna apenas o path relativo do arquivo (ex: `/resumes/arquivo.pdf`). 
+O Caddyfile está configurado para redirecionar automaticamente as requisições para `/cognitive-ats-uploads/*` 
+para o serviço localstack na porta 4566, mantendo o mesmo path.
 
 ## Validações
 

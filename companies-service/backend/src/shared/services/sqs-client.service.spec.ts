@@ -19,7 +19,7 @@ describe('SqsClientService', () => {
   describe('sendApplicationCreatedMessage', () => {
     it('should send application created message to SQS', async () => {
       const applicationId = 'test-application-id';
-      const resumeUrl = 'https://example.com/resume.pdf';
+      const resumeUrl = '/resumes/resume.pdf';
 
       // Mock do método sendMessage
       const sendMessageSpy = jest

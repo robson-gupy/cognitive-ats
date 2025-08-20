@@ -29,7 +29,7 @@ export class S3ClientService {
    * @param filePath - Caminho local do arquivo
    * @param bucketName - Nome do bucket de destino
    * @param key - Chave (nome) do arquivo no S3 (opcional, usa o nome do arquivo se não fornecido)
-   * @returns URL do arquivo no S3
+   * @returns Path do arquivo no S3 (sem protocolo, domínio e porta)
    */
   async uploadFile(
     filePath: string,
@@ -68,9 +68,8 @@ export class S3ClientService {
         `Arquivo ${filePath} enviado com sucesso para ${bucketName}/${s3Key}`,
       );
 
-      // Retorna a URL pública do arquivo
-      const publicUrl = `${process.env.ENDPOINT_URL}/${bucketName}/${s3Key}`;
-      return publicUrl;
+      // Retorna apenas o path do arquivo (sem protocolo, domínio e porta)
+      return `/${bucketName}/${s3Key}`;
     } catch (error) {
       this.logger.error(`Erro ao fazer upload do arquivo ${filePath}:`, error);
       throw error;
