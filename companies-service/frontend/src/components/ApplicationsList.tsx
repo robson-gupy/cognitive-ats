@@ -6,8 +6,7 @@ import {
   Tag, 
   Space, 
   Button, 
-  Avatar, 
-  Checkbox, 
+  Avatar,
   message, 
   Spin,
   Badge,
@@ -32,13 +31,6 @@ import {
   KeyboardSensor,
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
 import {
   useDroppable,
   useDraggable,
@@ -272,11 +264,6 @@ const StageColumn: React.FC<StageColumnProps> = ({
           <Title level={5} style={{ margin: 0, fontSize: '16px' }}>
             {stage.name}
           </Title>
-          {stage.description && (
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              {stage.description}
-            </Text>
-          )}
         </div>
         <Badge count={applications.length} showZero style={{ backgroundColor: '#1890ff' }} />
       </div>
