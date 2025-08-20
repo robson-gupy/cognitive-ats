@@ -20,8 +20,25 @@
         Access-Control-Allow-Credentials true
     }
 
-    # Matcher para *.jobs.localhost
-    @candidatesHost host *.jobs.localhost
+    # Matcher para *.jobs.localhost/jobs/* - redireciona para companies-backend
+    @jobsApi {
+        host *.jobs.localhost
+        path /jobs/*
+    }
+    
+    handle @jobsApi {
+        reverse_proxy companies-backend:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+        }
+    }
+
+    # Matcher para *.jobs.localhost (outros paths) - redireciona para candidates-service
+    @candidatesHost {
+        host *.jobs.localhost
+        not path /jobs/*
+    }
+    
     handle @candidatesHost {
         reverse_proxy candidates-service:3002 {
             header_up Host {host}
