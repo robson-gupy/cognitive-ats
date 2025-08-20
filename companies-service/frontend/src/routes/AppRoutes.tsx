@@ -94,6 +94,10 @@ export const AppRoutes: React.FC = () => {
           element={<ApplicationsList />} 
         />
         <Route 
+          path="/jobs/:id/applications/:applicationId" 
+          element={<ApplicationsList />} 
+        />
+        <Route 
           path="/test-drag" 
           element={<DragTest />} 
         />

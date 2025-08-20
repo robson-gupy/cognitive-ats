@@ -3,14 +3,12 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
+import { ModuleRef } from '@nestjs/core';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly jwtService: JwtService) {
-    super();
-  }
+export class JwtAuthGuard {
+  constructor(private moduleRef: ModuleRef) {}
 
   private extractTokenFromHeader(request: any): string | undefined {
     const authHeader = request.headers?.authorization;
@@ -32,14 +30,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
+      const jwtService = this.moduleRef.get(JwtService, { strict: false });
+      const payload = await jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
       });
 
       // Adicionar o payload do JWT ao request
       request.user = payload;
       return true;
-    } catch {
+    } catch (error) {
+      console.error('JWT validation error:', error);
       throw new UnauthorizedException('Token inválido');
     }
   }

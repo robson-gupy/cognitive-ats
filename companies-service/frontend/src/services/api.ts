@@ -249,11 +249,11 @@ export class ApiService {
       userData,
       timestamp: Date.now(),
     };
-    sessionStorage.setItem('authData', JSON.stringify(authData));
+    localStorage.setItem('authData', JSON.stringify(authData));
   }
 
   getToken(): string | null {
-    const authData = sessionStorage.getItem('authData');
+    const authData = localStorage.getItem('authData');
     if (!authData) {
       return null;
     }
@@ -277,7 +277,7 @@ export class ApiService {
   }
 
   getUserData(): any {
-    const authData = sessionStorage.getItem('authData');
+    const authData = localStorage.getItem('authData');
     if (!authData) return null;
     
     try {
@@ -290,7 +290,7 @@ export class ApiService {
   }
 
   removeToken(): void {
-    sessionStorage.removeItem('authData');
+    localStorage.removeItem('authData');
   }
 
   isAuthenticated(): boolean {
@@ -303,12 +303,12 @@ export class ApiService {
 
   // Verificar se há dados de autenticação em outras abas
   hasAuthDataInOtherTabs(): boolean {
-    return sessionStorage.getItem('authData') !== null;
+    return localStorage.getItem('authData') !== null;
   }
 
   // Sincronizar com dados de outras abas
   syncWithOtherTabs(): void {
-    const authData = sessionStorage.getItem('authData');
+    const authData = localStorage.getItem('authData');
     if (authData) {
       try {
         JSON.parse(authData);
@@ -397,7 +397,7 @@ export class ApiService {
 
   // Verificar se os dados de autenticação estão consistentes
   isAuthDataConsistent(): boolean {
-    const authData = sessionStorage.getItem('authData');
+    const authData = localStorage.getItem('authData');
     if (!authData) return false;
     
     try {
@@ -421,11 +421,23 @@ export class ApiService {
       localStorage.removeItem('token');
     }
     
-    // Verificar se há múltiplos dados de autenticação
-    const allKeys = Object.keys(sessionStorage);
-    const authKeys = allKeys.filter(key => key.includes('auth') || key.includes('token'));
-    if (authKeys.length > 1) {
-      authKeys.forEach(key => sessionStorage.removeItem(key));
+    // Verificar se há múltiplos dados de autenticação (exceto nossa chave principal)
+    const sessionKeys = Object.keys(sessionStorage);
+    const localKeys = Object.keys(localStorage);
+    const allKeys = [...sessionKeys, ...localKeys];
+    
+    const authKeys = allKeys.filter(key => 
+      (key.includes('auth') || key.includes('token')) && 
+      key !== 'authData' // Não remover nossa chave principal
+    );
+    
+    if (authKeys.length > 0) {
+      authKeys.forEach(key => {
+        sessionStorage.removeItem(key);
+        if (key !== 'authData') { // Proteger nossa chave principal
+          localStorage.removeItem(key);
+        }
+      });
     }
   }
 
@@ -436,6 +448,10 @@ export class ApiService {
 
   async getApplicationsWithQuestionResponses(jobId: string): Promise<Application[]> {
     return this.request<Application[]>(`/jobs/${jobId}/applications/with-question-responses`);
+  }
+
+  async getApplicationResume(applicationId: string): Promise<any> {
+    return this.request<any>(`/resumes/application/${applicationId}`);
   }
 
   async getApplication(jobId: string, applicationId: string): Promise<Application> {

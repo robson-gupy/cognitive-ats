@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -9,7 +10,7 @@ import { RolesModule } from '../roles/roles.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { AdminAuthGuard } from './guards/admin-auth.guard';
-import { JwtConfigModule } from './jwt.module';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthLoggingInterceptor } from './auth.interceptor';
 
 @Module({
@@ -18,7 +19,10 @@ import { AuthLoggingInterceptor } from './auth.interceptor';
     CompaniesModule,
     RolesModule,
     PassportModule,
-    JwtConfigModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'your-secret-key',
+      signOptions: { expiresIn: '24h' },
+    }),
   ],
   controllers: [AuthController],
   providers: [
@@ -26,11 +30,12 @@ import { AuthLoggingInterceptor } from './auth.interceptor';
     JwtStrategy,
     LocalStrategy,
     AdminAuthGuard,
+    JwtAuthGuard,
     {
       provide: APP_INTERCEPTOR,
       useClass: AuthLoggingInterceptor,
     },
   ],
-  exports: [AuthService, AdminAuthGuard, JwtConfigModule],
+  exports: [AuthService, AdminAuthGuard, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}

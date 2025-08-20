@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Application } from '../../applications/entities/application.entity';
+import {AdminAuthGuard} from "../../auth/guards/admin-auth.guard";
 
 @Controller('resumes')
 export class ResumeController {
@@ -33,7 +34,7 @@ export class ResumeController {
   }
 
   @Get('application/:applicationId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
   findByApplicationId(@Param('applicationId') applicationId: string) {
     return this.resumeService.findByApplicationId(applicationId);
   }

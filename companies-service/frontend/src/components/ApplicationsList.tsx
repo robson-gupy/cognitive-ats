@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Card, 
   Typography, 
@@ -12,14 +12,25 @@ import {
   Badge,
   Modal,
   Form,
-  Input
+  Input,
+  Drawer,
+  Descriptions,
+  Timeline,
+  Row,
+  Col
 } from 'antd';
 import { 
   UserOutlined, 
   MailOutlined, 
   CalendarOutlined, 
   FileTextOutlined, 
-  DragOutlined
+  DragOutlined,
+  CloseOutlined,
+  TrophyOutlined,
+  BookOutlined,
+  GlobalOutlined,
+  StarOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
 import {
   DndContext,
@@ -47,6 +58,7 @@ interface DraggableApplicationCardProps {
   application: Application;
   onViewResume?: () => void;
   onViewResponses?: () => void;
+  onCardClick?: () => void;
   hasPendingChange?: boolean;
 }
 
@@ -54,6 +66,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   application, 
   onViewResume, 
   onViewResponses,
+  onCardClick,
   hasPendingChange = false
 }) => {
   const {
@@ -67,6 +80,41 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     opacity: isDragging ? 0.5 : 1,
+  };
+
+  // Estado para controlar se o usuário está arrastando
+  const [isDraggingState, setIsDraggingState] = useState(false);
+  const [dragStartTime, setDragStartTime] = useState<number | null>(null);
+  const [dragStartPosition, setDragStartPosition] = useState<{ x: number; y: number } | null>(null);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setDragStartTime(Date.now());
+    setDragStartPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (dragStartTime && dragStartPosition) {
+      const timeDiff = Date.now() - dragStartTime;
+      const distance = Math.sqrt(
+        Math.pow(e.clientX - dragStartPosition.x, 2) + 
+        Math.pow(e.clientY - dragStartPosition.y, 2)
+      );
+      
+      // Se o clique foi rápido (< 300ms) e não houve movimento significativo (< 5px), abrir o modal
+      if (timeDiff < 300 && distance < 5 && !isDraggingState) {
+        onCardClick?.();
+      }
+    }
+    setDragStartTime(null);
+    setDragStartPosition(null);
+  };
+
+  const handleDragStart = () => {
+    setIsDraggingState(true);
+  };
+
+  const handleDragEnd = () => {
+    setIsDraggingState(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -121,6 +169,10 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
       hoverable
       {...attributes}
       {...listeners}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       style={{
         ...style,
         marginBottom: '8px',
@@ -205,6 +257,7 @@ interface StageColumnProps {
   applications: Application[];
   onViewResume: (application: Application) => void;
   onViewResponses: (application: Application) => void;
+  onCardClick: (application: Application) => void;
   pendingStageChanges: Map<string, string>;
 }
 
@@ -213,6 +266,7 @@ const StageColumn: React.FC<StageColumnProps> = ({
   applications, 
   onViewResume,
   onViewResponses,
+  onCardClick,
   pendingStageChanges
 }) => {
   const {
@@ -275,6 +329,7 @@ const StageColumn: React.FC<StageColumnProps> = ({
             application={application}
             onViewResume={() => onViewResume(application)}
             onViewResponses={() => onViewResponses(application)}
+            onCardClick={() => onCardClick(application)}
             hasPendingChange={pendingStageChanges.has(application.id)}
           />
         ))}
@@ -295,7 +350,9 @@ const StageColumn: React.FC<StageColumnProps> = ({
 };
 
 export const ApplicationsList: React.FC = () => {
-  const { id: jobId } = useParams<{ id: string }>();
+  const { id: jobId, applicationId } = useParams<{ id: string; applicationId?: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [job, setJob] = useState<Job | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -306,6 +363,19 @@ export const ApplicationsList: React.FC = () => {
   
   // Estado para controlar mudanças temporárias de stage
   const [pendingStageChanges, setPendingStageChanges] = useState<Map<string, string>>(new Map());
+  
+  // Estado para controlar o modal lateral de detalhes da application
+  const [applicationDetailsDrawer, setApplicationDetailsDrawer] = useState<{
+    visible: boolean;
+    application: Application | null;
+  }>({
+    visible: false,
+    application: null,
+  });
+
+  // Estado para armazenar os dados do resume
+  const [resumeData, setResumeData] = useState<any>(null);
+  const [resumeLoading, setResumeLoading] = useState(false);
   
   const [changeStageModal, setChangeStageModal] = useState<{
     visible: boolean;
@@ -343,6 +413,48 @@ export const ApplicationsList: React.FC = () => {
     }
   }, [jobId]);
 
+  // useEffect para detectar mudanças na URL e abrir o modal automaticamente
+  useEffect(() => {
+    if (applicationId && applications.length > 0) {
+      const application = applications.find(app => app.id === applicationId);
+      if (application) {
+        setApplicationDetailsDrawer({
+          visible: true,
+          application,
+        });
+        
+        // Buscar os dados do resume
+        loadResumeData(application.id);
+      }
+    }
+  }, [applicationId, applications]);
+
+  // useEffect para sincronizar o estado do modal com a URL
+  useEffect(() => {
+    if (applicationDetailsDrawer.visible && applicationDetailsDrawer.application) {
+      // Atualizar a URL para incluir o applicationId no path
+      const newUrl = `/jobs/${jobId}/applications/${applicationDetailsDrawer.application.id}`;
+      navigate(newUrl, { replace: true });
+    }
+  }, [applicationDetailsDrawer.visible, applicationDetailsDrawer.application, jobId, navigate]);
+
+  // useEffect para lidar com o botão voltar do navegador
+  useEffect(() => {
+    const handlePopState = () => {
+      // Verificar se há applicationId na URL atual
+      const currentPath = location.pathname;
+      const pathParts = currentPath.split('/');
+      const currentApplicationId = pathParts[pathParts.length - 1];
+      
+      // Se o último segmento não é um applicationId válido (não é um UUID), fechar o modal
+      if (!currentApplicationId || currentApplicationId === 'applications' || currentApplicationId === jobId) {
+        setApplicationDetailsDrawer({ visible: false, application: null });
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [location.pathname, jobId]);
 
 
   const loadJob = async () => {
@@ -462,6 +574,44 @@ export const ApplicationsList: React.FC = () => {
       visible: true,
       application,
     });
+  };
+
+  const handleApplicationCardClick = (application: Application) => {
+    setApplicationDetailsDrawer({
+      visible: true,
+      application,
+    });
+    
+    // Atualizar a URL para incluir o applicationId no path
+    const newUrl = `/jobs/${jobId}/applications/${application.id}`;
+    navigate(newUrl, { replace: true });
+
+    // Buscar os dados do resume
+    loadResumeData(application.id);
+  };
+
+  const loadResumeData = async (applicationId: string) => {
+    try {
+      setResumeLoading(true);
+      setResumeData(null);
+      
+      const resume = await apiService.getApplicationResume(applicationId);
+      setResumeData(resume);
+    } catch (error) {
+      console.error('Erro ao carregar dados do resume:', error);
+      // Não mostrar erro para o usuário, apenas log
+      setResumeData(null);
+    } finally {
+      setResumeLoading(false);
+    }
+  };
+
+  const handleCloseApplicationDrawer = () => {
+    setApplicationDetailsDrawer({ visible: false, application: null });
+    
+    // Remover o applicationId da URL
+    const newUrl = `/jobs/${jobId}/applications`;
+    navigate(newUrl, { replace: true });
   };
 
   const getApplicationsByStage = (stageId: string) => {
@@ -588,6 +738,7 @@ export const ApplicationsList: React.FC = () => {
                     applications={getApplicationsByStage(stage.id!)}
                     onViewResume={handleViewResume}
                     onViewResponses={handleViewResponses}
+                    onCardClick={handleApplicationCardClick}
                     pendingStageChanges={pendingStageChanges}
                   />
                 ))}
@@ -623,6 +774,348 @@ export const ApplicationsList: React.FC = () => {
           </DndContext>
         </div>
       )}
+
+      {/* Drawer lateral com detalhes da Application */}
+      <Drawer
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>Detalhes do Candidato</span>
+            <Button 
+              type="text" 
+              icon={<CloseOutlined />} 
+              onClick={handleCloseApplicationDrawer}
+            />
+          </div>
+        }
+        placement="right"
+        width={600}
+        open={applicationDetailsDrawer.visible}
+        onClose={handleCloseApplicationDrawer}
+        bodyStyle={{ padding: '24px' }}
+        headerStyle={{ padding: '16px 24px' }}
+      >
+        {applicationDetailsDrawer.application && (
+          <div>
+            {/* Informações básicas do candidato */}
+            <Card size="small" style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                <Avatar 
+                  size={64} 
+                  icon={<UserOutlined />} 
+                  style={{ backgroundColor: '#1890ff', marginRight: '16px' }}
+                />
+                <div>
+                  <Title level={3} style={{ margin: 0 }}>
+                    {applicationDetailsDrawer.application.firstName} {applicationDetailsDrawer.application.lastName}
+                  </Title>
+                  <Text type="secondary">
+                    Candidato em {applicationDetailsDrawer.application.currentStage?.name || 'Etapa não definida'}
+                  </Text>
+                </div>
+              </div>
+              
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Descriptions size="small" column={1}>
+                    <Descriptions.Item label="Email">
+                      {applicationDetailsDrawer.application.email || 'Não informado'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Telefone">
+                      {applicationDetailsDrawer.application.phone || 'Não informado'}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Col>
+                <Col span={12}>
+                  <Descriptions size="small" column={1}>
+                    <Descriptions.Item label="Data de inscrição">
+                      {new Date(applicationDetailsDrawer.application.createdAt).toLocaleDateString('pt-BR')}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Última atualização">
+                      {new Date(applicationDetailsDrawer.application.updatedAt).toLocaleDateString('pt-BR')}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Scores e avaliações */}
+            <Card size="small" style={{ marginBottom: '24px' }} title="Avaliações">
+              <Row gutter={16}>
+                <Col span={8}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1890ff' }}>
+                      {applicationDetailsDrawer.application.overallScore || 'N/A'}
+                    </div>
+                    <Text type="secondary">Aderência (%)</Text>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#52c41a' }}>
+                      {applicationDetailsDrawer.application.aiScore ? `${applicationDetailsDrawer.application.aiScore.toFixed(1)}/10` : 'N/A'}
+                    </div>
+                    <Text type="secondary">Score AI</Text>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#722ed1' }}>
+                      {applicationDetailsDrawer.application.questionResponsesScore || 'N/A'}
+                    </div>
+                    <Text type="secondary">Respostas (%)</Text>
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Resume/CV */}
+            {resumeData && (
+              <Card size="small" style={{ marginBottom: '24px' }} title="Currículo">
+                {resumeData.summary && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <Text strong>Resumo:</Text>
+                    <div style={{ marginTop: '8px', padding: '12px', backgroundColor: '#fafafa', borderRadius: '6px' }}>
+                      {resumeData.summary}
+                    </div>
+                  </div>
+                )}
+
+                {resumeData.professionalExperiences && resumeData.professionalExperiences.length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <Text strong>Experiência Profissional:</Text>
+                    <Timeline style={{ marginTop: '8px' }}>
+                      {resumeData.professionalExperiences.map((exp: any) => (
+                        <Timeline.Item 
+                          key={exp.id} 
+                          dot={<TrophyOutlined style={{ color: '#1890ff' }} />}
+                        >
+                          <div>
+                            <Text strong>{exp.position}</Text>
+                            <br />
+                            <Text type="secondary">{exp.company}</Text>
+                            <br />
+                            <Text type="secondary">
+                              {new Date(exp.startDate).toLocaleDateString('pt-BR')} - 
+                              {exp.endDate ? new Date(exp.endDate).toLocaleDateString('pt-BR') : 'Atual'}
+                            </Text>
+                            {exp.description && (
+                              <div style={{ marginTop: '8px', color: '#666' }}>
+                                {exp.description}
+                              </div>
+                            )}
+                          </div>
+                        </Timeline.Item>
+                      ))}
+                    </Timeline>
+                  </div>
+                )}
+
+                {resumeData.academicFormations && resumeData.academicFormations.length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <Text strong>Formação Acadêmica:</Text>
+                    <Timeline style={{ marginTop: '8px' }}>
+                      {resumeData.academicFormations.map((formation: any) => (
+                        <Timeline.Item 
+                          key={formation.id} 
+                          dot={<BookOutlined style={{ color: '#52c41a' }} />}
+                        >
+                          <div>
+                            <Text strong>{formation.course}</Text>
+                            <br />
+                            <Text type="secondary">{formation.institution}</Text>
+                            <br />
+                            <Text type="secondary">
+                              {formation.degree} • {new Date(formation.startDate).toLocaleDateString('pt-BR')} - 
+                              {formation.endDate ? new Date(formation.endDate).toLocaleDateString('pt-BR') : 'Atual'}
+                            </Text>
+                          </div>
+                        </Timeline.Item>
+                      ))}
+                    </Timeline>
+                  </div>
+                )}
+
+                {resumeData.achievements && resumeData.achievements.length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <Text strong>Conquistas:</Text>
+                    <div style={{ marginTop: '8px' }}>
+                      {resumeData.achievements.map((achievement: any) => (
+                        <div key={achievement.id} style={{ 
+                          padding: '8px 12px', 
+                          backgroundColor: '#fff7e6', 
+                          borderRadius: '6px', 
+                          marginBottom: '8px',
+                          border: '1px solid #ffe58f'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <StarOutlined style={{ color: '#faad14', marginRight: '8px' }} />
+                            <div>
+                              <Text strong>{achievement.title}</Text>
+                              {achievement.year && (
+                                <Text type="secondary" style={{ marginLeft: '8px' }}>
+                                  ({achievement.year})
+                                </Text>
+                              )}
+                            </div>
+                          </div>
+                          {achievement.description && (
+                            <div style={{ marginTop: '4px', color: '#666', fontSize: '12px' }}>
+                              {achievement.description}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {resumeData.languages && resumeData.languages.length > 0 && (
+                  <div>
+                    <Text strong>Idiomas:</Text>
+                    <div style={{ marginTop: '8px' }}>
+                      {resumeData.languages.map((language: any) => (
+                        <Tag key={language.id} icon={<GlobalOutlined />} style={{ marginBottom: '4px' }}>
+                          {language.language} - {language.level}
+                        </Tag>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {applicationDetailsDrawer.application?.resumeUrl && (
+                  <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                    <Button 
+                      type="primary" 
+                      icon={<FileTextOutlined />}
+                      onClick={() => handleViewResume(applicationDetailsDrawer.application!)}
+                    >
+                      Visualizar CV Completo
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {/* Loading do Resume */}
+            {resumeLoading && (
+              <Card size="small" style={{ marginBottom: '24px' }} title="Currículo">
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                  <Spin size="large" />
+                  <div style={{ marginTop: '16px' }}>Carregando dados do currículo...</div>
+                </div>
+              </Card>
+            )}
+
+            {/* Fallback para quando não há resume */}
+            {!resumeData && !resumeLoading && (
+              <Card size="small" style={{ marginBottom: '24px' }} title="Currículo">
+                <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                  <FileTextOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
+                  <div>Nenhum currículo encontrado para este candidato.</div>
+                  <div style={{ fontSize: '12px', marginTop: '8px' }}>
+                    O currículo pode não ter sido processado ainda ou não foi enviado.
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Respostas das perguntas */}
+            {applicationDetailsDrawer.application.questionResponses && applicationDetailsDrawer.application.questionResponses.length > 0 && (
+              <Card size="small" title="Respostas das Perguntas da Vaga">
+                {applicationDetailsDrawer.application.questionResponses.map((response, index) => (
+                  <div key={response.id} style={{ marginBottom: '16px' }}>
+                    <div style={{ 
+                      padding: '12px', 
+                      backgroundColor: '#f0f8ff', 
+                      borderRadius: '6px',
+                      border: '1px solid #d6e4ff'
+                    }}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <Text strong style={{ color: '#1890ff' }}>
+                          <CheckCircleOutlined style={{ marginRight: '8px' }} />
+                          Pergunta {index + 1}:
+                        </Text>
+                        <div style={{ marginTop: '4px', color: '#333', fontWeight: '500' }}>
+                          {response.question}
+                        </div>
+                      </div>
+                      <div>
+                        <Text strong>Resposta:</Text>
+                        <div style={{ 
+                          marginTop: '4px', 
+                          color: '#333',
+                          padding: '8px 12px',
+                          backgroundColor: 'white',
+                          borderRadius: '4px',
+                          border: '1px solid #e8e8e8'
+                        }}>
+                          {response.answer}
+                        </div>
+                      </div>
+                      <div style={{ 
+                        marginTop: '8px', 
+                        fontSize: '11px', 
+                        color: '#999',
+                        textAlign: 'right'
+                      }}>
+                        Respondida em: {new Date(response.createdAt).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            )}
+
+            {/* Histórico de mudanças de etapa */}
+            {applicationDetailsDrawer.application.stageHistory && applicationDetailsDrawer.application.stageHistory.length > 0 && (
+              <Card size="small" title="Histórico de Mudanças de Etapa">
+                <Timeline>
+                  {applicationDetailsDrawer.application.stageHistory.map((history, index) => (
+                    <Timeline.Item 
+                      key={history.id}
+                      color={index === 0 ? '#52c41a' : '#1890ff'}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text strong>
+                            {history.fromStage ? `${history.fromStage.name} → ${history.toStage?.name || 'Etapa não definida'}` : `→ ${history.toStage?.name || 'Etapa não definida'}`}
+                          </Text>
+                          <Text type="secondary" style={{ fontSize: '12px' }}>
+                            {new Date(history.createdAt).toLocaleDateString('pt-BR')}
+                          </Text>
+                        </div>
+                        {history.changedBy && (
+                          <Text type="secondary" style={{ fontSize: '12px' }}>
+                            Alterado por: {history.changedBy.firstName} {history.changedBy.lastName}
+                          </Text>
+                        )}
+                        {history.notes && (
+                          <div style={{ 
+                            marginTop: '8px', 
+                            padding: '8px 12px', 
+                            backgroundColor: '#f6ffed', 
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            color: '#666'
+                          }}>
+                            <Text strong>Observações:</Text> {history.notes}
+                          </div>
+                        )}
+                      </div>
+                    </Timeline.Item>
+                  ))}
+                </Timeline>
+              </Card>
+            )}
+          </div>
+        )}
+      </Drawer>
 
       {/* Modal de Confirmação de Mudança de Stage */}
       <Modal
