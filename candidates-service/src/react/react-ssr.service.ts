@@ -86,23 +86,186 @@ export class ReactSsrService {
               job: ${JSON.stringify(jobData.data)}
             };
             
-            // Funcionalidades interativas
+            // Hidratação do React e funcionalidades interativas
             document.addEventListener('DOMContentLoaded', function() {
-              // Botão de candidatura
-              const applyButton = document.querySelector('#apply-button');
-              if (applyButton) {
-                applyButton.addEventListener('click', function() {
-                  alert('Funcionalidade de candidatura será implementada em breve!');
-                });
+              console.log('DOM carregado, iniciando hidratação...');
+              
+              // Verificar se temos os dados necessários
+              if (!window.JOB_DATA) {
+                console.error('Dados da vaga não encontrados');
+                return;
               }
               
-              // Botão de candidatura rápida
-              const quickApplyButton = document.querySelector('#quick-apply-button');
-              if (quickApplyButton) {
-                quickApplyButton.addEventListener('click', function() {
-                  alert('Funcionalidade de candidatura será implementada em breve!');
+              const { companySlug, job } = window.JOB_DATA;
+              const companyName = companySlug.charAt(0).toUpperCase() + companySlug.slice(1);
+              
+              // Função para criar o formulário de inscrição
+              function createApplicationForm() {
+                const formContainer = document.querySelector('.application-form-container');
+                if (!formContainer) return;
+                
+                // Remover formulário existente se houver
+                formContainer.innerHTML = '';
+                
+                // Criar formulário HTML
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.className = 'space-y-4';
+                form.innerHTML = \`
+                  <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6">
+                      Candidatar-se para esta Vaga
+                    </h3>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">
+                          Nome *
+                        </label>
+                        <input
+                          type="text"
+                          id="firstName"
+                          name="firstName"
+                          required
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Seu nome"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">
+                          Sobrenome *
+                        </label>
+                        <input
+                          type="text"
+                          id="lastName"
+                          name="lastName"
+                          required
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Seu sobrenome"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                        E-mail *
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="seu@email.com"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
+                        Telefone *
+                      </label>
+                      <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="(11) 99999-9999"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label for="resume" class="block text-sm font-medium text-gray-700 mb-1">
+                        Currículo (PDF) - Opcional
+                      </label>
+                      <input
+                        type="file"
+                        id="resume"
+                        name="resume"
+                        accept=".pdf"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      <p class="text-xs text-gray-500 mt-1">
+                        Aceitamos apenas arquivos PDF. Tamanho máximo: 10MB.
+                      </p>
+                    </div>
+                    
+                    <button
+                      type="submit"
+                      class="w-full bg-green-500 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-green-600 transition-colors"
+                    >
+                      Enviar Candidatura
+                    </button>
+                  </div>
+                \`;
+                
+                // Adicionar evento de submit
+                form.addEventListener('submit', async function(e) {
+                  e.preventDefault();
+                  console.log('Formulário submetido via JavaScript');
+                  
+                  const formData = new FormData(form);
+                  const firstName = formData.get('firstName');
+                  const lastName = formData.get('lastName');
+                  const email = formData.get('email');
+                  const phone = formData.get('phone');
+                  const resumeFile = formData.get('resume');
+                  
+                  try {
+                    let response;
+                    
+                    if (resumeFile && resumeFile.size > 0) {
+                      // Com currículo
+                      const formDataToSend = new FormData();
+                      formDataToSend.append('firstName', firstName);
+                      formDataToSend.append('lastName', lastName);
+                      formDataToSend.append('email', email);
+                      formDataToSend.append('phone', phone);
+                      formDataToSend.append('resume', resumeFile);
+                      
+                      response = await fetch(\`/jobs/\${job.id}/applications/upload-resume\`, {
+                        method: 'POST',
+                        body: formDataToSend,
+                      });
+                    } else {
+                      // Sem currículo
+                      response = await fetch(\`/jobs/\${job.id}/applications\`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          firstName,
+                          lastName,
+                          email,
+                          phone,
+                          jobId: job.id,
+                        }),
+                      });
+                    }
+                    
+                    if (response.ok) {
+                      // Sucesso
+                      alert('Inscrição realizada com sucesso!');
+                      form.reset();
+                    } else {
+                      const errorData = await response.json().catch(() => ({}));
+                      alert('Erro ao enviar inscrição: ' + (errorData.message || 'Erro desconhecido'));
+                    }
+                  } catch (error) {
+                    console.error('Erro ao enviar inscrição:', error);
+                    alert('Erro ao enviar inscrição: ' + error.message);
+                  }
                 });
+                
+                formContainer.appendChild(form);
               }
+              
+              // Criar o formulário
+              createApplicationForm();
+              
+              console.log('Hidratação concluída');
             });
           </script>
         </body>

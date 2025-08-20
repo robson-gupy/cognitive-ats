@@ -67,7 +67,7 @@ export function JobDetail({ job, companyName, companySlug }: JobDetailProps) {
 
       {/* Job Details */}
       <section className="py-12">
-        <div className="max-w-4xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6">
           {/* Job Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-medium text-gray-900 mb-4">{job.title}</h1>
@@ -106,83 +106,91 @@ export function JobDetail({ job, companyName, companySlug }: JobDetailProps) {
             </div>
           </div>
 
-          {/* Job Content - Layout em coluna única */}
-          <div className="space-y-8">
-            {/* Description */}
-            <div>
-              <h2 className="text-xl font-medium text-gray-900 mb-4">Descrição da Vaga</h2>
-              <div className="text-gray-700 leading-relaxed">
-                {formatDescription(job.description)}
-              </div>
-            </div>
-
-            {/* Requirements */}
-            {job.requirements && (
+          {/* Job Content - Layout em duas colunas */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Coluna principal com detalhes da vaga */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Description */}
               <div>
-                <h2 className="text-xl font-medium text-gray-900 mb-4">Requisitos</h2>
+                <h2 className="text-xl font-medium text-gray-900 mb-4">Descrição da Vaga</h2>
                 <div className="text-gray-700 leading-relaxed">
-                  {formatRequirements(job.requirements)}
+                  {formatDescription(job.description)}
                 </div>
               </div>
-            )}
 
-            {/* Company Info */}
-            <div>
-              <h2 className="text-xl font-medium text-gray-900 mb-4">Sobre a Empresa</h2>
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-white font-light text-xl">{companyName.charAt(0)}</span>
-                </div>
+              {/* Requirements */}
+              {job.requirements && (
                 <div>
-                  <h4 className="font-medium text-gray-900">{companyName}</h4>
-                  <p className="text-sm text-gray-600">Empresa parceira</p>
-                </div>
-              </div>
-              <a 
-                href={`http://${companySlug}.jobs.localhost/`}
-                className="text-blue-500 hover:text-blue-600 text-sm font-medium transition-colors"
-              >
-                Ver todas as vagas →
-              </a>
-            </div>
-
-            {/* Job Summary */}
-            <div>
-              <h2 className="text-xl font-medium text-gray-900 mb-4">Resumo da Vaga</h2>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Departamento:</span>
-                  <span className="font-medium text-gray-900">
-                    {job.department ? job.department.name : 'Não especificado'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Data de Publicação:</span>
-                  <span className="font-medium text-gray-900">{formatDate(job.publishedAt)}</span>
-                </div>
-                {job.expirationDate && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Data de Expiração:</span>
-                    <span className="font-medium text-gray-900">{formatDate(job.expirationDate)}</span>
+                  <h2 className="text-xl font-medium text-gray-900 mb-4">Requisitos</h2>
+                  <div className="text-gray-700 leading-relaxed">
+                    {formatRequirements(job.requirements)}
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
-                  <span className="font-medium text-gray-900">
-                    {job.status === 'PUBLISHED' ? 'Ativa' : job.status}
-                  </span>
+                </div>
+              )}
+
+              {/* Company Info */}
+              <div>
+                <h2 className="text-xl font-medium text-gray-900 mb-4">Sobre a Empresa</h2>
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                    <span className="text-white font-light text-xl">{companyName.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">{companyName}</h4>
+                    <p className="text-sm text-gray-600">Empresa parceira</p>
+                  </div>
+                </div>
+                <a 
+                  href={`http://${companySlug}.jobs.localhost/`}
+                  className="text-blue-500 hover:text-blue-600 text-sm font-medium transition-colors"
+                >
+                  Ver todas as vagas →
+                </a>
+              </div>
+
+              {/* Job Summary */}
+              <div>
+                <h2 className="text-xl font-medium text-gray-900 mb-4">Resumo da Vaga</h2>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Departamento:</span>
+                    <span className="font-medium text-gray-900">
+                      {job.department ? job.department.name : 'Não especificado'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Data de Publicação:</span>
+                    <span className="font-medium text-gray-900">{formatDate(job.publishedAt)}</span>
+                  </div>
+                  {job.expirationDate && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Data de Expiração:</span>
+                      <span className="font-medium text-gray-900">{formatDate(job.expirationDate)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Status:</span>
+                    <span className="font-medium text-gray-900">
+                      {job.status === 'PUBLISHED' ? 'Ativa' : job.status}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Apply Button */}
-            <div className="pt-6">
-              <button 
-                id="apply-button"
-                className="w-full bg-green-500 text-white px-6 py-3 rounded-lg text-lg font-medium hover:bg-green-600 transition-colors"
-              >
-                Candidatar-se para esta Vaga
-              </button>
+            {/* Coluna lateral direita com formulário de inscrição */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-6">
+                <div className="application-form-container">
+                  {/* O formulário será inserido aqui via JavaScript */}
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-6">
+                      Candidatar-se para esta Vaga
+                    </h3>
+                    <p className="text-gray-500">Carregando formulário...</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -190,12 +198,13 @@ export function JobDetail({ job, companyName, companySlug }: JobDetailProps) {
 
       {/* Footer */}
       <footer className="border-t border-gray-100 py-8 mt-16">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+        <div className="max-w-7xl mx-auto px-6 text-center">
           <p className="text-gray-500 text-sm">
             &copy; 2024 {companyName} - Plataforma de Recrutamento
           </p>
         </div>
       </footer>
+
     </div>
   );
 }
