@@ -951,14 +951,6 @@ export const ApplicationsList: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#52c41a' }}>
-                      {applicationDetailsDrawer.application.aiScore ? `${applicationDetailsDrawer.application.aiScore.toFixed(1)}/10` : 'N/A'}
-                    </div>
-                    <Text type="secondary">Score AI</Text>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#722ed1' }}>
                       {applicationDetailsDrawer.application.questionResponsesScore || 'N/A'}
                     </div>
