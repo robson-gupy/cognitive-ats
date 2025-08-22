@@ -1007,7 +1007,7 @@ export const ApplicationsList: React.FC = () => {
                                     <div>
                                       <Text strong>{exp.position}</Text>
                                       <br />
-                                      <Text type="secondary">{exp.company}</Text>
+                                      <Text strong style={{ color: 'rgba(70, 70, 70, 0.88)' }}>{exp.companyName}</Text>
                                       <br />
                                       <Text type="secondary">
                                         {new Date(exp.startDate).toLocaleDateString('pt-BR')} - 
@@ -1089,9 +1089,9 @@ export const ApplicationsList: React.FC = () => {
                               <Text strong>Idiomas:</Text>
                               <div style={{ marginTop: '8px' }}>
                                 {resumeData.languages.map((language: any) => (
-                                  <Tag key={language.id} icon={<GlobalOutlined />} style={{ marginBottom: '4px' }}>
-                                    {language.language} - {language.level}
-                                  </Tag>
+                                                                      <Tag key={language.id} icon={<GlobalOutlined />} style={{ marginBottom: '4px' }}>
+                                      {language.language} - {language.proficiencyLevel}
+                                    </Tag>
                                 ))}
                               </div>
                             </div>

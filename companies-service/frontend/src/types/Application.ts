@@ -35,7 +35,7 @@ export interface Application {
     summary?: string;
     professionalExperiences?: Array<{
       id: string;
-      company: string;
+      companyName: string;
       position: string;
       startDate: string;
       endDate?: string;
@@ -58,7 +58,7 @@ export interface Application {
     languages?: Array<{
       id: string;
       language: string;
-      level: string;
+      proficiencyLevel: string;
     }>;
   };
   questionResponses?: Array<{
