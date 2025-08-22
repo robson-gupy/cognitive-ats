@@ -16,6 +16,10 @@ export class ReactSsrService {
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+          <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+          <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+          <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
           <title>${slug ? `${slug.charAt(0).toUpperCase() + slug.slice(1)} - ` : ''}Gupy Candidates - Encontre as Melhores Oportunidades</title>
           <meta name="description" content="Conectamos candidatos talentosos com empresas inovadoras através de inteligência artificial." />
           <script src="https://cdn.tailwindcss.com"></script>
@@ -57,6 +61,7 @@ export class ReactSsrService {
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
           <title>${jobData.data.title} - ${companyName} Jobs</title>
           <meta name="description" content="${jobData.data.description.substring(0, 160)}..." />
           <script src="https://cdn.tailwindcss.com"></script>
@@ -282,6 +287,10 @@ export class ReactSsrService {
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+          <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+          <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+          <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
           <title>Vaga não encontrada - ${companyName} Jobs</title>
           <meta name="description" content="Vaga não encontrada ou não está disponível." />
           <script src="https://cdn.tailwindcss.com"></script>
