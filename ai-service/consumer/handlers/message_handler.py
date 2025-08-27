@@ -13,6 +13,7 @@ from consumer.models.message import SQSMessage, ResumeMessage
 from consumer.models.result import ProcessingResult
 from consumer.services.sqs_service import SQSService
 from consumer.services.resume_orchestrator import ResumeOrchestrator
+from consumer.services.applications_service import applications_service
 
 
 class MessageHandler:
@@ -44,11 +45,7 @@ class MessageHandler:
                     
                     logger.info("✅ Lote de mensagens processado")
                 else:
-                    logger.debug("⏳ Nenhuma mensagem para processar")
-                
-                # Pequena pausa para não sobrecarregar
-                import asyncio
-                await asyncio.sleep(0.5)
+                    await asyncio.sleep(0.5)
                 
         except KeyboardInterrupt:
             logger.info("⏹️ Processamento interrompido pelo usuário")
@@ -180,5 +177,6 @@ class MessageHandler:
         return {
             'sqs': self.sqs_service.get_queue_info(),
             'backend': self.resume_orchestrator.resume_processor.backend_service.get_backend_info(),
-            'ai_service': 'initialized' if self.resume_orchestrator.resume_processor.ai_service else 'not_initialized'
+            'ai_service': 'initialized' if self.resume_orchestrator.resume_processor.ai_service else 'not_initialized',
+            'database': applications_service.get_database_status()
         }

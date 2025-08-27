@@ -4,11 +4,15 @@ Parser de currículos usando IA
 import PyPDF2
 import tempfile
 import os
+import logging
 from typing import Dict, Any, Optional
 from datetime import date
 from shared.exceptions import ResumeParsingError
 from shared.utils import extract_json_from_text, sanitize_text
 from core.ai.service import AIService
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 
 class ResumeParser:
@@ -44,9 +48,25 @@ class ResumeParser:
             # Cria prompt para parsing
             prompt = self._create_resume_parse_prompt(pdf_text)
             
+            # Log antes de chamar o serviço de IA
+            logger.info(
+                "⏳ Aguardando resposta do serviço de IA para parsing do currículo...",
+                application_id=application_id,
+                provider=getattr(self.ai_service, 'provider', 'unknown'),
+                pdf_path=pdf_path
+            )
+            
             # Gera parsing usando IA
             response = await self.ai_service.generate_text(
                 prompt
+            )
+            
+            # Log após receber resposta da IA
+            logger.info(
+                "✅ Resposta recebida do serviço de IA para parsing do currículo",
+                application_id=application_id,
+                response_received=bool(response),
+                response_length=len(response) if response else 0
             )
             
             # Extrai dados do JSON

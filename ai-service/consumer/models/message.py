@@ -3,17 +3,19 @@ Modelos para mensagens SQS
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 
 @dataclass
 class ResumeMessage:
-    """Mensagem de processamento de currículo"""
+    """Mensagem de currículo para processamento"""
     resume_url: str
     application_id: str
-    timestamp: Optional[datetime] = None
-    priority: Optional[str] = None
+    job_id: Optional[str] = None
+    company_id: Optional[str] = None
+    user_id: Optional[str] = None
+    created_at: Optional[str] = None
     
     def __post_init__(self):
         """Validação pós-inicialização"""
@@ -21,6 +23,16 @@ class ResumeMessage:
             raise ValueError("resume_url é obrigatório")
         if not self.application_id:
             raise ValueError("application_id é obrigatório")
+
+
+@dataclass
+class AIScoreMessage:
+    """Mensagem para cálculo de score de candidato"""
+    application_id: str
+    resume_data: Dict[str, Any]
+    job_data: Dict[str, Any]
+    question_responses: Optional[List[Dict[str, str]]] = None
+    created_at: Optional[str] = None
 
 
 @dataclass

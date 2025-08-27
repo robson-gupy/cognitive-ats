@@ -38,7 +38,38 @@ class AIService:
         Returns:
             Texto gerado
         """
-        return await self.provider_instance.generate_text(prompt, **kwargs)
+        logger.info(
+            "🚀 Iniciando geração de texto",
+            provider=self.provider.value,
+            prompt_length=len(prompt)
+        )
+        
+        # Log antes de chamar o provider
+        logger.info(
+            "⏳ Aguardando resposta da API externa...",
+            provider=self.provider.value,
+            prompt_length=len(prompt)
+        )
+        
+        try:
+            response = await self.provider_instance.generate_text(prompt, **kwargs)
+            
+            # Log após receber resposta
+            logger.info(
+                "✅ Resposta recebida da API externa",
+                provider=self.provider.value,
+                response_length=len(response) if response else 0
+            )
+            
+            return response
+            
+        except Exception as e:
+            logger.error(
+                "❌ Erro na chamada para API externa",
+                provider=self.provider.value,
+                error=str(e)
+            )
+            raise
     
     async def generate_chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
         """

@@ -56,13 +56,22 @@ docker run --rm --network cognitive-ats_cognitive-ats-network \
     --endpoint-url=http://localstack:4566
 
 # Criar fila SQS para aplicações
-echo "Criando fila SQS..."
+echo "Criando as filas SQS..."
 docker run --rm --network cognitive-ats_cognitive-ats-network \
     -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
     -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
     -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
     amazon/aws-cli:latest sqs create-queue \
-    --queue-name applications-queue \
+    --queue-name $APPLICATIONS_SQS_QUEUE_NAME \
+    --attributes '{"VisibilityTimeout": "30", "MessageRetentionPeriod": "1209600"}' \
+    --endpoint-url=http://localstack:4566
+
+docker run --rm --network cognitive-ats_cognitive-ats-network \
+    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+    amazon/aws-cli:latest sqs create-queue \
+    --queue-name $APPLICATIONS_AI_SCORE_SQS_QUEUE_NAME \
     --attributes '{"VisibilityTimeout": "30", "MessageRetentionPeriod": "1209600"}' \
     --endpoint-url=http://localstack:4566
 
