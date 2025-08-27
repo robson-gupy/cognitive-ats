@@ -47,7 +47,6 @@ class JobCreator:
             kwargs_without_temp = {k: v for k, v in kwargs.items() if k != 'temperature'}
             response = await self.ai_service.generate_text(
                 structured_prompt,
-                temperature=kwargs.get('temperature', 0.9),
                 **kwargs_without_temp
             )
             
@@ -164,9 +163,7 @@ class JobCreator:
         
         try:
             response = await self.ai_service.generate_text(
-                prompt,
-                temperature=0.8,
-                max_tokens=1000
+                prompt
             )
             
             questions_data = extract_json_from_text(response)
@@ -193,9 +190,7 @@ class JobCreator:
         
         try:
             response = await self.ai_service.generate_text(
-                prompt,
-                temperature=0.8,
-                max_tokens=1000
+                prompt
             )
             
             stages_data = extract_json_from_text(response)

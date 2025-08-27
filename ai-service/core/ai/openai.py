@@ -37,15 +37,11 @@ class OpenAIProvider(BaseAIProvider):
     async def generate_text(self, prompt: str, **kwargs) -> str:
         """Gera texto usando OpenAI"""
         model = kwargs.get('model', Config.DEFAULT_MODEL)
-        max_tokens = kwargs.get('max_tokens', Config.DEFAULT_MAX_TOKENS)
-        temperature = kwargs.get('temperature', Config.DEFAULT_TEMPERATURE)
         
         try:
             response = await self.client.chat.completions.create(
                 model=model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=max_tokens,
-                temperature=temperature
+                messages=[{"role": "user", "content": prompt}]
             )
             return response.choices[0].message.content
         except Exception as e:
@@ -53,16 +49,12 @@ class OpenAIProvider(BaseAIProvider):
     
     async def generate_chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
         """Gera resposta de chat usando OpenAI"""
-        model = kwargs.get('model', 'gpt-3.5-turbo')
-        max_tokens = kwargs.get('max_tokens', Config.DEFAULT_MAX_TOKENS)
-        temperature = kwargs.get('temperature', Config.DEFAULT_TEMPERATURE)
+        model = kwargs.get('model', 'gpt-5-2025-08-07')
         
         try:
             response = await self.client.chat.completions.create(
                 model=model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature
+                messages=messages
             )
             return response.choices[0].message.content
         except Exception as e:

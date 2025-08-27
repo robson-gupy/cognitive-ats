@@ -55,9 +55,7 @@ async def evaluate_candidate(request: CandidateEvaluationRequest):
             resume_data=resume_dict,
             job_data=job_dict,
             question_responses=question_responses,
-            model=model,
-            max_tokens=2000,
-            temperature=0.3
+            model=model
         )
         
         logger.info("✅ Avaliação concluída com sucesso")

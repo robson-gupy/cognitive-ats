@@ -36,9 +36,7 @@ async def create_job_from_prompt(request: JobCreationRequest):
             generate_questions=request.generate_questions,
             generate_stages=request.generate_stages,
             max_questions=request.max_questions,
-            max_stages=request.max_stages,
-            max_tokens=request.max_tokens,
-            temperature=request.temperature
+            max_stages=request.max_stages
         )
         
         return JobResponse(

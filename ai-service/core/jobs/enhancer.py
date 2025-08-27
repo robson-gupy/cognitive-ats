@@ -37,9 +37,7 @@ class JobEnhancer:
             
             # Gera texto melhorado
             enhanced_description = await self.ai_service.generate_text(
-                prompt,
-                temperature=0.7,
-                max_tokens=1500
+                prompt
             )
             
             # Sanitiza e atualiza o job
@@ -68,9 +66,7 @@ class JobEnhancer:
             
             # Gera texto melhorado
             enhanced_requirements = await self.ai_service.generate_text(
-                prompt,
-                temperature=0.7,
-                max_tokens=1000
+                prompt
             )
             
             # Sanitiza e atualiza o job
@@ -99,9 +95,7 @@ class JobEnhancer:
             
             # Gera texto melhorado
             enhanced_title = await self.ai_service.generate_text(
-                prompt,
-                temperature=0.8,
-                max_tokens=100
+                prompt
             )
             
             # Sanitiza e atualiza o job

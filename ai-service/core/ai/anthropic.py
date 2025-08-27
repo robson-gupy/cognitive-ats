@@ -28,14 +28,10 @@ class AnthropicProvider(BaseAIProvider):
     async def generate_text(self, prompt: str, **kwargs) -> str:
         """Gera texto usando Anthropic"""
         model = kwargs.get('model', 'claude-3-sonnet-20240229')
-        max_tokens = kwargs.get('max_tokens', Config.DEFAULT_MAX_TOKENS)
-        temperature = kwargs.get('temperature', Config.DEFAULT_TEMPERATURE)
         
         try:
             response = await self.client.messages.create(
                 model=model,
-                max_tokens=max_tokens,
-                temperature=temperature,
                 messages=[{"role": "user", "content": prompt}]
             )
             return response.content[0].text
@@ -45,14 +41,10 @@ class AnthropicProvider(BaseAIProvider):
     async def generate_chat(self, messages: List[Dict[str, str]], **kwargs) -> str:
         """Gera resposta de chat usando Anthropic"""
         model = kwargs.get('model', 'claude-3-sonnet-20240229')
-        max_tokens = kwargs.get('max_tokens', Config.DEFAULT_MAX_TOKENS)
-        temperature = kwargs.get('temperature', Config.DEFAULT_TEMPERATURE)
         
         try:
             response = await self.client.messages.create(
                 model=model,
-                max_tokens=max_tokens,
-                temperature=temperature,
                 messages=messages
             )
             return response.content[0].text

@@ -18,8 +18,6 @@ class ChatRequest(BaseModel):
     provider: Optional[str] = None
     api_key: Optional[str] = None
     model: Optional[str] = None
-    max_tokens: Optional[int] = 1000
-    temperature: Optional[float] = 0.7
 
 
 class EmbeddingRequest(BaseModel):

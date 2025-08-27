@@ -92,7 +92,7 @@ class ResumeCommand(BaseCommand):
         
         parser.add_argument(
             '--output', '-o',
-            help='Arquivo de saída para salvar o resultado (opcional)'
+            help='Arquivo de saída para salvar o resultado em JSON (opcional). Se não especificado, imprime no console.'
         )
         
         parser.add_argument(
@@ -173,7 +173,8 @@ class ResumeCommand(BaseCommand):
                     "application_id": args.application_id,
                     "processing_time": result.processing_time,
                     "timestamp": result.timestamp.isoformat() if result.timestamp else None,
-                    "message": "Currículo processado com sucesso"
+                    "message": "Currículo processado com sucesso",
+                    "resume_data": result.resume_data if hasattr(result, 'resume_data') else None
                 }
             else:
                 print(f"❌ Erro ao processar currículo: {result.error}")
@@ -298,6 +299,7 @@ Comandos disponíveis:
 
 Exemplos de uso:
   python ai_service_cli.py resume --pdf curriculo.pdf --application-id ID123
+  python ai_service_cli.py resume --pdf curriculo.pdf --application-id ID123 --output resultado.json
   python ai_service_cli.py jobs --action create --input vaga.json
   python ai_service_cli.py ai --model gpt-4 --prompt "Analise este texto"
 
@@ -373,6 +375,26 @@ Para ajuda específica de um comando:
         
         print(f"📝 Mensagem: {data.get('message', 'N/A')}")
         print("="*50)
+    
+    def print_json_output(self, data: dict):
+        """Imprime o resultado em formato JSON formatado no console"""
+        print("\n" + "="*50)
+        print("📄 RESULTADO EM JSON")
+        print("="*50)
+        
+        # Remove campos desnecessários para a saída JSON
+        json_data = data.copy()
+        
+        # Se for um comando de currículo bem-sucedido, inclui os dados do currículo
+        if data.get("success") and "resume_data" in data and data["resume_data"]:
+            print("✅ Dados do currículo processado:")
+            print(json.dumps(data["resume_data"], indent=2, ensure_ascii=False))
+        else:
+            # Para outros casos, mostra o resultado completo
+            print("📊 Resultado completo:")
+            print(json.dumps(json_data, indent=2, ensure_ascii=False))
+        
+        print("="*50)
 
 
 async def main():
@@ -410,6 +432,9 @@ async def main():
     # Salva resultado se solicitado
     if hasattr(command_args, 'output') and command_args.output:
         cli.save_output(result, command_args.output)
+    else:
+        # Se não foi especificado arquivo de saída, imprime JSON no console
+        cli.print_json_output(result)
     
     # Exit code baseado no sucesso
     sys.exit(0 if result.get("success") else 1)

@@ -26,8 +26,7 @@ class Config:
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     
     # Configurações de modelo padrão
-    DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4")
-    DEFAULT_MAX_TOKENS = int(os.getenv("DEFAULT_MAX_TOKENS", "1000"))
+    DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4.1-2025-04-14")
     DEFAULT_TEMPERATURE = float(os.getenv("DEFAULT_TEMPERATURE", "0.7"))
     
     # Configurações de timeout

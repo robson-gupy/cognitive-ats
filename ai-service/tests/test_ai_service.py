@@ -11,8 +11,7 @@ client = TestClient(app)
 def test_generate_text():
     """Testa geração de texto"""
     response = client.post("/ai/generate-text", json={
-        "prompt": "Olá, como você está?",
-        "max_tokens": 50
+        "prompt": "Olá, como você está?"
     })
     assert response.status_code == 200
     data = response.json()
@@ -23,8 +22,7 @@ def test_generate_text():
 def test_chat():
     """Testa chat"""
     response = client.post("/ai/chat", json={
-        "messages": [{"role": "user", "content": "Olá"}],
-        "max_tokens": 50
+        "messages": [{"role": "user", "content": "Olá"}]
     })
     assert response.status_code == 200
     data = response.json()

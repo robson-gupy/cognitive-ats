@@ -31,9 +31,7 @@ async def generate_text(request: TextGenerationRequest):
         # Gera o texto
         text = await ai_service.generate_text(
             request.prompt,
-            model=request.model,
-            max_tokens=request.max_tokens,
-            temperature=request.temperature
+            model=request.model
         )
         
         return AIResponse(

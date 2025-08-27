@@ -38,8 +38,6 @@ class JobCreationRequest(BaseModel):
     max_stages: Optional[int] = 3
     provider: Optional[str] = None
     api_key: Optional[str] = None
-    max_tokens: Optional[int] = 2000
-    temperature: Optional[float] = 0.7
 
 
 class JobEnhancementRequest(BaseModel):

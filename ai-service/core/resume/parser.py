@@ -46,9 +46,7 @@ class ResumeParser:
             
             # Gera parsing usando IA
             response = await self.ai_service.generate_text(
-                prompt,
-                temperature=0.3,
-                max_tokens=2000
+                prompt
             )
             
             # Extrai dados do JSON
