@@ -38,7 +38,7 @@ O sistema agora possui **dois listeners SQS** que funcionam em paralelo para pro
 
 - **Fila**: `APPLICATIONS_SQS_QUEUE_NAME`
 - **Função**: Processa currículos em PDF
-- **Fluxo**: Download → Parse → Extração → Armazenamento
+- **Fluxo**: Download → Parse → Extração → Armazenamento → **Envio Automático para Fila de Scores**
 
 **Estrutura da mensagem:**
 ```json
@@ -49,6 +49,13 @@ O sistema agora possui **dois listeners SQS** que funcionam em paralelo para pro
   "companyId": "uuid-da-empresa"
 }
 ```
+
+**Funcionalidades:**
+- Download do PDF do currículo
+- Parse e extração de informações
+- Armazenamento no banco de dados
+- Atualização da application com dados extraídos
+- **🚀 Envio automático para fila de scores**
 
 ### 2. Listener de Scores (NOVO)
 
@@ -80,6 +87,38 @@ O sistema agora possui **dois listeners SQS** que funcionam em paralelo para pro
   ]
 }
 ```
+
+**Funcionalidades:**
+- Recebe dados do currículo já processados
+- Calcula scores usando `ai_service.evaluate_candidate`
+- Atualiza a application com os scores calculados
+- Usa `ApplicationsService.update_application_scores`
+
+## 🔄 Fluxo Automatizado (NOVO!)
+
+**O sistema agora funciona de forma completamente automatizada:**
+
+```
+📄 PDF do CV → Fila de CVs → Processamento → Fila de Scores → Cálculo de Score → Banco de Dados
+     ↓              ↓              ↓              ↓              ↓              ↓
+  Upload CV    Listener CVs   Parse + IA   Listener Scores   IA Score    Application
+                                 ↓              ↓              ↓
+                            Dados Extraídos → Score Calculado → Scores Salvos
+```
+
+**Benefícios:**
+- ✅ **Processo único**: Envie apenas para a fila de CVs
+- ✅ **Automação completa**: O sistema cuida de todo o fluxo
+- ✅ **Consistência**: Dados do CV são automaticamente convertidos para scores
+- ✅ **Eficiência**: Não há necessidade de coordenação manual entre filas
+- ✅ **Rastreabilidade**: Logs completos de todo o processo
+
+**Como usar:**
+1. Envie mensagem para fila de CVs
+2. O sistema processa automaticamente
+3. Dados são enviados para fila de scores
+4. Scores são calculados e salvos
+5. Application atualizada com todos os dados
 
 ## ⚙️ Configuração
 

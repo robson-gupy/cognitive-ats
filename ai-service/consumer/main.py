@@ -52,8 +52,8 @@ async def main():
         score_handler = AIScoreMessageHandler()
         
         # Exibe status dos serviços
-        resume_status = resume_handler.get_status()
-        score_status = score_handler.get_status()
+        resume_status = await resume_handler.get_status()
+        score_status = await score_handler.get_status()
         
         logger.info("📊 Status dos serviços:")
         logger.info(f"   SQS CVs: {'✅ Conectado' if resume_status['sqs'] else '❌ Não conectado'}")
@@ -75,7 +75,7 @@ async def main():
     except KeyboardInterrupt:
         logger.info("⏹️ Consumer interrompido pelo usuário")
     except Exception as e:
-        logger.critical("💥 Erro crítico no consumer", error=str(e))
+        logger.critical(f"💥 Erro crítico no consumer: {e}")
         sys.exit(1)
 
 

@@ -14,29 +14,32 @@ from consumer.models.message import SQSMessage
 class SQSService:
     """Serviço para operações com SQS"""
     
-    def __init__(self):
+    def __init__(self, sqs_config: Optional[Dict[str, Any]] = None, queue_name: Optional[str] = None):
+        """
+        Inicializa o serviço SQS
+        
+        Args:
+            sqs_config: Configurações SQS (opcional, usa padrão se não fornecido)
+            queue_name: Nome da fila (opcional, usa padrão se não fornecido)
+        """
         self.client = None
         self.queue_url = None
+        self.sqs_config = sqs_config or settings.get_sqs_config()
+        self.queue_name = queue_name or settings.sqs.queue_name
         self._connect()
     
     def _connect(self):
         """Estabelece conexão com SQS"""
         try:
-            # Obtém configurações
-            sqs_config = settings.get_sqs_config()
-            
             # Cria cliente SQS
-            self.client = boto3.client('sqs', **sqs_config)
+            self.client = boto3.client('sqs', **self.sqs_config)
             
             # Obtém URL da fila
             self.queue_url = self._get_queue_url()
             
             if self.queue_url:
                 logger.info(
-                    "✅ Cliente SQS conectado com sucesso",
-                    endpoint=settings.sqs.endpoint_url,
-                    region=settings.sqs.region,
-                    queue=settings.sqs.queue_name
+                    f"✅ Cliente SQS conectado com sucesso - Endpoint: {self.sqs_config.get('endpoint_url')}, Região: {self.sqs_config.get('region_name')}, Fila: {self.queue_name}"
                 )
             else:
                 logger.error("❌ Não foi possível obter URL da fila")
@@ -44,7 +47,7 @@ class SQSService:
         except NoCredentialsError:
             logger.error("❌ Credenciais AWS não configuradas")
         except Exception as e:
-            logger.error("❌ Erro ao conectar com SQS", error=str(e))
+            logger.error(f"❌ Erro ao conectar com SQS: {e}")
     
     def _get_queue_url(self) -> Optional[str]:
         """Obtém a URL da fila pelo nome"""
@@ -57,15 +60,15 @@ class SQSService:
             
             # Procura pela fila específica
             for url in queue_urls:
-                if settings.sqs.queue_name in url:
+                if self.queue_name in url:
                     logger.info(f"✅ Fila encontrada: {url}")
                     return url
             
-            logger.error(f"❌ Fila '{settings.sqs.queue_name}' não encontrada")
+            logger.error(f"❌ Fila '{self.queue_name}' não encontrada")
             return None
             
         except Exception as e:
-            logger.error("❌ Erro ao listar filas", error=str(e))
+            logger.error(f"❌ Erro ao listar filas: {e}")
             return None
     
     def receive_messages(self) -> List[SQSMessage]:
@@ -80,10 +83,14 @@ class SQSService:
             return []
         
         try:
+            # Usa configurações padrão se não especificadas
+            max_messages = getattr(settings.sqs, 'max_messages', 10)
+            wait_time = getattr(settings.sqs, 'wait_time_seconds', 20)
+            
             response = self.client.receive_message(
                 QueueUrl=self.queue_url,
-                MaxNumberOfMessages=settings.sqs.max_messages,
-                WaitTimeSeconds=settings.sqs.wait_time_seconds,
+                MaxNumberOfMessages=max_messages,
+                WaitTimeSeconds=wait_time,
                 AttributeNames=['All'],
                 MessageAttributeNames=['All']
             )
@@ -111,7 +118,7 @@ class SQSService:
                 return []
                 
         except Exception as e:
-            logger.error("❌ Erro ao receber mensagens", error=str(e))
+            logger.error(f"❌ Erro ao receber mensagens: {e}")
             return []
     
     def delete_message(self, receipt_handle: str) -> bool:
@@ -137,7 +144,7 @@ class SQSService:
             return True
             
         except Exception as e:
-            logger.error("❌ Erro ao deletar mensagem", error=str(e))
+            logger.error(f"❌ Erro ao deletar mensagem: {e}")
             return False
     
     def is_connected(self) -> bool:
@@ -150,10 +157,56 @@ class SQSService:
             return {}
         
         return {
-            'queue_name': settings.sqs.queue_name,
+            'queue_name': self.queue_name,
             'queue_url': self.queue_url,
-            'endpoint': settings.sqs.endpoint_url,
-            'region': settings.sqs.region,
-            'max_retries': settings.sqs.max_retries,
-            'wait_time': settings.sqs.wait_time_seconds
+            'endpoint': self.sqs_config.get('endpoint_url'),
+            'region': self.sqs_config.get('region_name'),
+            'max_retries': getattr(settings.sqs, 'max_retries', 3),
+            'wait_time': getattr(settings.sqs, 'wait_time_seconds', 20)
         }
+    
+    def send_message(self, message_body: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Envia uma mensagem para a fila SQS
+        
+        Args:
+            message_body: Corpo da mensagem a ser enviada
+            
+        Returns:
+            Dict com o resultado do envio ou None se falhar
+        """
+        if not self.client or not self.queue_url:
+            logger.error("❌ Cliente SQS não conectado")
+            return None
+        
+        try:
+            import json
+            
+            # Converte a mensagem para JSON
+            message_json = json.dumps(message_body, ensure_ascii=False, default=str)
+            
+            # Envia a mensagem
+            response = self.client.send_message(
+                QueueUrl=self.queue_url,
+                MessageBody=message_json
+            )
+            
+            logger.info(
+                "✅ Mensagem enviada para a fila com sucesso",
+                message_id=response.get('MessageId'),
+                queue_name=self.queue_name
+            )
+            
+            return {
+                'MessageId': response.get('MessageId'),
+                'MD5OfMessageBody': response.get('MD5OfMessageBody'),
+                'queue_name': self.queue_name
+            }
+            
+        except Exception as e:
+            logger.error(
+                f"❌ Erro ao enviar mensagem para a fila: {e}",
+                queue_name=self.queue_name,
+                error=str(e)
+            )
+            return None

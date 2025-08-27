@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Script de teste para demonstrar os dois listeners SQS
-# CVs e Scores funcionando em paralelo
+# CVs e Scores funcionando em paralelo com FLUXO AUTOMATIZADO
 
-echo "🚀 Testando Sistema de Dois Listeners SQS"
-echo "=========================================="
+echo "🚀 Testando Sistema de Dois Listeners SQS com Fluxo Automatizado"
+echo "================================================================"
 echo
 
 # Verificar se o Docker Compose está rodando
@@ -52,7 +52,7 @@ echo "📋 Filas SQS disponíveis:"
 aws --endpoint-url=http://localhost:4566 sqs list-queues --region us-east-1
 echo
 
-# Função para enviar mensagem de CV
+# Função para enviar mensagem de CV (que dispara o fluxo automatizado)
 send_cv_message() {
     local application_id=$1
     local job_id=$2
@@ -67,10 +67,10 @@ send_cv_message() {
         }" \
         --region us-east-1
     
-    echo "📄 Mensagem de CV enviada para application ${application_id}"
+    echo "📄 Mensagem de CV enviada para application ${application_id} (dispara fluxo automatizado)"
 }
 
-# Função para enviar mensagem de score
+# Função para enviar mensagem de score (método manual - opcional)
 send_score_message() {
     local application_id=$1
     local candidate_name=$2
@@ -117,21 +117,30 @@ send_score_message() {
         }" \
         --region us-east-1
     
-    echo "📊 Mensagem de score enviada para application ${application_id}"
+    echo "📊 Mensagem de score manual enviada para application ${application_id}"
 }
 
 # Enviar mensagens de teste
 echo "📤 Enviando mensagens de teste..."
+echo
 
-# Mensagens de CV
-send_cv_message "cv-001" "job-001"
-send_cv_message "cv-002" "job-001"
-send_cv_message "cv-003" "job-002"
+echo "🔄 FLUXO AUTOMATIZADO - Enviando para fila de CVs:"
+echo "   (O sistema automaticamente enviará para fila de scores após processamento)"
+echo
 
-# Mensagens de Score
-send_score_message "score-001" "João Silva"
-send_score_message "score-002" "Maria Santos"
-send_score_message "score-003" "Carlos Oliveira"
+# Mensagens de CV (disparam fluxo automatizado)
+send_cv_message "auto-cv-001" "job-001"
+send_cv_message "auto-cv-002" "job-001"
+send_cv_message "auto-cv-003" "job-002"
+
+echo
+echo "📊 MÉTODO MANUAL - Enviando diretamente para fila de scores:"
+echo "   (Para casos onde você já tem os dados processados)"
+echo
+
+# Mensagens de Score (método manual)
+send_score_message "manual-score-001" "João Silva"
+send_score_message "manual-score-002" "Maria Santos"
 
 echo
 echo "✅ Mensagens de teste enviadas"
@@ -154,14 +163,40 @@ aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes \
     --region us-east-1 | jq '.Attributes.ApproximateNumberOfMessages // "0"'
 
 echo
+echo "🎯 FLUXO AUTOMATIZADO - Como funciona:"
+echo "======================================"
+echo
+echo "1. 📄 Você envia PDF para fila de CVs"
+echo "2. 🔄 Sistema processa automaticamente:"
+echo "   - Download do PDF"
+echo "   - Parse com IA"
+echo "   - Extração de dados"
+echo "   - Envio para backend"
+echo "   🚀 ENVIO AUTOMÁTICO para fila de scores"
+echo "3. 📊 Sistema calcula scores automaticamente:"
+echo "   - Recebe dados da fila de scores"
+echo "   - Calcula scores com IA"
+echo "   - Atualiza application no banco"
+echo "4. ✅ Processo completo finalizado"
+echo
+echo "💡 VANTAGEM: Você só precisa enviar UMA mensagem para a fila de CVs!"
+echo "   O sistema cuida de todo o resto automaticamente."
+echo
 echo "🎯 Próximos passos:"
 echo "1. Inicie o consumer: cd ai-service/consumer && python main.py"
-echo "2. Observe os logs dos dois listeners funcionando em paralelo"
-echo "3. As mensagens serão processadas automaticamente"
+echo "2. Observe o fluxo automatizado funcionando:"
+echo "   - CVs sendo processados"
+echo "   - Dados sendo enviados automaticamente para fila de scores"
+echo "   - Scores sendo calculados e salvos"
+echo "3. Use Ctrl+C para parar quando quiser"
 echo
-echo "💡 Dica: Use Ctrl+C para parar o consumer quando quiser"
+echo "🔍 Para monitorar o fluxo em tempo real:"
+echo "   # Terminal 1: Consumer"
+echo "   cd ai-service/consumer && python main.py"
 echo
-echo "🔍 Para monitorar as filas em tempo real:"
+echo "   # Terminal 2: Monitorar filas"
 echo "   watch -n 2 'aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes --queue-url http://localhost:4566/000000000000/applications-queue --attribute-names All --region us-east-1 | jq .Attributes.ApproximateNumberOfMessages'"
 echo
 echo "✅ Teste configurado com sucesso!"
+echo
+echo "🚀 FLUXO AUTOMATIZADO ATIVADO - O sistema agora funciona sozinho!"

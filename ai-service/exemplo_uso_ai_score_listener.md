@@ -118,7 +118,32 @@ cd ai-service/consumer
 python main.py
 ```
 
-### 3. Enviar Mensagem para a Fila
+### 3. Fluxo Automatizado (NOVO!)
+
+**Agora o sistema funciona de forma automatizada:**
+
+1. **Envie uma mensagem para a fila de CVs**:
+   ```bash
+   aws --endpoint-url=http://localhost:4566 sqs send-message \
+     --queue-url http://localhost:4566/000000000000/applications-queue \
+     --message-body '{
+       "resumeUrl": "https://exemplo.com/cv.pdf",
+       "applicationId": "auto-cv-001",
+       "jobId": "job-001"
+     }'
+   ```
+
+2. **O sistema automaticamente**:
+   - ✅ Processa o PDF do currículo
+   - ✅ Extrai informações com IA
+   - ✅ Envia dados para o backend
+   - 🚀 **ENVIA AUTOMATICAMENTE para a fila de scores**
+   - ✅ Calcula scores com IA
+   - ✅ Atualiza a application no banco
+
+**Não é mais necessário enviar mensagens separadas para cada fila!**
+
+### 4. Enviar Mensagem para a Fila (Método Manual - Opcional)
 
 ```bash
 # Usando AWS CLI local

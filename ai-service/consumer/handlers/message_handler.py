@@ -14,6 +14,7 @@ from consumer.models.result import ProcessingResult
 from consumer.services.sqs_service import SQSService
 from consumer.services.resume_orchestrator import ResumeOrchestrator
 from consumer.services.applications_service import applications_service
+import asyncio
 
 
 class MessageHandler:
@@ -50,7 +51,7 @@ class MessageHandler:
         except KeyboardInterrupt:
             logger.info("⏹️ Processamento interrompido pelo usuário")
         except Exception as e:
-            logger.error("❌ Erro durante processamento de mensagens", error=str(e))
+            logger.error(f"❌ Erro durante processamento de mensagens: {e}")
     
     async def _process_single_message(self, message: SQSMessage):
         """
@@ -122,6 +123,21 @@ class MessageHandler:
                     processing_time=result.processing_time
                 )
                 
+                # Log adicional sobre o envio para fila de scores
+                if hasattr(result, 'score_queue_success') and result.score_queue_success:
+                    logger.info(
+                        "🚀 Currículo enviado para fila de scores",
+                        message_id=message.message_id,
+                        application_id=resume_message.application_id
+                    )
+                elif hasattr(result, 'score_queue_error') and result.score_queue_error:
+                    logger.warning(
+                        "⚠️ Falha ao enviar para fila de scores",
+                        message_id=message.message_id,
+                        application_id=resume_message.application_id,
+                        error=result.score_queue_error
+                    )
+                
                 # Deleta mensagem após processamento bem-sucedido
                 self.sqs_service.delete_message(message.receipt_handle)
                 
@@ -170,13 +186,14 @@ class MessageHandler:
             True se deve ser processada
         """
         required_fields = ['resumeUrl', 'applicationId']
+        print(message_data)
         return all(field in message_data for field in required_fields)
     
-    def get_status(self) -> dict:
+    async def get_status(self) -> dict:
         """Retorna status dos serviços"""
         return {
             'sqs': self.sqs_service.get_queue_info(),
             'backend': self.resume_orchestrator.resume_processor.backend_service.get_backend_info(),
             'ai_service': 'initialized' if self.resume_orchestrator.resume_processor.ai_service else 'not_initialized',
-            'database': applications_service.get_database_status()
+            'database': await applications_service.get_database_status()
         }

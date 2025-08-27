@@ -34,9 +34,7 @@ class BackendService:
             url = f"{self.base_url}/resumes/{application_id}"
             
             logger.info(
-                "📤 Enviando dados do currículo para o backend",
-                url=url,
-                application_id=application_id
+                f"📤 Enviando dados do currículo para o backend - URL: {url}, Application ID: {application_id}"
             )
             
             # Faz a requisição POST
@@ -67,9 +65,7 @@ class BackendService:
                 
         except requests.exceptions.RequestException as e:
             logger.error(
-                "❌ Erro de conexão com o backend",
-                error=str(e),
-                url=url
+                f"❌ Erro de conexão com o backend - URL: {url}, Erro: {str(e)}"
             )
             return BackendResult(
                 success=False,
@@ -78,9 +74,7 @@ class BackendService:
             
         except Exception as e:
             logger.error(
-                "❌ Erro inesperado na comunicação com backend",
-                error=str(e),
-                url=url
+                f"❌ Erro inesperado na comunicação com backend - URL: {url}, Erro: {str(e)}"
             )
             return BackendResult(
                 success=False,

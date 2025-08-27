@@ -21,6 +21,7 @@ except ImportError as e:
 from consumer.utils.logger import logger
 from consumer.models.result import ProcessingResult
 from consumer.services.backend_service import BackendService
+from consumer.services.score_queue_service import score_queue_service
 
 
 class ResumeProcessor:
@@ -39,7 +40,7 @@ class ResumeProcessor:
             self.resume_parser = ResumeParser(self.ai_service)
             logger.info("✅ Serviço de IA inicializado")
         except Exception as e:
-            logger.error("❌ Erro ao inicializar serviço de IA", error=str(e))
+            logger.error(f"❌ Erro ao inicializar serviço de IA: {e}")
             raise
     
     async def process_resume(self, pdf_path: str, application_id: str) -> ProcessingResult:
@@ -84,17 +85,20 @@ class ResumeProcessor:
                     pdf_path,
                     application_id
                 )
-                
+
                 logger.info(
-                    "✅ Currículo processado com sucesso",
-                    application_id=application_id,
-                    summary_length=len(resume_data.get('summary', '') or ''),
-                    experiences_count=len(resume_data.get('professionalExperiences', [])),
-                    formations_count=len(resume_data.get('academicFormations', [])),
-                    achievements_count=len(resume_data.get('achievements', [])),
-                    languages_count=len(resume_data.get('languages', []))
+                    "✅ Currículo processado com sucesso "
+                    "application_id={},\nsummary_length={},\nexperiences_count={},\n"
+                    "formations_count={},\nachievements_count={},\nlanguages_count={}".format(
+                        application_id,
+                        len(resume_data.get('summary', '') or ''),
+                        len(resume_data.get('professionalExperiences', [])),
+                        len(resume_data.get('academicFormations', [])),
+                        len(resume_data.get('achievements', [])),
+                        len(resume_data.get('languages', []))
+                    )
                 )
-                
+
                 # Converte datas para formato ISO para serialização JSON
                 from consumer.utils.date_utils import convert_dates_to_iso
                 resume_data = convert_dates_to_iso(resume_data)
@@ -108,6 +112,22 @@ class ResumeProcessor:
                     backend_resume_data
                 )
                 
+                # ENVIO AUTOMÁTICO PARA FILA DE SCORES
+                logger.info("🚀 Enviando dados processados para fila de scores")
+                
+                score_queue_result = await score_queue_service.send_score_request(
+                    application_id=application_id,
+                    resume_data=resume_data
+                )
+                
+                if score_queue_result['success']:
+                    logger.info("✅ Dados enviados para fila de scores com sucesso")
+                else:
+                    logger.warning(
+                        "⚠️ Falha ao enviar para fila de scores",
+                        error=score_queue_result.get('error')
+                    )
+                
                 # Calcula tempo de processamento
                 processing_time = (datetime.now() - start_time).total_seconds()
                 
@@ -119,13 +139,14 @@ class ResumeProcessor:
                     resume_data=resume_data,
                     processing_time=processing_time,
                     backend_success=backend_result.success,
-                    backend_error=backend_result.error if not backend_result.success else None
+                    backend_error=backend_result.error if not backend_result.success else None,
+                    score_queue_success=score_queue_result['success'],
+                    score_queue_error=score_queue_result.get('error') if not score_queue_result['success'] else None
                 )
                 
             except Exception as e:
                 logger.error(
-                    "❌ Erro ao processar currículo",
-                    application_id=application_id,
+                    f"❌ Erro ao processar currículo - {str(e)}",
                     error=str(e)
                 )
                 raise

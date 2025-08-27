@@ -43,9 +43,7 @@ class FileService:
             content_type = response.headers.get('content-type', '').lower()
             if 'pdf' not in content_type and not url.lower().endswith('.pdf'):
                 logger.warning(
-                    "⚠️ Content-Type não é PDF",
-                    content_type=content_type,
-                    url=url
+                    f"⚠️ Content-Type não é PDF - Content-Type: {content_type}, URL: {url}"
                 )
             
             # Cria arquivo temporário
@@ -135,9 +133,7 @@ class FileService:
         full_url = f"{settings.sqs.endpoint_url}/{path}"
         
         logger.info(
-            "🔗 URL construída",
-            original_path=resume_url,
-            full_url=full_url
+            f"🔗 URL construída - Path original: {resume_url}, URL completa: {full_url}"
         )
         
         return full_url

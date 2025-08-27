@@ -2,11 +2,9 @@
 Serviço para gerenciar applications no consumer SQS
 """
 
-import logging
 from typing import Optional, Dict, Any
 from consumer.services.database_service import database_service
-
-logger = logging.getLogger(__name__)
+from consumer.utils.logger import logger
 
 
 class ApplicationsService:
@@ -34,23 +32,48 @@ class ApplicationsService:
         try:
             logger.info(f"🔄 Atualizando scores da application {application_id}")
             
-            # Validar se pelo menos um score foi fornecido
-            if all(score is None for score in [overall_score, education_score, experience_score]):
-                raise ValueError("Pelo menos um score deve ser fornecido para atualização")
+            # Validar tipos dos scores
+            validated_scores = {}
+            scores_to_validate = [
+                ('overall_score', overall_score),
+                ('education_score', education_score),
+                ('experience_score', experience_score)
+            ]
+            
+            for score_name, score_value in scores_to_validate:
+                if score_value is not None:
+                    if not isinstance(score_value, (int, float)):
+                        logger.warning(f"⚠️ Score {score_name} não é numérico: {score_value} (tipo: {type(score_value).__name__})")
+                        # Tenta converter para float
+                        try:
+                            if isinstance(score_value, str):
+                                validated_scores[score_name] = float(score_value.replace(',', '.'))
+                            else:
+                                validated_scores[score_name] = float(score_value)
+                        except (ValueError, TypeError):
+                            raise ValueError(f"Score {score_name} não pode ser convertido para número: {score_value}")
+                    else:
+                        validated_scores[score_name] = score_value
+            
+            # Validar se pelo menos um score válido foi fornecido após validação
+            if not validated_scores:
+                raise ValueError("Nenhum score válido foi fornecido para atualização")
+            
+            logger.info(f"📊 Scores validados: {validated_scores}")
             
             # Fazer update direto no banco
             result = await database_service.update_application_scores(
                 application_id=application_id,
-                overall_score=overall_score,
-                education_score=education_score,
-                experience_score=experience_score
+                overall_score=validated_scores.get('overall_score'),
+                education_score=validated_scores.get('education_score'),
+                experience_score=validated_scores.get('experience_score')
             )
             
             if result['success']:
                 logger.info(f"✅ Scores da application {application_id} atualizados com sucesso")
-                logger.info(f"   Overall Score: {overall_score}")
-                logger.info(f"   Education Score: {education_score}")
-                logger.info(f"   Experience Score: {experience_score}")
+                logger.info(f"   Overall Score: {validated_scores.get('overall_score')}")
+                logger.info(f"   Education Score: {validated_scores.get('education_score')}")
+                logger.info(f"   Experience Score: {validated_scores.get('experience_score')}")
             else:
                 logger.error(f"❌ Falha ao atualizar scores da application {application_id}: {result['error']}")
             

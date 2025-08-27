@@ -67,11 +67,11 @@ def map_resume_to_backend_format(resume_data: dict) -> dict:
         dict: Dados mapeados para o formato do backend
     """
     mapped_data = {}
-    
+
     # Campos básicos
     if 'summary' in resume_data:
         mapped_data['summary'] = resume_data['summary']
-    
+
     # Mapear experiências profissionais
     if 'professionalExperiences' in resume_data and resume_data['professionalExperiences']:
         mapped_data['professionalExperiences'] = []
@@ -89,7 +89,7 @@ def map_resume_to_backend_format(resume_data: dict) -> dict:
             # Remove campos None
             mapped_exp = {k: v for k, v in mapped_exp.items() if v is not None}
             mapped_data['professionalExperiences'].append(mapped_exp)
-    
+
     # Mapear formações acadêmicas
     if 'academicFormations' in resume_data and resume_data['academicFormations']:
         mapped_data['academicFormations'] = []
@@ -107,7 +107,7 @@ def map_resume_to_backend_format(resume_data: dict) -> dict:
             # Remove campos None
             mapped_formation = {k: v for k, v in mapped_formation.items() if v is not None}
             mapped_data['academicFormations'].append(mapped_formation)
-    
+
     # Mapear conquistas
     if 'achievements' in resume_data and resume_data['achievements']:
         mapped_data['achievements'] = []
@@ -119,7 +119,7 @@ def map_resume_to_backend_format(resume_data: dict) -> dict:
             # Remove campos None
             mapped_achievement = {k: v for k, v in mapped_achievement.items() if v is not None}
             mapped_data['achievements'].append(mapped_achievement)
-    
+
     # Mapear idiomas
     if 'languages' in resume_data and resume_data['languages']:
         mapped_data['languages'] = []
@@ -131,7 +131,7 @@ def map_resume_to_backend_format(resume_data: dict) -> dict:
             # Remove campos None
             mapped_language = {k: v for k, v in mapped_language.items() if v is not None}
             mapped_data['languages'].append(mapped_language)
-    
+
     return mapped_data
 
 
@@ -143,7 +143,7 @@ def get_sqs_client():
         access_key = os.getenv('AWS_ACCESS_KEY_ID')
         secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         region = os.getenv('AWS_REGION')
-        
+
         # Valida se as variáveis estão configuradas
         if not all([endpoint_url, access_key, secret_key, region]):
             print("❌ Variáveis de ambiente AWS não configuradas:")
@@ -152,7 +152,7 @@ def get_sqs_client():
             print(f"   AWS_SECRET_ACCESS_KEY: {'***' if secret_key else 'NÃO CONFIGURADA'}")
             print(f"   AWS_REGION: {region}")
             return None
-        
+
         # Cria o cliente SQS
         sqs = boto3.client(
             'sqs',
@@ -161,12 +161,12 @@ def get_sqs_client():
             aws_secret_access_key=secret_key,
             region_name=region
         )
-        
+
         print(f"✅ Cliente SQS criado com sucesso")
         print(f"   Endpoint: {endpoint_url}")
         print(f"   Região: {region}")
         return sqs
-        
+
     except Exception as e:
         print(f"❌ Erro ao criar cliente SQS: {e}")
         return None
@@ -178,20 +178,20 @@ def get_queue_url(sqs_client, queue_name):
         # Lista todas as filas para encontrar a que queremos
         response = sqs_client.list_queues()
         queue_urls = response.get('QueueUrls', [])
-        
+
         print(f"📋 Filas encontradas: {len(queue_urls)}")
         for url in queue_urls:
             print(f"   - {url}")
-        
+
         # Procura pela fila específica
         for url in queue_urls:
             if queue_name in url:
                 print(f"✅ Fila encontrada: {url}")
                 return url
-        
+
         print(f"❌ Fila '{queue_name}' não encontrada")
         return None
-        
+
     except Exception as e:
         print(f"❌ Erro ao listar filas: {e}")
         return None
@@ -212,7 +212,7 @@ def should_delete_message(message: dict, max_retries: int = 3) -> bool:
         # Verifica se há atributos de tentativas
         attributes = message.get('Attributes', {})
         approximate_receive_count = int(attributes.get('ApproximateReceiveCount', 1))
-        
+
         return approximate_receive_count >= max_retries
     except Exception:
         return False
@@ -232,14 +232,14 @@ async def send_resume_to_backend(application_id: str, resume_data: dict) -> dict
     try:
         # Obtém a URL do backend das variáveis de ambiente
         backend_url = os.getenv('BACKEND_URL', 'http://localhost:3000')
-        
+
         # URL do endpoint de criação de resumo
         url = f"{backend_url}/resumes/{application_id}"
-        
+
         print(f"📤 Enviando dados do currículo para o backend...")
         print(f"   URL: {url}")
         print(f"   Application ID: {application_id}")
-        
+
         # Faz a requisição POST
         response = requests.post(
             url,
@@ -249,7 +249,7 @@ async def send_resume_to_backend(application_id: str, resume_data: dict) -> dict
             },
             timeout=30
         )
-        
+
         if response.status_code == 201 or response.status_code == 200:
             print(f"✅ Dados do currículo enviados com sucesso!")
             print(f"   Status: {response.status_code}")
@@ -267,7 +267,7 @@ async def send_resume_to_backend(application_id: str, resume_data: dict) -> dict
                 "status_code": response.status_code,
                 "error": response.text
             }
-            
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Erro de conexão com o backend: {e}")
         return {
@@ -297,24 +297,24 @@ def download_pdf_from_url(url: str) -> str:
     """
     try:
         print(f"📥 Fazendo download do PDF: {url}")
-        
+
         # Faz a requisição HTTP
         response = requests.get(url, timeout=30)
         response.raise_for_status()
-        
+
         # Verifica se o conteúdo é um PDF
         content_type = response.headers.get('content-type', '').lower()
         if 'pdf' not in content_type and not url.lower().endswith('.pdf'):
             print(f"⚠️  Aviso: Content-Type não é PDF: {content_type}")
-        
+
         # Cria arquivo temporário
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
         temp_file.write(response.content)
         temp_file.close()
-        
+
         print(f"✅ PDF salvo em: {temp_file.name}")
         return temp_file.name
-        
+
     except requests.exceptions.RequestException as e:
         raise Exception(f"Erro ao fazer download do PDF: {str(e)}")
     except Exception as e:
@@ -336,16 +336,16 @@ async def process_resume_message(message_data: dict, ai_service: AIService, retr
     try:
         resume_url = message_data.get('resumeUrl')
         application_id = message_data.get('applicationId')
-        
+
         if not resume_url:
             raise Exception("resumeUrl não encontrado na mensagem")
-        
+
         if not application_id:
             raise Exception("applicationId não encontrado na mensagem")
-        
+
         # Constrói a URL completa do S3 usando a variável de ambiente
         s3_endpoint = os.getenv('AWS_ENDPOINT_URL', 'http://localhost:4566')
-        
+
         # Se o resume_url já é uma URL completa, usa como está
         if resume_url.startswith('http'):
             full_resume_url = resume_url
@@ -354,37 +354,39 @@ async def process_resume_message(message_data: dict, ai_service: AIService, retr
             # Remove a barra inicial se existir para evitar duplicação
             path = resume_url.lstrip('/')
             full_resume_url = f"{s3_endpoint}/{path}"
-        
+
         print(f"🔄 Processando currículo para aplicação: {application_id}")
         print(f"   Path original: {resume_url}")
         print(f"   URL completa: {full_resume_url}")
-        
+
         # Faz download do PDF usando a URL completa
         pdf_path = download_pdf_from_url(full_resume_url)
-        
+
         try:
             # Cria o parser de currículos
             resume_parser = ResumeParser(ai_service)
-            
+
+            print(f"🔄 Iniciando o parse do PDF!")
+
             # Processa o currículo
             resume_data = await resume_parser.parse_resume_from_pdf(pdf_path, application_id)
-            
+
             print(f"✅ Currículo processado com sucesso!")
             print(f"   - Resumo: {len(resume_data.get('summary', '') or '')} caracteres")
             print(f"   - Experiências: {len(resume_data.get('professionalExperiences', []))}")
             print(f"   - Formações: {len(resume_data.get('academicFormations', []))}")
             print(f"   - Conquistas: {len(resume_data.get('achievements', []))}")
             print(f"   - Idiomas: {len(resume_data.get('languages', []))}")
-            
+
             # Converte datas para formato ISO para serialização JSON
             resume_data = convert_dates_to_iso(resume_data)
-            
+
             # Mapeia os dados para o formato esperado pelo backend
             backend_resume_data = map_resume_to_backend_format(resume_data)
-            
+
             # Envia os dados do currículo para o backend
             backend_result = await send_resume_to_backend(application_id, backend_resume_data)
-            
+
             if backend_result['success']:
                 return {
                     "success": True,
@@ -402,7 +404,7 @@ async def process_resume_message(message_data: dict, ai_service: AIService, retr
                     "backend_error": backend_result.get('error'),
                     "message": "Currículo processado mas falha ao enviar ao backend"
                 }
-            
+
         finally:
             # Remove o arquivo temporário
             try:
@@ -410,7 +412,7 @@ async def process_resume_message(message_data: dict, ai_service: AIService, retr
                 print(f"🗑️  Arquivo temporário removido: {pdf_path}")
             except Exception as e:
                 print(f"⚠️  Erro ao remover arquivo temporário: {e}")
-        
+
     except Exception as e:
         print(f"❌ Erro ao processar currículo: {str(e)}")
         return {
@@ -426,7 +428,7 @@ async def listen_to_queue(sqs_client, queue_url):
     print(f"🎧 Iniciando escuta da fila: {queue_url}")
     print("⏳ Aguardando mensagens de currículo... (Ctrl+C para parar)")
     print("-" * 50)
-    
+
     # Inicializa o serviço de IA
     try:
         ai_service = AIService(provider=AIProvider.OPENAI)
@@ -434,7 +436,7 @@ async def listen_to_queue(sqs_client, queue_url):
     except Exception as e:
         print(f"❌ Erro ao inicializar serviço de IA: {e}")
         return
-    
+
     try:
         while True:
             # Recebe mensagens da fila
@@ -445,45 +447,45 @@ async def listen_to_queue(sqs_client, queue_url):
                 AttributeNames=['All'],
                 MessageAttributeNames=['All']
             )
-            
+
             messages = response.get('Messages', [])
-            
+
             if messages:
                 print(f"📨 {len(messages)} mensagem(s) recebida(s)")
                 print("=" * 50)
-                
+
                 for i, message in enumerate(messages, 1):
                     print(f"📝 Processando mensagem #{i}:")
                     print(f"   ID: {message.get('MessageId')}")
                     print(f"   Receipt Handle: {message.get('ReceiptHandle')[:50]}...")
-                    
+
                     # Imprime o corpo da mensagem
                     body = message.get('Body', '')
                     print(f"   Corpo: {body}")
-                    
+
                     try:
                         # Tenta fazer parse do JSON
                         body_json = json.loads(body)
                         print(f"   JSON: {json.dumps(body_json, indent=2, ensure_ascii=False)}")
-                        
+
                         # Verifica se é uma mensagem de currículo
                         if 'resumeUrl' in body_json and 'applicationId' in body_json:
                             print(f"🔄 Mensagem de currículo detectada!")
-                            
+
                             # Obtém o número de tentativas
                             attributes = message.get('Attributes', {})
                             receive_count = int(attributes.get('ApproximateReceiveCount', 1))
                             max_retries = int(os.getenv('SQS_MAX_RETRIES', '3'))
-                            
+
                             print(f"🔄 Tentativa {receive_count}/{max_retries}")
-                            
+
                             # Processa o currículo
                             result = await process_resume_message(body_json, ai_service, receive_count - 1)
-                            
+
                             if result['success']:
                                 print(f"✅ Currículo processado com sucesso!")
                                 # Aqui você pode adicionar lógica para salvar no banco ou enviar para outra fila
-                                
+
                                 # Deleta a mensagem da fila após processamento bem-sucedido
                                 try:
                                     sqs_client.delete_message(
@@ -495,7 +497,7 @@ async def listen_to_queue(sqs_client, queue_url):
                                     print(f"⚠️  Erro ao deletar mensagem da fila: {e}")
                             else:
                                 print(f"❌ Falha no processamento: {result.get('error', 'Erro desconhecido')}")
-                                
+
                                 # Verifica se deve deletar a mensagem após muitas tentativas
                                 if should_delete_message(message, max_retries):
                                     print(f"⚠️  Máximo de tentativas atingido ({max_retries}) - deletando mensagem")
@@ -504,7 +506,8 @@ async def listen_to_queue(sqs_client, queue_url):
                                             QueueUrl=queue_url,
                                             ReceiptHandle=message.get('ReceiptHandle')
                                         )
-                                        print(f"🗑️  Mensagem deletada após {max_retries} tentativas: {message.get('MessageId')}")
+                                        print(
+                                            f"🗑️  Mensagem deletada após {max_retries} tentativas: {message.get('MessageId')}")
                                     except Exception as e:
                                         print(f"⚠️  Erro ao deletar mensagem após tentativas: {e}")
                                 else:
@@ -520,7 +523,7 @@ async def listen_to_queue(sqs_client, queue_url):
                                 print(f"🗑️  Mensagem inválida deletada: {message.get('MessageId')}")
                             except Exception as e:
                                 print(f"⚠️  Erro ao deletar mensagem inválida: {e}")
-                        
+
                     except json.JSONDecodeError:
                         print(f"   ❌ Mensagem não é JSON válido - ignorando")
                         # Deleta mensagens com JSON inválido
@@ -543,16 +546,16 @@ async def listen_to_queue(sqs_client, queue_url):
                             print(f"🗑️  Mensagem com erro deletada: {message.get('MessageId')}")
                         except Exception as delete_error:
                             print(f"⚠️  Erro ao deletar mensagem com erro: {delete_error}")
-                    
+
                     print("-" * 30)
-                
+
                 print("=" * 50)
             else:
                 print("⏳ Nenhuma mensagem recebida...")
-            
+
             # Pequena pausa para não sobrecarregar
             await asyncio.sleep(1)
-            
+
     except KeyboardInterrupt:
         print("\n⏹️  Escuta interrompida pelo usuário")
     except Exception as e:
@@ -563,7 +566,7 @@ async def main():
     """Função principal"""
     print("=== SQS Resume Processor ===")
     print()
-    
+
     # Obtém o nome da fila
     queue_name = os.getenv('APPLICATIONS_SQS_QUEUE_NAME')
     if not queue_name:
@@ -571,26 +574,26 @@ async def main():
         print("   Configure no arquivo .env:")
         print("   APPLICATIONS_SQS_QUEUE_NAME=applications-queue")
         sys.exit(1)
-    
+
     print(f"🎯 Fila alvo: {queue_name}")
     print()
-    
+
     # Cria o cliente SQS
     sqs_client = get_sqs_client()
     if not sqs_client:
         sys.exit(1)
-    
+
     # Obtém a URL da fila
     queue_url = get_queue_url(sqs_client, queue_name)
     if not queue_url:
         print("❌ Não foi possível obter a URL da fila")
         sys.exit(1)
-    
+
     print()
-    
+
     # Inicia a escuta
     await listen_to_queue(sqs_client, queue_url)
 
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())

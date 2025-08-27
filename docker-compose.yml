@@ -113,14 +113,15 @@ services:
       - cognitive-ats-network
     restart: unless-stopped
 
-  # SQS Listener Service
-  sqs-listener:
+  # SQS Resume Listener Service (Parse de currículos)
+  sqs-resume-listener:
     build:
       context: ./ai-service
-      dockerfile: consumer/Dockerfile.listener
-    container_name: cognitive-ats-sqs-listener
+      dockerfile: consumer/Dockerfile.resume-listener
+    container_name: cognitive-ats-sqs-resume-listener
     environment:
       - APPLICATIONS_SQS_QUEUE_NAME=${APPLICATIONS_SQS_QUEUE_NAME}
+      - APPLICATIONS_AI_SCORE_SQS_QUEUE_NAME=${APPLICATIONS_AI_SCORE_SQS_QUEUE_NAME}
       - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -128,11 +129,48 @@ services:
       - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - BACKEND_URL=${BACKEND_URL:-http://companies-backend:3000}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_PORT=${DB_PORT}
     volumes:
       - ./ai-service:/app
     depends_on:
       - localstack
       - companies-backend
+      - postgres
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+  # SQS Score Listener Service (Score de candidatos)
+  sqs-score-listener:
+    build:
+      context: ./ai-service
+      dockerfile: consumer/Dockerfile.score-listener
+    container_name: cognitive-ats-sqs-score-listener
+    environment:
+      - AI_SCORE_SQS_QUEUE_NAME=${AI_SCORE_SQS_QUEUE_NAME:-ai-score-queue}
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - BACKEND_URL=${BACKEND_URL:-http://companies-backend:3000}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_PORT=${DB_PORT}
+    volumes:
+      - ./ai-service:/app
+    depends_on:
+      - localstack
+      - companies-backend
+      - postgres
     networks:
       - cognitive-ats-network
     restart: unless-stopped

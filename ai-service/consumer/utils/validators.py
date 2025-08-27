@@ -22,7 +22,7 @@ def validate_json_message(body: str) -> Optional[Dict[str, Any]]:
         data = json.loads(body)
         return data
     except json.JSONDecodeError as e:
-        logger.error("Mensagem não é JSON válido", error=str(e), body=body)
+        logger.error(f"Mensagem não é JSON válido: {e}, body: {body}")
         return None
 
 
@@ -39,37 +39,36 @@ def validate_resume_message(data: Dict[str, Any]) -> Optional[ResumeMessage]:
     try:
         # Verifica campos obrigatórios
         if 'resumeUrl' not in data:
-            logger.error("Campo resumeUrl não encontrado na mensagem", data=data)
+            logger.error(f"Campo resumeUrl não encontrado na mensagem: {data}")
             return None
         
         if 'applicationId' not in data:
-            logger.error("Campo applicationId não encontrado na mensagem", data=data)
+            logger.error(f"Campo applicationId não encontrado na mensagem: {data}")
             return None
         
         # Validações adicionais
         if not validate_pdf_url(data['resumeUrl']):
-            logger.error("URL do currículo inválida", url=data['resumeUrl'])
+            logger.error(f"URL do currículo inválida: {data['resumeUrl']}")
             return None
         
         if not validate_application_id(data['applicationId']):
-            logger.error("ID da aplicação inválido", application_id=data['applicationId'])
+            logger.error(f"ID da aplicação inválido: {data['applicationId']}")
             return None
         
         # Cria e valida o objeto ResumeMessage
         resume_message = ResumeMessage(
             resume_url=data['resumeUrl'],
-            application_id=data['applicationId'],
-            timestamp=data.get('timestamp'),
-            priority=data.get('priority')
+            application_id=data['applicationId']
         )
         
         return resume_message
         
     except ValueError as e:
-        logger.error("Dados da mensagem inválidos", error=str(e), data=data)
+        logger.error(f"Dados da mensagem inválidos: {e}, data: {data}")
         return None
     except Exception as e:
-        logger.error("Erro inesperado na validação da mensagem", error=str(e), data=data)
+        print(f"Erro na validação da mensagem: {e}")
+        logger.error(f"Erro inesperado na validação da mensagem: {e}, data: {data}")
         return None
 
 

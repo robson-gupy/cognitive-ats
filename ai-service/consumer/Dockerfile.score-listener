@@ -1,0 +1,32 @@
+FROM python:3.11-slim
+
+# Define o diretório de trabalho
+WORKDIR /app
+
+# Instala dependências do sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia o arquivo de requirements
+COPY requirements.txt .
+
+# Instala as dependências Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia o código da aplicação
+COPY consumer/ ./consumer/
+COPY core/ ./core/
+COPY shared/ ./shared/
+
+# Define variáveis de ambiente padrão
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Cria um usuário não-root para segurança
+RUN useradd --create-home --shell /bin/bash app \
+    && chown -R app:app /app
+USER app
+
+# Comando para executar apenas o listener de score de candidatos
+CMD ["python", "-c", "import asyncio; from consumer.handlers.ai_score_message_handler import AIScoreMessageHandler; asyncio.run(AIScoreMessageHandler().process_messages())"]

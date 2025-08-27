@@ -38,6 +38,7 @@ class ResumeParser:
         Returns:
             Dict com os dados do currículo parseado
         """
+        logger.info("⏳ Iniciando parsing do currículo...")
         try:
             # Extrai texto do PDF
             pdf_text = self._extract_text_from_pdf(pdf_path)
@@ -49,12 +50,7 @@ class ResumeParser:
             prompt = self._create_resume_parse_prompt(pdf_text)
             
             # Log antes de chamar o serviço de IA
-            logger.info(
-                "⏳ Aguardando resposta do serviço de IA para parsing do currículo...",
-                application_id=application_id,
-                provider=getattr(self.ai_service, 'provider', 'unknown'),
-                pdf_path=pdf_path
-            )
+            logger.info("⏳ Aguardando resposta do serviço de IA para parsing do currículo...")
             
             # Gera parsing usando IA
             response = await self.ai_service.generate_text(
@@ -63,10 +59,7 @@ class ResumeParser:
             
             # Log após receber resposta da IA
             logger.info(
-                "✅ Resposta recebida do serviço de IA para parsing do currículo",
-                application_id=application_id,
-                response_received=bool(response),
-                response_length=len(response) if response else 0
+                "✅ Resposta recebida do serviço de IA para parsing do currículo"
             )
             
             # Extrai dados do JSON

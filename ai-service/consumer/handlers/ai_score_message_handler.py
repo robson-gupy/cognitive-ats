@@ -21,8 +21,16 @@ class AIScoreMessageHandler:
     """Handler para processamento de mensagens de score de candidatos"""
     
     def __init__(self):
-        self.sqs_service = SQSService(settings.get_ai_score_sqs_config())
-        self.ai_service = AIService()
+        self.sqs_service = SQSService(
+            sqs_config=settings.get_ai_score_sqs_config(),
+            queue_name=settings.ai_score_sqs.queue_name
+        )
+        try:
+            from shared.config import AIProvider
+            self.ai_service = AIService(provider=AIProvider.OPENAI)
+        except Exception as e:
+            logger.warning(f"⚠️ AIService não inicializado: {e}")
+            self.ai_service = None
     
     async def process_messages(self):
         """Processa mensagens da fila SQS de scores"""
@@ -51,7 +59,7 @@ class AIScoreMessageHandler:
         except KeyboardInterrupt:
             logger.info("⏹️ Processamento de scores interrompido pelo usuário")
         except Exception as e:
-            logger.error("❌ Erro durante processamento de mensagens de score", error=str(e))
+            logger.error(f"❌ Erro durante processamento de mensagens de score: {e}")
     
     async def _process_single_score_message(self, message: SQSMessage):
         """
@@ -248,10 +256,10 @@ class AIScoreMessageHandler:
             if not evaluation_result:
                 raise Exception("Falha ao calcular score com IA")
             
-            # Extrai scores
-            overall_score = evaluation_result.get('overall_score')
-            education_score = evaluation_result.get('education_score')
-            experience_score = evaluation_result.get('experience_score')
+            # Extrai e converte scores para float
+            overall_score = self._convert_score_to_float(evaluation_result.get('overall_score'))
+            education_score = self._convert_score_to_float(evaluation_result.get('education_score'))
+            experience_score = self._convert_score_to_float(evaluation_result.get('experience_score'))
             
             logger.info(
                 "📊 Scores calculados",
@@ -260,6 +268,10 @@ class AIScoreMessageHandler:
                 education_score=education_score,
                 experience_score=experience_score
             )
+            
+            # Valida se pelo menos um score válido foi calculado
+            if all(score is None for score in [overall_score, education_score, experience_score]):
+                raise Exception("Nenhum score válido foi calculado pela IA")
             
             # Log antes de atualizar o banco
             logger.info(
@@ -290,6 +302,8 @@ class AIScoreMessageHandler:
             return ProcessingResult(
                 success=True,
                 application_id=score_message.application_id,
+                message_id=message_id,
+                timestamp=datetime.now(),
                 processing_time=processing_time,
                 result_data={
                     'overall_score': overall_score,
@@ -301,7 +315,7 @@ class AIScoreMessageHandler:
         except Exception as e:
             processing_time = (datetime.now() - start_time).total_seconds()
             logger.error(
-                "❌ Erro ao processar score",
+                f"❌ Erro ao processar score - {str(e)}",
                 application_id=score_message.application_id,
                 message_id=message_id,
                 error=str(e),
@@ -311,14 +325,51 @@ class AIScoreMessageHandler:
             return ProcessingResult(
                 success=False,
                 application_id=score_message.application_id,
+                message_id=message_id,
+                timestamp=datetime.now(),
                 processing_time=processing_time,
                 error=str(e)
             )
     
-    def get_status(self) -> dict:
+    def _convert_score_to_float(self, score_value) -> Optional[float]:
+        """
+        Converte um valor de score para float
+        
+        Args:
+            score_value: Valor do score (pode ser string, int, float, etc.)
+            
+        Returns:
+            Score como float ou None se inválido
+        """
+        if score_value is None:
+            return None
+        
+        try:
+            # Se já for float, retorna como está
+            if isinstance(score_value, float):
+                return score_value
+            
+            # Se for int, converte para float
+            if isinstance(score_value, int):
+                return float(score_value)
+            
+            # Se for string, tenta converter
+            if isinstance(score_value, str):
+                # Remove caracteres não numéricos e converte
+                cleaned = score_value.strip().replace(',', '.')
+                return float(cleaned)
+            
+            # Para outros tipos, tenta conversão direta
+            return float(score_value)
+            
+        except (ValueError, TypeError):
+            logger.warning(f"⚠️ Não foi possível converter score '{score_value}' para float")
+            return None
+    
+    async def get_status(self) -> dict:
         """Retorna status dos serviços"""
         return {
             'sqs': self.sqs_service.get_queue_info(),
             'ai_service': 'initialized' if self.ai_service else 'not_initialized',
-            'database': applications_service.get_database_status()
+            'database': await applications_service.get_database_status()
         }

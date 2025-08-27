@@ -60,64 +60,34 @@ class ConsumerLogger:
     
     def log_processing_start(self, application_id: str, message_id: str):
         """Log do início do processamento"""
-        self.info(
-            "🔄 Iniciando processamento de currículo",
-            application_id=application_id,
-            message_id=message_id
-        )
+        self.info(f"🔄 Iniciando processamento de currículo - Application ID: {application_id}, Message ID: {message_id}")
     
     def log_processing_success(self, application_id: str, message_id: str, processing_time: float):
         """Log de sucesso no processamento"""
-        self.info(
-            "✅ Currículo processado com sucesso",
-            application_id=application_id,
-            message_id=message_id,
-            processing_time=processing_time
-        )
+        self.info(f"✅ Currículo processado com sucesso - Application ID: {application_id}, Message ID: {message_id}, Tempo: {processing_time:.2f}s")
     
     def log_processing_error(self, application_id: str, message_id: str, error: str):
         """Log de erro no processamento"""
-        self.error(
-            "❌ Erro no processamento de currículo",
-            application_id=application_id,
-            message_id=message_id,
-            error=error
-        )
+        self.error(f"❌ Erro no processamento de currículo - Application ID: {application_id}, Message ID: {message_id}, Erro: {error}")
     
     def log_download_start(self, url: str):
         """Log do início do download"""
-        self.info("📥 Iniciando download", url=url)
+        self.info(f"📥 Iniciando download: {url}")
     
     def log_download_success(self, file_path: str, file_size: int):
         """Log de sucesso no download"""
-        self.info(
-            "✅ Download concluído",
-            file_path=file_path,
-            file_size=file_size
-        )
+        self.info(f"✅ Download concluído - Arquivo: {file_path}, Tamanho: {file_size} bytes")
     
     def log_download_error(self, url: str, error: str):
         """Log de erro no download"""
-        self.error(
-            "❌ Erro no download",
-            url=url,
-            error=error
-        )
+        self.error(f"❌ Erro no download - URL: {url}, Erro: {error}")
     
     def log_backend_communication(self, url: str, status_code: int):
         """Log de comunicação com backend"""
         if status_code in [200, 201]:
-            self.info(
-                "📤 Dados enviados ao backend com sucesso",
-                url=url,
-                status_code=status_code
-            )
+            self.info(f"📤 Dados enviados ao backend com sucesso - URL: {url}, Status: {status_code}")
         else:
-            self.error(
-                "❌ Erro na comunicação com backend",
-                url=url,
-                status_code=status_code
-            )
+            self.error(f"❌ Erro na comunicação com backend - URL: {url}, Status: {status_code}")
 
 
 # Logger global

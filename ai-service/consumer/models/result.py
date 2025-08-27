@@ -15,10 +15,13 @@ class ProcessingResult:
     message_id: str
     timestamp: datetime
     resume_data: Optional[Dict[str, Any]] = None
+    result_data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     processing_time: Optional[float] = None
     backend_success: Optional[bool] = None
     backend_error: Optional[str] = None
+    score_queue_success: Optional[bool] = None
+    score_queue_error: Optional[str] = None
     
     def __post_init__(self):
         """Validação pós-inicialização"""
