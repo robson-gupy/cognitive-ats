@@ -1,0 +1,16 @@
+Você é um especialista em recrutamento e seleção. Melhore os requisitos do seguinte job com base na solicitação fornecida.
+
+Job atual:
+Título: {job.get('title', 'N/A')}
+Descrição: {job.get('description', 'N/A')}
+Requisitos atuais: {job.get('requirements', 'N/A')}
+
+Solicitação de melhoria: {enhancement_prompt}
+
+Por favor, forneça requisitos melhorados que atenda à solicitação. Os requisitos devem ser:
+1. Específicos e mensuráveis
+2. Realistas para o cargo
+3. Organizados por prioridade
+4. Incluir tanto requisitos obrigatórios quanto desejáveis
+
+Retorne apenas os requisitos melhorados, sem texto adicional.

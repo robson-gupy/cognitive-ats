@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 
 from shared.config import Config, AIProvider
-from api.routes import ai, jobs
+from api.routes import ai, jobs, candidates
 
 # Configurar logging
 logging.basicConfig(
@@ -41,6 +41,7 @@ app.add_middleware(
 # Inclui as rotas
 app.include_router(ai.router)
 app.include_router(jobs.router)
+app.include_router(candidates.router)
 
 
 @app.get("/")

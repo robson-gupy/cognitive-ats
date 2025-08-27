@@ -1,0 +1,16 @@
+Você é um especialista em recrutamento e seleção. Melhore a descrição do seguinte job com base na solicitação fornecida.
+
+Job atual:
+Título: {job.get('title', 'N/A')}
+Descrição atual: {job.get('description', 'N/A')}
+Requisitos: {job.get('requirements', 'N/A')}
+
+Solicitação de melhoria: {enhancement_prompt}
+
+Por favor, forneça uma descrição melhorada que atenda à solicitação. A descrição deve ser:
+1. Clara e detalhada
+2. Atraente para candidatos qualificados
+3. Específica sobre responsabilidades
+4. Profissional e bem estruturada
+
+Retorne apenas a descrição melhorada, sem texto adicional.

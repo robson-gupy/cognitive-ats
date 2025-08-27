@@ -1,0 +1,16 @@
+Você é um especialista em recrutamento e seleção. Melhore o título do seguinte job com base na solicitação fornecida.
+
+Job atual:
+Título atual: {job.get('title', 'N/A')}
+Descrição: {job.get('description', 'N/A')}
+Requisitos: {job.get('requirements', 'N/A')}
+
+Solicitação de melhoria: {enhancement_prompt}
+
+Por favor, forneça um título melhorado que atenda à solicitação. O título deve ser:
+1. Claro e atrativo
+2. Específico para o cargo
+3. Com no máximo 255 caracteres
+4. Profissional e adequado ao mercado
+
+Retorne apenas o título melhorado, sem texto adicional.

@@ -1,0 +1,18 @@
+Com base no seguinte job, gere {num_questions} perguntas relevantes para avaliar candidatos:
+
+Título: {job['title']}
+Descrição: {job['description']}
+Requisitos: {job['requirements']}
+
+Retorne apenas um JSON válido com a seguinte estrutura:
+{
+    "questions": [
+        {
+            "question": "Pergunta aqui",
+            "orderIndex": 1,
+            "isRequired": true
+        }
+    ]
+}
+
+As perguntas devem ser específicas para o cargo e ajudar a avaliar se o candidato tem as competências necessárias.

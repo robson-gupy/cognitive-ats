@@ -75,10 +75,10 @@ class ResumeParser:
         try:
             with open(pdf_path, 'rb') as file:
                 pdf_reader = PyPDF2.PdfReader(file)
-                text = ""
+                text = " "
                 
                 for page in pdf_reader.pages:
-                    text += page.extract_text() + "\n"
+                    text += page.extract_text() + " \n"
                 
                 return sanitize_text(text)
                 
@@ -95,62 +95,21 @@ class ResumeParser:
         Returns:
             Prompt estruturado para a IA
         """
-        return f"""
-Você é um especialista em análise de currículos. Analise o seguinte texto extraído de um currículo e extraia as informações estruturadas.
-
-Texto do currículo:
-{pdf_text}
-
-Por favor, retorne apenas um JSON válido com a seguinte estrutura:
-{{
-    "summary": "Resumo profissional do candidato",
-    "professionalExperiences": [
-        {{
-            "companyName": "Nome da empresa",
-            "position": "Cargo",
-            "startDate": "YYYY-MM-DD",
-            "endDate": "YYYY-MM-DD ou null se atual",
-            "isCurrent": false,
-            "description": "Descrição do cargo",
-            "responsibilities": "Principais responsabilidades",
-            "achievements": "Principais conquistas"
-        }}
-    ],
-    "academicFormations": [
-        {{
-            "institution": "Nome da instituição",
-            "course": "Nome do curso",
-            "degree": "Grau acadêmico",
-            "startDate": "YYYY-MM-DD",
-            "endDate": "YYYY-MM-DD ou null se atual",
-            "isCurrent": false,
-            "status": "completed|in_progress|interrupted",
-            "description": "Descrição adicional"
-        }}
-    ],
-    "achievements": [
-        {{
-            "title": "Título do achievement",
-            "description": "Descrição do achievement"
-        }}
-    ],
-    "languages": [
-        {{
-            "language": "Nome do idioma",
-            "proficiencyLevel": "basic|intermediate|advanced|fluent|native"
-        }}
-    ]
-}}
-
-Regras importantes:
-1. Use datas no formato YYYY-MM-DD
-2. Para datas desconhecidas, use null
-3. Para experiências atuais, use isCurrent: true
-4. Use apenas os campos que fazem sentido para os dados disponíveis
-5. Se um campo não estiver disponível, não o inclua no JSON
-6. Retorne APENAS o JSON, sem texto adicional
-7. Use aspas duplas no JSON
-"""
+        try:
+            # Lê o prompt do arquivo externo
+            prompt_file_path = os.path.join(os.path.dirname(__file__), 'resume_parse.prompt')
+            
+            with open(prompt_file_path, 'r', encoding='utf-8') as file:
+                prompt_template = file.read()
+            
+            # Substitui apenas a variável {pdf_text} usando replace (mais seguro)
+            # Isso evita problemas com chaves {} no JSON de exemplo
+            return prompt_template.replace('{pdf_text}', pdf_text)
+            
+        except FileNotFoundError:
+            raise ResumeParsingError("Arquivo de prompt 'resume_parse.prompt' não encontrado")
+        except Exception as e:
+            raise ResumeParsingError(f"Erro ao ler arquivo de prompt: {str(e)}")
     
     def _parse_json_response(self, response: str) -> Dict[str, Any]:
         """

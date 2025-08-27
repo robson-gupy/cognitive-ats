@@ -2,6 +2,7 @@
 Serviço para criação de jobs usando IA
 """
 import json
+import os
 from typing import Dict, Any, Optional, List
 from shared.exceptions import JobCreationError
 from shared.utils import extract_json_from_text, sanitize_text
@@ -91,25 +92,21 @@ class JobCreator:
         Returns:
             str: Prompt estruturado para a IA
         """
-        return f"""
-Você é um especialista em recrutamento e seleção. Com base na seguinte descrição, crie um job completo com todos os campos necessários.
-
-Descrição fornecida: {user_prompt}
-
-Por favor, retorne apenas um JSON válido com os seguintes campos:
-{{
-    "title": "Título da vaga (máximo 255 caracteres)",
-    "description": "Descrição detalhada da vaga",
-    "requirements": "Requisitos e qualificações necessárias"
-}}
-
-Regras importantes:
-1. O título deve ser claro e atrativo
-2. A descrição deve ser detalhada e incluir responsabilidades
-3. Os requisitos devem ser específicos e realistas
-4. Retorne APENAS o JSON, sem texto adicional
-5. Use aspas duplas no JSON
-"""
+        try:
+            # Lê o prompt do arquivo de texto
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            prompt_file_path = os.path.join(current_dir, "job_creation.prompt")
+            
+            with open(prompt_file_path, 'r', encoding='utf-8') as file:
+                prompt_template = file.read()
+            
+            # Substitui a variável {user_prompt} pelo prompt do usuário
+            return prompt_template.format(user_prompt=user_prompt)
+            
+        except FileNotFoundError:
+            raise JobCreationError("Arquivo de prompt não encontrado: job_creation.prompt")
+        except Exception as e:
+            raise JobCreationError(f"Erro ao ler arquivo de prompt: {str(e)}")
     
     def _extract_json_from_response(self, response: str) -> Dict[str, Any]:
         """
@@ -212,46 +209,40 @@ Regras importantes:
     
     def _create_questions_prompt(self, job: Dict[str, Any], num_questions: int) -> str:
         """Cria prompt para geração de perguntas"""
-        return f"""
-Com base no seguinte job, gere {num_questions} perguntas relevantes para avaliar candidatos:
-
-Título: {job['title']}
-Descrição: {job['description']}
-Requisitos: {job['requirements']}
-
-Retorne apenas um JSON válido com a seguinte estrutura:
-{{
-    "questions": [
-        {{
-            "question": "Pergunta aqui",
-            "orderIndex": 1,
-            "isRequired": true
-        }}
-    ]
-}}
-
-As perguntas devem ser específicas para o cargo e ajudar a avaliar se o candidato tem as competências necessárias.
-"""
+        try:
+            # Lê o prompt do arquivo externo
+            prompt_file_path = os.path.join(os.path.dirname(__file__), 'job_questions.prompt')
+            
+            with open(prompt_file_path, 'r', encoding='utf-8') as file:
+                prompt_template = file.read()
+            
+            # Substitui as variáveis no template
+            return prompt_template.format(
+                num_questions=num_questions,
+                job=job
+            )
+            
+        except FileNotFoundError:
+            raise JobCreationError("Arquivo de prompt 'job_questions.prompt' não encontrado")
+        except Exception as e:
+            raise JobCreationError(f"Erro ao ler arquivo de prompt: {str(e)}")
     
     def _create_stages_prompt(self, job: Dict[str, Any], num_stages: int) -> str:
         """Cria prompt para geração de estágios"""
-        return f"""
-Com base no seguinte job, gere {num_stages} estágios para o processo seletivo:
-
-Título: {job['title']}
-Descrição: {job['description']}
-Requisitos: {job['requirements']}
-
-Retorne apenas um JSON válido com a seguinte estrutura:
-{{
-    "stages": [
-        {{
-            "name": "Nome do estágio",
-            "description": "Descrição do estágio",
-            "orderIndex": 1
-        }}
-    ]
-}}
-
-Os estágios devem seguir um fluxo lógico de seleção, como: Triagem inicial, Entrevista técnica, Entrevista final, etc.
-"""
+        try:
+            # Lê o prompt do arquivo externo
+            prompt_file_path = os.path.join(os.path.dirname(__file__), 'job_stages.prompt')
+            
+            with open(prompt_file_path, 'r', encoding='utf-8') as filename:
+                prompt_template = filename.read()
+            
+            # Substitui as variáveis no template
+            return prompt_template.format(
+                num_stages=num_stages,
+                job=job
+            )
+            
+        except FileNotFoundError:
+            raise JobCreationError("Arquivo de prompt 'job_stages.prompt' não encontrado")
+        except Exception as e:
+            raise JobCreationError(f"Erro ao ler arquivo de prompt: {str(e)}")

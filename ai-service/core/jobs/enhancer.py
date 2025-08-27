@@ -1,6 +1,7 @@
 """
 Serviço para melhoria de jobs usando IA
 """
+import os
 from typing import Dict, Any, Optional
 from shared.exceptions import JobCreationError
 from shared.utils import sanitize_text
@@ -114,63 +115,60 @@ class JobEnhancer:
     
     def _create_enhancement_prompt(self, job: Dict[str, Any], enhancement_prompt: str) -> str:
         """Cria prompt para melhoria da descrição"""
-        return f"""
-Você é um especialista em recrutamento e seleção. Melhore a descrição do seguinte job com base na solicitação fornecida.
-
-Job atual:
-Título: {job.get('title', 'N/A')}
-Descrição atual: {job.get('description', 'N/A')}
-Requisitos: {job.get('requirements', 'N/A')}
-
-Solicitação de melhoria: {enhancement_prompt}
-
-Por favor, forneça uma descrição melhorada que atenda à solicitação. A descrição deve ser:
-1. Clara e detalhada
-2. Atraente para candidatos qualificados
-3. Específica sobre responsabilidades
-4. Profissional e bem estruturada
-
-Retorne apenas a descrição melhorada, sem texto adicional.
-"""
+        try:
+            # Lê o prompt do arquivo externo
+            prompt_file_path = os.path.join(os.path.dirname(__file__), 'job_description_enhancement.prompt')
+            
+            with open(prompt_file_path, 'r', encoding='utf-8') as file:
+                prompt_template = file.read()
+            
+            # Substitui as variáveis no template
+            return prompt_template.format(
+                job=job,
+                enhancement_prompt=enhancement_prompt
+            )
+            
+        except FileNotFoundError:
+            raise JobCreationError("Arquivo de prompt 'job_description_enhancement.prompt' não encontrado")
+        except Exception as e:
+            raise JobCreationError(f"Erro ao ler arquivo de prompt: {str(e)}")
     
     def _create_requirements_enhancement_prompt(self, job: Dict[str, Any], enhancement_prompt: str) -> str:
         """Cria prompt para melhoria dos requisitos"""
-        return f"""
-Você é um especialista em recrutamento e seleção. Melhore os requisitos do seguinte job com base na solicitação fornecida.
-
-Job atual:
-Título: {job.get('title', 'N/A')}
-Descrição: {job.get('description', 'N/A')}
-Requisitos atuais: {job.get('requirements', 'N/A')}
-
-Solicitação de melhoria: {enhancement_prompt}
-
-Por favor, forneça requisitos melhorados que atenda à solicitação. Os requisitos devem ser:
-1. Específicos e mensuráveis
-2. Realistas para o cargo
-3. Organizados por prioridade
-4. Incluir tanto requisitos obrigatórios quanto desejáveis
-
-Retorne apenas os requisitos melhorados, sem texto adicional.
-"""
+        try:
+            # Lê o prompt do arquivo externo
+            prompt_file_path = os.path.join(os.path.dirname(__file__), 'job_requirements_enhancement.prompt')
+            
+            with open(prompt_file_path, 'r', encoding='utf-8') as file:
+                prompt_template = file.read()
+            
+            # Substitui as variáveis no template
+            return prompt_template.format(
+                job=job,
+                enhancement_prompt=enhancement_prompt
+            )
+            
+        except FileNotFoundError:
+            raise JobCreationError("Arquivo de prompt 'job_requirements_enhancement.prompt' não encontrado")
+        except Exception as e:
+            raise JobCreationError(f"Erro ao ler arquivo de prompt: {str(e)}")
     
     def _create_title_enhancement_prompt(self, job: Dict[str, Any], enhancement_prompt: str) -> str:
         """Cria prompt para melhoria do título"""
-        return f"""
-Você é um especialista em recrutamento e seleção. Melhore o título do seguinte job com base na solicitação fornecida.
-
-Job atual:
-Título atual: {job.get('title', 'N/A')}
-Descrição: {job.get('description', 'N/A')}
-Requisitos: {job.get('requirements', 'N/A')}
-
-Solicitação de melhoria: {enhancement_prompt}
-
-Por favor, forneça um título melhorado que atenda à solicitação. O título deve ser:
-1. Claro e atrativo
-2. Específico para o cargo
-3. Com no máximo 255 caracteres
-4. Profissional e adequado ao mercado
-
-Retorne apenas o título melhorado, sem texto adicional.
-"""
+        try:
+            # Lê o prompt do arquivo externo
+            prompt_file_path = os.path.join(os.path.dirname(__file__), 'job_title_enhancement.prompt')
+            
+            with open(prompt_file_path, 'r', encoding='utf-8') as file:
+                prompt_template = file.read()
+            
+            # Substitui as variáveis no template
+            return prompt_template.format(
+                job=job,
+                enhancement_prompt=enhancement_prompt
+            )
+            
+        except FileNotFoundError:
+            raise JobCreationError("Arquivo de prompt 'job_title_enhancement.prompt' não encontrado")
+        except Exception as e:
+            raise JobCreationError(f"Erro ao ler arquivo de prompt: {str(e)}")

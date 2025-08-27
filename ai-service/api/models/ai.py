@@ -10,9 +10,6 @@ class TextGenerationRequest(BaseModel):
     prompt: str
     provider: Optional[str] = None
     api_key: Optional[str] = None
-    model: Optional[str] = None
-    max_tokens: Optional[int] = 1000
-    temperature: Optional[float] = 0.7
 
 
 class ChatRequest(BaseModel):
@@ -89,9 +86,6 @@ class CandidateEvaluationRequest(BaseModel):
     resume: ResumeData
     job: JobData
     question_responses: Optional[List[QuestionResponse]] = None
-    provider: Optional[str] = None
-    api_key: Optional[str] = None
-    model: Optional[str] = None
 
 
 class CandidateEvaluationResponse(BaseModel):
@@ -100,6 +94,3 @@ class CandidateEvaluationResponse(BaseModel):
     question_responses_score: int  # 0-100
     education_score: int  # 0-100
     experience_score: int  # 0-100
-    provider: str
-    model: Optional[str] = None
-    evaluation_details: Optional[Dict[str, Any]] = None
