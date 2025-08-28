@@ -46,8 +46,6 @@ services:
       - /app/node_modules
     depends_on:
       - postgres
-      - ai-service
-      - localstack
     networks:
       - cognitive-ats-network
     restart: unless-stopped

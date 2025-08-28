@@ -977,4 +977,26 @@ export class JobsService {
         : null,
     };
   }
+
+  async findPublicJobQuestionsBySlug(
+    companySlug: string,
+    jobSlug: string,
+  ): Promise<{
+    id: string;
+    question: string;
+    orderIndex: number;
+    isRequired: boolean;
+  }[]> {
+    // Primeiro verificar se a job existe e está publicada
+    const job = await this.findPublicJobBySlug(companySlug, jobSlug);
+    
+    // Buscar as questions da job
+    const questions = await this.jobQuestionsRepository.find({
+      where: { jobId: job.id },
+      order: { orderIndex: 'ASC' },
+      select: ['id', 'question', 'orderIndex', 'isRequired'],
+    });
+
+    return questions;
+  }
 }

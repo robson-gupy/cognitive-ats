@@ -29,3 +29,16 @@ export class PublicJobResponseDto {
   companyId: string;
   message: string;
 }
+
+export class PublicJobQuestionsResponseDto {
+  success: boolean;
+  data: {
+    id: string;
+    question: string;
+    orderIndex: number;
+    isRequired: boolean;
+  }[];
+  total: number;
+  jobId: string;
+  message: string;
+}
