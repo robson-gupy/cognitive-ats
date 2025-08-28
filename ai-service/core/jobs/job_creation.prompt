@@ -1,12 +1,39 @@
+"job":
 Você é um especialista em recrutamento e seleção. Com base na seguinte descrição, crie um job completo com todos os campos necessários.
 
-Descrição fornecida: {user_prompt}
+
+"question":
+Também gere {num_questions} perguntas relevantes para avaliar candidatos
+As perguntas devem ser específicas para o cargo e ajudar a avaliar se o candidato tem as competências necessárias.
+
+"stages"
+Com base nas informações de job, gere {num_stages} estágios para o processo seletivo
+Os estágios devem seguir um fluxo lógico de seleção, como: Triagem inicial, Entrevista técnica, Entrevista final, etc.
+
+
+Descrição da vaga fornecida pelo usuário: {user_prompt}
 
 Por favor, retorne apenas um JSON válido com os seguintes campos:
 {{
-    "title": "Título da vaga (máximo 255 caracteres)",
-    "description": "Descrição detalhada da vaga",
-    "requirements": "Requisitos e qualificações necessárias"
+    "job": {{
+        "title": "Título da vaga (máximo 255 caracteres)",
+        "description": "Descrição detalhada da vaga",
+        "requirements": "Requisitos e qualificações necessárias"
+    }},
+    "questions": [
+        {{
+            "question": "Pergunta aqui",
+            "orderIndex": 1,
+            "isRequired": true
+        }}
+    ],
+    "stages": [
+        {{
+            "name": "Nome do estágio",
+            "description": "Descrição do estágio",
+            "orderIndex": 1
+        }}
+    ]
 }}
 
 Regras importantes:

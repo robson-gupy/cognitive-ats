@@ -29,6 +29,8 @@ async def create_job_from_prompt(request: JobCreationRequest):
         
         # Cria o serviço de jobs
         job_creator = JobCreator(ai_service)
+
+        print(f"Job creation request: {request}")
         
         # Cria o job
         result = await job_creator.create_job_from_prompt(
@@ -45,64 +47,6 @@ async def create_job_from_prompt(request: JobCreationRequest):
             stages=result.get("stages"),
             provider=provider_name
         )
-        
-    except JobCreationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except AIProviderError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/generate-questions")
-async def generate_job_questions(request: JobQuestionsRequest):
-    """Gera perguntas para um job usando IA"""
-    try:
-        provider_name = request.provider or Config.DEFAULT_AI_PROVIDER
-        provider = AIProvider(provider_name)
-        
-        # Cria o serviço de IA
-        ai_service = AIService(provider, api_key=request.api_key)
-        
-        # Cria o serviço de jobs
-        job_creator = JobCreator(ai_service)
-        
-        # Gera as perguntas
-        questions = await job_creator.generate_job_questions(
-            request.job, request.num_questions
-        )
-        
-        return {
-            "questions": questions,
-            "provider": provider_name
-        }
-        
-    except JobCreationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except AIProviderError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/generate-stages")
-async def generate_job_stages(request: JobStagesRequest):
-    """Gera estágios para um job usando IA"""
-    try:
-        provider_name = request.provider or Config.DEFAULT_AI_PROVIDER
-        provider = AIProvider(provider_name)
-        
-        # Cria o serviço de IA
-        ai_service = AIService(provider, api_key=request.api_key)
-        
-        # Cria o serviço de jobs
-        job_creator = JobCreator(ai_service)
-        
-        # Gera os estágios
-        stages = await job_creator.generate_job_stages(
-            request.job, request.num_stages
-        )
-        
-        return {
-            "stages": stages,
-            "provider": provider_name
-        }
         
     except JobCreationError as e:
         raise HTTPException(status_code=400, detail=str(e))

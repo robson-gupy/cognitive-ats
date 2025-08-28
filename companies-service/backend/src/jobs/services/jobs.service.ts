@@ -240,8 +240,8 @@ export class JobsService {
     // Preparar requisição para o AI Service
     const aiRequest: JobCreationRequest = {
       prompt: createJobWithAiDto.prompt,
-      generate_questions: true,
-      generate_stages: true,
+      generate_questions: (createJobWithAiDto.maxQuestions || 5) > 0,
+      generate_stages: (createJobWithAiDto.maxQuestions || 3) > 0,
       max_questions: createJobWithAiDto.maxQuestions || 5,
       max_stages: createJobWithAiDto.maxStages || 3,
     };
