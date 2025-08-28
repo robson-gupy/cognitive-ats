@@ -39,16 +39,12 @@ class AIService:
             Texto gerado
         """
         logger.info(
-            "🚀 Iniciando geração de texto",
-            provider=self.provider.value,
-            prompt_length=len(prompt)
+            f"🚀 Iniciando geração de texto - provider: {self.provider.value}, prompt_length: {len(prompt)}"
         )
         
         # Log antes de chamar o provider
         logger.info(
-            "⏳ Aguardando resposta da API externa...",
-            provider=self.provider.value,
-            prompt_length=len(prompt)
+            f"⏳ Aguardando resposta da API externa... - provider: {self.provider.value}, prompt_length: {len(prompt)}"
         )
         
         try:
@@ -56,18 +52,14 @@ class AIService:
             
             # Log após receber resposta
             logger.info(
-                "✅ Resposta recebida da API externa",
-                provider=self.provider.value,
-                response_length=len(response) if response else 0
+                f"✅ Resposta recebida da API externa - provider: {self.provider.value}, response_length: {len(response) if response else 0}"
             )
             
             return response
             
         except Exception as e:
             logger.error(
-                "❌ Erro na chamada para API externa",
-                provider=self.provider.value,
-                error=str(e)
+                f"❌ Erro na chamada para API externa - provider: {self.provider.value}, error: {str(e)}"
             )
             raise
     

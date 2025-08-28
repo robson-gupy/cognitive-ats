@@ -3,11 +3,11 @@ Você é um especialista em recrutamento e seleção. Com base na seguinte descr
 Descrição fornecida: {user_prompt}
 
 Por favor, retorne apenas um JSON válido com os seguintes campos:
-{
+{{
     "title": "Título da vaga (máximo 255 caracteres)",
     "description": "Descrição detalhada da vaga",
     "requirements": "Requisitos e qualificações necessárias"
-}
+}}
 
 Regras importantes:
 1. O título deve ser claro e atrativo

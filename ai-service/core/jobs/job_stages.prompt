@@ -5,14 +5,14 @@ Descrição: {job['description']}
 Requisitos: {job['requirements']}
 
 Retorne apenas um JSON válido com a seguinte estrutura:
-{
+{{
     "stages": [
-        {
+        {{
             "name": "Nome do estágio",
             "description": "Descrição do estágio",
             "orderIndex": 1
-        }
+        }}
     ]
-}
+}}
 
 Os estágios devem seguir um fluxo lógico de seleção, como: Triagem inicial, Entrevista técnica, Entrevista final, etc.
