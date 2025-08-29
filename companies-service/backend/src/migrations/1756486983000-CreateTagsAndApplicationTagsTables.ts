@@ -29,6 +29,11 @@ export class CreateTagsAndApplicationTagsTables1756486983000
             isNullable: false,
           },
           {
+            name: 'company_id',
+            type: 'uuid',
+            isNullable: false,
+          },
+          {
             name: 'color',
             type: 'varchar',
             length: '7',
@@ -101,10 +106,12 @@ export class CreateTagsAndApplicationTagsTables1756486983000
     await queryRunner.createIndex(
       'tags',
       new TableIndex({
-        name: 'IDX_tags_label',
-        columnNames: ['label'],
+        name: 'IDX_tags_company_id',
+        columnNames: ['company_id'],
       }),
     );
+
+    // Nota: O índice único composto company_id + label será criado na migração AddCompanyIdToTags
 
     // Criar índices para a tabela application_tags
     await queryRunner.createIndex(
@@ -128,6 +135,18 @@ export class CreateTagsAndApplicationTagsTables1756486983000
       new TableIndex({
         name: 'IDX_application_tags_added_by_user_id',
         columnNames: ['added_by_user_id'],
+      }),
+    );
+
+    // Criar foreign key para tags.company_id
+    await queryRunner.createForeignKey(
+      'tags',
+      new TableForeignKey({
+        name: 'FK_tags_company_id',
+        columnNames: ['company_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'companies',
+        onDelete: 'CASCADE',
       }),
     );
 
@@ -178,6 +197,10 @@ export class CreateTagsAndApplicationTagsTables1756486983000
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover foreign keys
+    await queryRunner.dropForeignKey(
+      'tags',
+      'FK_tags_company_id',
+    );
     await queryRunner.dropForeignKey(
       'application_tags',
       'FK_application_tags_added_by_user_id',

@@ -11,7 +11,8 @@ Este módulo implementa um sistema de tags reutilizáveis que podem ser adiciona
 A entidade `Tag` representa uma tag reutilizável que pode ser aplicada a múltiplas applications:
 
 - **id**: UUID único da tag
-- **label**: Nome/texto da tag (único)
+- **companyId**: ID da empresa à qual a tag pertence
+- **label**: Nome/texto da tag (único por empresa)
 - **color**: Cor de fundo da tag em formato hex (#RRGGBB)
 - **textColor**: Cor do texto da tag em formato hex (#RRGGBB)
 - **createdAt**: Data de criação da tag
@@ -29,34 +30,46 @@ A entidade `ApplicationTag` representa a relação entre uma application e uma t
 
 ## Relacionamentos
 
+- Uma `Company` pode ter múltiplas `Tag`s (One-to-Many)
 - Uma `Tag` pode estar associada a múltiplas `Application`s (One-to-Many através de ApplicationTag)
 - Uma `Application` pode ter múltiplas `Tag`s (Many-to-Many através de ApplicationTag)
 - Um `User` pode ter adicionado múltiplas tags a applications (One-to-Many através de ApplicationTag)
 
 ## Constraints
 
-- **Unicidade**: Uma tag só pode ser adicionada uma vez por application (constraint único em application_id + tag_id)
+- **Unicidade**: 
+  - Uma tag só pode ser adicionada uma vez por application (constraint único em application_id + tag_id)
+  - O nome da tag deve ser único por empresa (constraint único em company_id + label)
 - **Integridade Referencial**: 
   - Se uma application for deletada, suas tags são removidas (CASCADE)
   - Se uma tag for deletada, suas associações com applications são removidas (CASCADE)
+  - Se uma empresa for deletada, suas tags são removidas (CASCADE)
   - Se um usuário for deletado, as associações de tags que ele adicionou são mantidas (RESTRICT)
 
 ## Índices
 
-- **tags.label**: Para busca rápida por nome da tag
+- **tags.company_id**: Para busca rápida por empresa
+- **tags.company_id + label** (único): Para garantir unicidade por empresa
 - **application_tags.application_id**: Para buscar todas as tags de uma application
 - **application_tags.tag_id**: Para buscar todas as applications que usam uma tag
 - **application_tags.added_by_user_id**: Para rastrear ações de usuários
 
 ## Migração
 
-A migração `1756486983000-CreateTagsAndApplicationTagsTables.ts` cria:
-
-1. Tabela `tags` com todos os campos necessários
+### Migração Principal: `1756486983000-CreateTagsAndApplicationTagsTables.ts`
+Cria:
+1. Tabela `tags` com todos os campos necessários (incluindo company_id)
 2. Tabela `application_tags` com as relações e metadados
 3. Índices para performance
 4. Foreign keys para integridade referencial
 5. Constraints únicos para evitar duplicatas
+
+### Migração Adicional: `1756487862000-AddCompanyIdToTags.ts`
+Adiciona:
+1. Campo `company_id` na tabela `tags`
+2. Índice único composto para `company_id + label`
+3. Foreign key para `companies` com CASCADE
+4. Remove o índice único antigo de `label`
 
 ## Uso Futuro
 
@@ -67,3 +80,5 @@ Esta estrutura permite:
 - **Auditoria**: Rastrear quem adicionou cada tag
 - **Reutilização**: Usar as mesmas tags em múltiplas applications
 - **Personalização**: Cores customizáveis para cada tag
+- **Isolamento por Empresa**: Cada empresa tem seu próprio conjunto de tags
+- **Organização**: Tags organizadas por contexto empresarial
