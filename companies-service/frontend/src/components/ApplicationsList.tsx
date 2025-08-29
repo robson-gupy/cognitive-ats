@@ -19,7 +19,8 @@ import {
   Row,
   Col,
   Tabs,
-  Dropdown
+  Dropdown,
+  Select
 } from 'antd';
 import { 
   UserOutlined, 
@@ -956,6 +957,15 @@ export const ApplicationsList: React.FC = () => {
     application: null,
   });
 
+  // Estados para filtro por tag
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [availableTagsForFilter, setAvailableTagsForFilter] = useState<TagType[]>([]);
+  const [tagsForFilterLoading, setTagsForFilterLoading] = useState(false);
+  const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
+  const [filteringInProgress, setFilteringInProgress] = useState(false);
+  const [debouncedSelectedTags, setDebouncedSelectedTags] = useState<string[]>([]);
+  const [applicationTagsCache, setApplicationTagsCache] = useState<Map<string, string[]>>(new Map());
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -969,8 +979,75 @@ export const ApplicationsList: React.FC = () => {
     if (jobId) {
       loadJob();
       loadApplications();
+      loadAvailableTagsForFilter();
     }
   }, [jobId]);
+
+  // useEffect para debounce das tags selecionadas (evita filtros excessivos durante digitação)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSelectedTags(selectedTags);
+    }, 500); // Aguarda 500ms após parar de digitar
+
+    return () => clearTimeout(timer);
+  }, [selectedTags]);
+
+  // useEffect para aplicar filtro por tag (usando debounced tags e cache)
+  useEffect(() => {
+    if (debouncedSelectedTags.length === 0) {
+      // Se não há tags selecionadas, mostrar todas as aplicações
+      setFilteredApplications(applications);
+      setFilteringInProgress(false);
+    } else {
+      // Filtrar aplicações que têm pelo menos uma das tags selecionadas
+      const filterApplicationsByTags = async () => {
+        setFilteringInProgress(true);
+        const filtered: Application[] = [];
+        
+        for (const app of applications) {
+          try {
+            let applicationTagIds: string[];
+            
+            // Verificar se já temos as tags em cache
+            if (applicationTagsCache.has(app.id)) {
+              applicationTagIds = applicationTagsCache.get(app.id) || [];
+            } else {
+              // Buscar tags da API e armazenar no cache
+              const applicationTags = await apiService.getApplicationTags(app.id);
+              applicationTagIds = applicationTags.map(appTag => appTag.tagId);
+              
+              // Atualizar cache
+              setApplicationTagsCache(prev => new Map(prev.set(app.id, applicationTagIds)));
+            }
+            
+            const hasSelectedTag = debouncedSelectedTags.some(selectedTagId => 
+              applicationTagIds.includes(selectedTagId)
+            );
+            
+            if (hasSelectedTag) {
+              filtered.push(app);
+            }
+          } catch (error) {
+            console.error('Erro ao verificar tags da aplicação:', error);
+            // Em caso de erro, incluir a aplicação para não perdê-la
+            filtered.push(app);
+          }
+        }
+        
+        setFilteredApplications(filtered);
+        setFilteringInProgress(false);
+      };
+      
+      filterApplicationsByTags();
+    }
+  }, [applications, debouncedSelectedTags, applicationTagsCache]);
+
+  // useEffect para inicializar filteredApplications quando applications for carregado
+  useEffect(() => {
+    if (applications.length > 0 && debouncedSelectedTags.length === 0) {
+      setFilteredApplications(applications);
+    }
+  }, [applications, debouncedSelectedTags]);
 
   // useEffect para detectar mudanças na URL e abrir o modal automaticamente
   useEffect(() => {
@@ -1050,6 +1127,35 @@ export const ApplicationsList: React.FC = () => {
       message.error('Erro ao carregar aplicações');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Função para carregar tags disponíveis para filtro
+  const loadAvailableTagsForFilter = async () => {
+    try {
+      setTagsForFilterLoading(true);
+      const tags = await apiService.getTags();
+      setAvailableTagsForFilter(tags);
+    } catch (error) {
+      console.error('Erro ao carregar tags para filtro:', error);
+      setAvailableTagsForFilter([]);
+    } finally {
+      setTagsForFilterLoading(false);
+    }
+  };
+
+  // Função para verificar se uma aplicação tem alguma das tags selecionadas
+  const hasSelectedTags = async (applicationId: string): Promise<boolean> => {
+    if (selectedTags.length === 0) return true;
+    
+    try {
+      const applicationTags = await apiService.getApplicationTags(applicationId);
+      return selectedTags.some(selectedTagId => 
+        applicationTags.some(appTag => appTag.tagId === selectedTagId)
+      );
+    } catch (error) {
+      console.error('Erro ao verificar tags da aplicação:', error);
+      return false;
     }
   };
 
@@ -1212,12 +1318,16 @@ export const ApplicationsList: React.FC = () => {
   };
 
   const getApplicationsByStage = (stageId: string) => {
-    return applications
+    return filteredApplications
       .filter(app => {
         // Verificar se há uma mudança temporária para esta aplicação
         const pendingStageId = pendingStageChanges.get(app.id);
         const effectiveStageId = pendingStageId || app.currentStageId;
-        return effectiveStageId === stageId;
+        
+        // Filtro por estágio
+        const stageMatch = effectiveStageId === stageId;
+        
+        return stageMatch;
       })
       .sort((a, b) => {
         // Ordenar por overall_score do maior para o menor
@@ -1269,7 +1379,7 @@ export const ApplicationsList: React.FC = () => {
     <div style={{ padding: '24px' }}>
       {/* Header */}
       <Card style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <Title level={2} style={{ margin: 0 }}>
               Candidatos
@@ -1280,11 +1390,94 @@ export const ApplicationsList: React.FC = () => {
               )}
             </Title>
             <Text type="secondary">
-              {applications.length} candidato{applications.length !== 1 ? 's' : ''} inscrito{applications.length !== 1 ? 's' : ''} • Ordenados por aderência (maior para menor)
+              {filteringInProgress ? (
+                <span style={{ color: '#1890ff' }}>
+                  <Spin size="small" style={{ marginRight: '8px' }} />
+                  Aplicando filtro...
+                </span>
+              ) : (
+                <>
+                  {filteredApplications.length} de {applications.length} candidato{applications.length !== 1 ? 's' : ''} inscrito{applications.length !== 1 ? 's' : ''} • Ordenados por aderência (maior para menor)
+                  {selectedTags.length > 0 && (
+                    <span style={{ color: '#1890ff', fontWeight: '500' }}>
+                      {' '}• Filtrado por {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </>
+              )}
             </Text>
           </div>
           
-          <Space>
+          <Space direction="vertical" align="end" size="middle">
+            {/* Filtro por Tags */}
+            <div style={{ textAlign: 'right' }}>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                Filtrar por Tags:
+              </Text>
+              <Select
+                mode="multiple"
+                placeholder="Selecione as tags para filtrar"
+                value={selectedTags}
+                onChange={setSelectedTags}
+                style={{ width: '300px' }}
+                loading={tagsForFilterLoading || filteringInProgress}
+                allowClear
+                showSearch
+                filterOption={(input, option) => {
+                  // Buscar o texto da tag no option
+                  const tagId = option?.value as string;
+                  const tag = availableTagsForFilter.find(t => t.id === tagId);
+                  if (tag) {
+                    return tag.label.toLowerCase().includes(input.toLowerCase());
+                  }
+                  return false;
+                }}
+              >
+                {availableTagsForFilter.map(tag => (
+                  <Select.Option key={tag.id} value={tag.id}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          width: '12px',
+                          height: '12px',
+                          borderRadius: '2px',
+                          backgroundColor: tag.color,
+                          marginRight: '8px',
+                          border: '1px solid #d9d9d9',
+                        }}
+                      />
+                      {tag.label}
+                    </div>
+                  </Select.Option>
+                ))}
+              </Select>
+              {selectedTags.length > 0 && (
+                <div style={{ marginTop: '8px' }}>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                    {filteringInProgress ? 'Aplicando filtro...' : `${filteredApplications.length} candidato${filteredApplications.length !== 1 ? 's' : ''} encontrado${filteredApplications.length !== 1 ? 's' : ''}`}
+                  </div>
+                  {selectedTags.length !== debouncedSelectedTags.length && (
+                    <div style={{ fontSize: '11px', color: '#1890ff', marginBottom: '4px', fontStyle: 'italic' }}>
+                      ⏳ Aguardando para aplicar filtro...
+                    </div>
+                  )}
+                  <Button 
+                    size="small" 
+                    onClick={() => {
+                      setSelectedTags([]);
+                      setDebouncedSelectedTags([]);
+                      setFilteredApplications(applications);
+                      setFilteringInProgress(false);
+                      setApplicationTagsCache(new Map()); // Limpar cache
+                    }}
+                    style={{ fontSize: '12px' }}
+                  >
+                    Limpar filtros
+                  </Button>
+                </div>
+              )}
+            </div>
+            
             <Button type="primary" onClick={loadApplications}>
               Atualizar
             </Button>
