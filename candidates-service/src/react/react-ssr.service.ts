@@ -251,9 +251,16 @@ export class ReactSsrService {
                     }
                     
                     if (response.ok) {
-                      // Sucesso
-                      alert('Inscrição realizada com sucesso!');
-                      form.reset();
+                      const applicationData = await response.json();
+                      
+                      // Se temos o ID da application, abrir modal de perguntas
+                      if (applicationData && applicationData.id) {
+                        showQuestionsModal(applicationData.id);
+                      } else {
+                        // Sucesso sem perguntas
+                        alert('Inscrição realizada com sucesso!');
+                        form.reset();
+                      }
                     } else {
                       const errorData = await response.json().catch(() => ({}));
                       alert('Erro ao enviar inscrição: ' + (errorData.message || 'Erro desconhecido'));
@@ -265,6 +272,318 @@ export class ReactSsrService {
                 });
                 
                 formContainer.appendChild(form);
+              }
+
+              // Função para mostrar o modal de perguntas
+              function showQuestionsModal(applicationId) {
+                // Criar o modal
+                const modal = document.createElement('div');
+                modal.id = 'questions-modal';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                modal.innerHTML = \`
+                  <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                      <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                          Perguntas da Vaga
+                        </h3>
+                        <button
+                          id="close-questions-modal"
+                          class="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <div class="mt-4">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                          <span id="question-counter">Pergunta 1 de 1</span>
+                          <span id="question-progress">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            id="progress-bar"
+                            class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style="width: 0%"
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div id="questions-content" class="px-6 py-6 flex-1 overflow-y-auto">
+                      <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p class="text-gray-600">Carregando perguntas...</p>
+                      </div>
+                    </div>
+
+                    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                      <div class="flex justify-between">
+                        <button
+                          id="prev-question"
+                          class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors opacity-50 cursor-not-allowed"
+                          disabled
+                        >
+                          Anterior
+                        </button>
+                        
+                        <div class="flex space-x-3">
+                          <button
+                            id="next-question"
+                            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors opacity-50 cursor-not-allowed"
+                            disabled
+                          >
+                            Próxima
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                \`;
+
+                document.body.appendChild(modal);
+
+                // Buscar perguntas da vaga
+                fetchQuestions(applicationId);
+
+                // Event listeners
+                document.getElementById('close-questions-modal').addEventListener('click', () => {
+                  closeQuestionsModal();
+                });
+
+                // Fechar modal ao clicar fora
+                modal.addEventListener('click', (e) => {
+                  if (e.target === modal) {
+                    closeQuestionsModal();
+                  }
+                });
+              }
+
+              // Função para buscar perguntas
+              async function fetchQuestions(applicationId) {
+                try {
+                  const response = await fetch(\`/public/\${companySlug}/jobs/\${job.slug}/questions\`);
+                  
+                  if (!response.ok) {
+                    throw new Error('Erro ao buscar perguntas da vaga');
+                  }
+                  
+                  const data = await response.json();
+                  
+                  if (data.success && data.data) {
+                    // Ordenar perguntas por orderIndex
+                    const questions = data.data.sort((a, b) => a.orderIndex - b.orderIndex);
+                    renderQuestions(questions, applicationId);
+                  } else {
+                    throw new Error(data.message || 'Erro ao buscar perguntas');
+                  }
+                } catch (err) {
+                  showError(err.message || 'Erro ao buscar perguntas');
+                }
+              }
+
+              // Função para renderizar perguntas
+              function renderQuestions(questions, applicationId) {
+                let currentQuestionIndex = 0;
+                const responses = questions.map(q => ({ jobQuestionId: q.id, answer: '' }));
+
+                function updateQuestionDisplay() {
+                  const question = questions[currentQuestionIndex];
+                  const content = document.getElementById('questions-content');
+                  const counter = document.getElementById('question-counter');
+                  const progress = document.getElementById('question-progress');
+                  const progressBar = document.getElementById('progress-bar');
+                  const prevBtn = document.getElementById('prev-question');
+                  const nextBtn = document.getElementById('next-question');
+
+                  // Atualizar contador e progresso
+                  counter.textContent = \`Pergunta \${currentQuestionIndex + 1} de \${questions.length}\`;
+                  const progressPercent = Math.round(((currentQuestionIndex + 1) / questions.length) * 100);
+                  progress.textContent = \`\${progressPercent}%\`;
+                  progressBar.style.width = \`\${progressPercent}%\`;
+
+                  // Atualizar botões
+                  prevBtn.disabled = currentQuestionIndex === 0;
+                  prevBtn.className = \`px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors \${currentQuestionIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}\`;
+
+                  if (currentQuestionIndex === questions.length - 1) {
+                    nextBtn.textContent = 'Concluir';
+                    nextBtn.className = 'px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors';
+                  } else {
+                    nextBtn.textContent = 'Próxima';
+                    nextBtn.className = 'px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors';
+                  }
+
+                  // Renderizar pergunta atual
+                  content.innerHTML = \`
+                    <div class="mb-6">
+                      <h4 class="text-lg font-medium text-gray-900 mb-4">
+                        \${question.question}
+                      </h4>
+                      
+                      \${question.isRequired ? '<p class="text-sm text-red-600 mb-4">* Esta pergunta é obrigatória</p>' : ''}
+                      
+                      <textarea
+                        id="question-answer"
+                        placeholder="Digite sua resposta aqui..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        rows="4"
+                        required="\${question.isRequired}"
+                      >\${responses[currentQuestionIndex].answer}</textarea>
+                    </div>
+                  \`;
+
+                  // Salvar resposta ao digitar
+                  const textarea = document.getElementById('question-answer');
+                  textarea.addEventListener('input', (e) => {
+                    responses[currentQuestionIndex].answer = e.target.value;
+                    
+                    // Verificar se pode ir para próxima após digitar
+                    const currentResponse = responses[currentQuestionIndex];
+                    const hasAnswer = currentResponse && currentResponse.answer.trim() !== '';
+                    const isRequired = question.isRequired;
+                    
+                    // Botão próxima desabilitado apenas se a pergunta for obrigatória e não tiver resposta
+                    nextBtn.disabled = isRequired && !hasAnswer;
+                    
+                    // Aplicar estilos de acordo com o estado
+                    if (nextBtn.disabled) {
+                      nextBtn.className = \`\${nextBtn.className.replace(' opacity-50 cursor-not-allowed', '')} opacity-50 cursor-not-allowed\`;
+                    } else {
+                      // Remover classes de desabilitado
+                      nextBtn.className = nextBtn.className.replace(' opacity-50 cursor-not-allowed', '');
+                    }
+                  });
+
+                  // Verificar se pode ir para próxima inicialmente
+                  const currentResponse = responses[currentQuestionIndex];
+                  const hasAnswer = currentResponse && currentResponse.answer.trim() !== '';
+                  const isRequired = question.isRequired;
+                  
+                  // Botão próxima desabilitado apenas se a pergunta for obrigatória e não tiver resposta
+                  nextBtn.disabled = isRequired && !hasAnswer;
+                  
+                  // Aplicar estilos de acordo com o estado
+                  if (nextBtn.disabled) {
+                    nextBtn.className = \`\${nextBtn.className} opacity-50 cursor-not-allowed\`;
+                  }
+                }
+
+                // Event listeners para navegação
+                document.getElementById('prev-question').addEventListener('click', () => {
+                  if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    updateQuestionDisplay();
+                  }
+                });
+
+                document.getElementById('next-question').addEventListener('click', async () => {
+                  if (currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
+                    updateQuestionDisplay();
+                  } else {
+                    // Última pergunta - enviar respostas
+                    await submitResponses(responses, applicationId);
+                  }
+                });
+
+                // Inicializar primeira pergunta
+                updateQuestionDisplay();
+              }
+
+              // Função para enviar respostas
+              async function submitResponses(responses, applicationId) {
+                try {
+                  const nextBtn = document.getElementById('next-question');
+                  nextBtn.disabled = true;
+                  nextBtn.textContent = 'Enviando...';
+
+                  const response = await fetch(\`/jobs/\${job.id}/applications/\${applicationId}/question-responses/multiple\`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      responses: responses.filter(r => r.answer.trim() !== '')
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Erro ao enviar respostas');
+                  }
+
+                  // Sucesso - mostrar mensagem e fechar modal
+                  showSuccess();
+                } catch (err) {
+                  showError(err.message || 'Erro ao enviar respostas');
+                  nextBtn.disabled = false;
+                  nextBtn.textContent = 'Concluir';
+                }
+              }
+
+              // Função para mostrar sucesso
+              function showSuccess() {
+                const content = document.getElementById('questions-content');
+                content.innerHTML = \`
+                  <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Sucesso!</h3>
+                    <p class="text-gray-600 mb-4">
+                      Todas as suas respostas foram enviadas com sucesso. Sua candidatura está completa!
+                    </p>
+                    <p class="text-sm text-gray-500">
+                      Redirecionando em alguns segundos...
+                    </p>
+                  </div>
+                \`;
+
+                // Fechar modal após 3 segundos
+                setTimeout(() => {
+                  closeQuestionsModal();
+                  // Recarregar página ou mostrar mensagem de sucesso
+                  alert('Candidatura realizada com sucesso! Todas as suas respostas foram enviadas.');
+                  location.reload();
+                }, 3000);
+              }
+
+              // Função para mostrar erro
+              function showError(message) {
+                const content = document.getElementById('questions-content');
+                content.innerHTML = \`
+                  <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
+                    <p class="text-red-600 mb-4">\${message}</p>
+                    <button
+                      id="retry-questions"
+                      class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      Tentar Novamente
+                    </button>
+                  </div>
+                \`;
+
+                document.getElementById('retry-questions').addEventListener('click', () => {
+                  location.reload();
+                });
+              }
+
+              // Função para fechar modal
+              function closeQuestionsModal() {
+                const modal = document.getElementById('questions-modal');
+                if (modal) {
+                  modal.remove();
+                }
               }
               
               // Criar o formulário
