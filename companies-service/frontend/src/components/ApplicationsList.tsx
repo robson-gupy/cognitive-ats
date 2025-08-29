@@ -18,7 +18,8 @@ import {
   Timeline,
   Row,
   Col,
-  Tabs
+  Tabs,
+  Dropdown
 } from 'antd';
 import { 
   UserOutlined, 
@@ -32,7 +33,11 @@ import {
   GlobalOutlined,
   StarOutlined,
   CheckCircleOutlined,
-  WhatsAppOutlined
+  WhatsAppOutlined,
+  MoreOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  CopyOutlined
 } from '@ant-design/icons';
 import {
   DndContext,
@@ -79,6 +84,10 @@ interface DraggableApplicationCardProps {
   onViewResponses?: (application: Application) => void;
   onCardClick?: () => void;
   hasPendingChange?: boolean;
+  onEdit?: (application: Application) => void;
+  onCopy?: (application: Application) => void;
+  onFavorite?: (application: Application) => void;
+  onDelete?: (application: Application) => void;
 }
 
 const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({ 
@@ -86,7 +95,11 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   onViewResume, 
   onViewResponses,
   onCardClick,
-  hasPendingChange = false
+  hasPendingChange = false,
+  onEdit,
+  onCopy,
+  onFavorite,
+  onDelete
 }) => {
   const {
     attributes,
@@ -105,6 +118,9 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   const [isDraggingState, setIsDraggingState] = useState(false);
   const [dragStartTime, setDragStartTime] = useState<number | null>(null);
   const [dragStartPosition, setDragStartPosition] = useState<{ x: number; y: number } | null>(null);
+  
+  // Estado para controlar se o dropdown está aberto
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setDragStartTime(Date.now());
@@ -112,7 +128,13 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (dragStartTime && dragStartPosition) {
+    // Verificar se o clique foi no botão do menu ou se o dropdown está aberto
+    const target = e.target as HTMLElement;
+    const isMenuButton = target.closest('button') && target.closest('button')?.getAttribute('aria-haspopup') === 'true';
+    const isDropdownItem = target.closest('.ant-dropdown-menu-item') || target.closest('.ant-dropdown-menu');
+    
+    // Não abrir o currículo se o dropdown estiver aberto ou se clicou em elementos do menu
+    if (dragStartTime && dragStartPosition && !isMenuButton && !isDropdownItem && !isDropdownOpen) {
       const timeDiff = Date.now() - dragStartTime;
       const distance = Math.sqrt(
         Math.pow(e.clientX - dragStartPosition.x, 2) + 
@@ -153,17 +175,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
     return contactInfo.join(' • ') || 'Nenhum contato informado';
   };
 
-  const formatScore = (score?: number) => {
-    if (score === undefined || score === null) return 'N/A';
-    return `${score.toFixed(1)}/10`;
-  };
 
-  const getScoreColor = (score?: number) => {
-    if (score === undefined || score === null) return 'default';
-    if (score >= 8) return 'success';
-    if (score >= 6) return 'warning';
-    return 'error';
-  };
 
   const getAdherenceLevel = (overallScore?: number) => {
     if (overallScore === undefined || overallScore === null) return null;
@@ -200,9 +212,97 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
         border: hasPendingChange ? '2px solid #faad14' : undefined,
         opacity: hasPendingChange ? 0.8 : 1,
         userSelect: 'none',
+        position: 'relative',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+      {/* Botão de edição no canto superior direito - posicionado absolutamente */}
+      <Dropdown
+        menu={{
+          items: [
+            {
+              key: 'edit',
+              icon: <EditOutlined />,
+              label: 'Editar Candidato',
+            },
+            {
+              key: 'copy',
+              icon: <CopyOutlined />,
+              label: 'Duplicar',
+            },
+            {
+              key: 'favorite',
+              icon: <StarOutlined />,
+              label: 'Favoritar',
+            },
+            {
+              type: 'divider',
+            },
+            {
+              key: 'delete',
+              icon: <DeleteOutlined />,
+              label: 'Excluir',
+              danger: true,
+            },
+          ],
+          onClick: ({ key, domEvent }) => {
+            // Prevenir que o clique no menu dispare a visualização do CV
+            domEvent?.stopPropagation();
+            domEvent?.preventDefault();
+            
+            // Garantir que o dropdown permaneça aberto temporariamente
+            setTimeout(() => setIsDropdownOpen(false), 100);
+            
+            switch (key) {
+              case 'edit':
+                onEdit?.(application);
+                break;
+              case 'copy':
+                onCopy?.(application);
+                break;
+              case 'favorite':
+                onFavorite?.(application);
+                break;
+              case 'delete':
+                onDelete?.(application);
+                break;
+            }
+          },
+        }}
+        trigger={['click']}
+        placement="bottomRight"
+        onOpenChange={(open) => {
+          // Atualizar o estado do dropdown
+          setIsDropdownOpen(open);
+        }}
+      >
+        <Button
+          type="text"
+          size="small"
+          icon={<MoreOutlined />}
+          aria-haspopup="true"
+          style={{
+            padding: '4px',
+            height: '24px',
+            width: '24px',
+            borderRadius: '4px',
+            border: 'none',
+            color: '#666',
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            zIndex: 20,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onMouseUp={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+        />
+      </Dropdown>
+
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', paddingRight: '32px' }}>
         <DragOutlined style={{ marginRight: '8px', color: '#999' }} />
         <Avatar 
           size="small" 
@@ -219,15 +319,11 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
             </div>
           )}
         </div>
+        
         <Space size="small">
           {application.overallScore !== undefined && (
             <Tag color={getAdherenceColor(application.overallScore)}>
               {getAdherenceLevel(application.overallScore)}
-            </Tag>
-          )}
-          {application.aiScore !== undefined && (
-            <Tag color={getScoreColor(application.aiScore)}>
-              {formatScore(application.aiScore)}
             </Tag>
           )}
         </Space>
@@ -350,6 +446,10 @@ const StageColumn: React.FC<StageColumnProps> = ({
             onViewResponses={() => onViewResponses(application)}
             onCardClick={() => onCardClick(application)}
             hasPendingChange={pendingStageChanges.has(application.id)}
+            onEdit={(app) => console.log('Editar candidato:', app.id)}
+            onCopy={(app) => console.log('Duplicar candidato:', app.id)}
+            onFavorite={(app) => console.log('Favoritar candidato:', app.id)}
+            onDelete={(app) => console.log('Excluir candidato:', app.id)}
           />
         ))}
       </div>
