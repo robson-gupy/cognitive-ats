@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from consumer.config.settings import settings
 from consumer.utils.logger import logger
+import json
 
 
 class DatabaseService:
@@ -213,6 +214,118 @@ class DatabaseService:
             
         except Exception as e:
             logger.error(f"❌ Erro ao atualizar scores da application {application_id}: {e}")
+            logger.error(f"🔍 Detalhes do erro: {type(e).__name__}")
+            import traceback
+            logger.error(f"🔍 Traceback completo: {traceback.format_exc()}")
+            return {
+                'success': False,
+                'application_id': application_id,
+                'error': str(e)
+            }
+
+    async def update_question_responses_score(
+        self, 
+        application_id: str, 
+        question_responses_score: float,
+        evaluation_provider: Optional[str] = None,
+        evaluation_model: Optional[str] = None,
+        evaluation_details: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Atualiza o score das respostas das perguntas de uma application
+        
+        Args:
+            application_id: ID da application
+            question_responses_score: Score das respostas (0-100)
+            evaluation_provider: Provider de IA usado (opcional)
+            evaluation_model: Modelo de IA usado (opcional)
+            evaluation_details: Detalhes da avaliação (opcional)
+            
+        Returns:
+            Dicionário com o resultado da atualização
+        """
+        try:
+            logger.info(f"🔄 Atualizando question_responses_score da application {application_id}")
+            logger.info(f"   Score: {question_responses_score}")
+            logger.info(f"   Provider: {evaluation_provider}")
+            logger.info(f"   Model: {evaluation_model}")
+            
+            # Validar o score
+            if not isinstance(question_responses_score, (int, float)):
+                raise ValueError(f"Score deve ser numérico, recebido: {question_responses_score} (tipo: {type(question_responses_score).__name__})")
+            
+            if question_responses_score < 0 or question_responses_score > 100:
+                raise ValueError(f"Score deve estar entre 0 e 100, recebido: {question_responses_score}")
+            
+            # Construir a query de atualização
+            update_fields = []
+            update_values = []
+            param_count = 1
+            
+            # Score das respostas
+            update_fields.append(f"question_responses_score = ${param_count}")
+            update_values.append(float(question_responses_score))
+            param_count += 1
+            
+            # Provider de IA (se fornecido)
+            if evaluation_provider:
+                update_fields.append(f"evaluation_provider = ${param_count}")
+                update_values.append(evaluation_provider)
+                param_count += 1
+            
+            # Modelo de IA (se fornecido)
+            if evaluation_model:
+                update_fields.append(f"evaluation_model = ${param_count}")
+                update_values.append(evaluation_model)
+                param_count += 1
+            
+            # Detalhes da avaliação (se fornecidos)
+            if evaluation_details:
+                update_fields.append(f"evaluation_details = ${param_count}")
+                update_values.append(json.dumps(evaluation_details))
+                param_count += 1
+            
+            # Timestamp da avaliação
+            current_time = datetime.now()
+            update_fields.append(f"evaluated_at = ${param_count}")
+            update_values.append(current_time)
+            param_count += 1
+            
+            # Updated_at
+            update_fields.append(f"updated_at = ${param_count}")
+            update_values.append(current_time)
+            param_count += 1
+            
+            # ID da application
+            update_values.append(application_id)
+            
+            query = f"""
+                UPDATE public.applications 
+                SET {', '.join(update_fields)}
+                WHERE id = ${param_count}
+                RETURNING id, question_responses_score, evaluation_provider, evaluation_model, evaluated_at, updated_at
+            """
+            
+            logger.info(f"📋 Query SQL: {query}")
+            logger.info(f"📝 Valores: {update_values}")
+            
+            result = await self.execute_query(query, *update_values)
+            
+            if not result:
+                raise ValueError(f"Application com ID {application_id} não encontrada")
+            
+            logger.info(f"✅ Question responses score da application {application_id} atualizado com sucesso")
+            logger.info(f"📊 Resultado: {result[0]}")
+            
+            return {
+                'success': True,
+                'application_id': application_id,
+                'updated_fields': result[0],
+                'message': 'Question responses score atualizado com sucesso'
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Erro ao atualizar question_responses_score da application {application_id}: {e}")
             logger.error(f"🔍 Detalhes do erro: {type(e).__name__}")
             import traceback
             logger.error(f"🔍 Traceback completo: {traceback.format_exc()}")

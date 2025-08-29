@@ -2,7 +2,7 @@
 Serviço para gerenciar applications no consumer SQS
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from consumer.services.database_service import database_service
 from consumer.utils.logger import logger
 
@@ -86,6 +86,57 @@ class ApplicationsService:
                 'application_id': application_id,
                 'error': str(e)
             }
+
+    async def update_question_responses_score(
+        self,
+        application_id: str,
+        question_responses_score: float,
+        evaluation_provider: Optional[str] = None,
+        evaluation_model: Optional[str] = None,
+        evaluation_details: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Atualiza o score das respostas das perguntas de uma application
+        
+        Args:
+            application_id: ID da application
+            question_responses_score: Score das respostas (0-100)
+            evaluation_provider: Provider de IA usado (opcional)
+            evaluation_model: Modelo de IA usado (opcional)
+            evaluation_details: Detalhes da avaliação (opcional)
+            
+        Returns:
+            Dicionário com o resultado da atualização
+        """
+        try:
+            logger.info(f"🔄 Atualizando question_responses_score da application {application_id}")
+            
+            # Fazer update direto no banco
+            result = await database_service.update_question_responses_score(
+                application_id=application_id,
+                question_responses_score=question_responses_score,
+                evaluation_provider=evaluation_provider,
+                evaluation_model=evaluation_model,
+                evaluation_details=evaluation_details
+            )
+            
+            if result['success']:
+                logger.info(f"✅ Question responses score da application {application_id} atualizado com sucesso")
+                logger.info(f"   Score: {question_responses_score}")
+                logger.info(f"   Provider: {evaluation_provider}")
+                logger.info(f"   Model: {evaluation_model}")
+            else:
+                logger.error(f"❌ Falha ao atualizar question_responses_score da application {application_id}: {result['error']}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Erro inesperado ao atualizar question_responses_score da application {application_id}: {e}")
+            return {
+                'success': False,
+                'application_id': application_id,
+                'error': str(e)
+            }
     
     async def get_application_by_id(self, application_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -107,6 +158,7 @@ class ApplicationsService:
                 logger.info(f"   Overall Score: {application.get('overall_score')}")
                 logger.info(f"   Education Score: {application.get('education_score')}")
                 logger.info(f"   Experience Score: {application.get('experience_score')}")
+                logger.info(f"   Question Responses Score: {application.get('question_responses_score')}")
             else:
                 logger.warning(f"⚠️ Application {application_id} não encontrada")
             

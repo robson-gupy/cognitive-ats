@@ -41,3 +41,8 @@ class ResumeParsingError(Exception):
 class JobCreationError(Exception):
     """Exceção quando há erro na criação de job"""
     pass
+
+
+class QuestionEvaluationError(Exception):
+    """Exceção quando há erro na avaliação de respostas de perguntas"""
+    pass
