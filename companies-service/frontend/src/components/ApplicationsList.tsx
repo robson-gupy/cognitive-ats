@@ -153,8 +153,11 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
     const isMenuButton = target.closest('button') && target.closest('button')?.getAttribute('aria-haspopup') === 'true';
     const isDropdownItem = target.closest('.ant-dropdown-menu-item') || target.closest('.ant-dropdown-menu');
     
-    // Não abrir o currículo se o dropdown estiver aberto ou se clicou em elementos do menu
-    if (dragStartTime && dragStartPosition && !isMenuButton && !isDropdownItem && !isDropdownOpen) {
+    // Verificar se o clique foi em um elemento clicável (nome, email, telefone, botão CV)
+    const isClickableElement = target.closest('[data-clickable="true"]');
+    
+    // Só abrir o currículo se clicou em um elemento clicável específico
+    if (dragStartTime && dragStartPosition && !isMenuButton && !isDropdownItem && !isDropdownOpen && isClickableElement) {
       const timeDiff = Date.now() - dragStartTime;
       const distance = Math.sqrt(
         Math.pow(e.clientX - dragStartPosition.x, 2) + 
@@ -409,7 +412,23 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
           style={{ backgroundColor: '#1890ff' }}
         />
         <div style={{ flex: 1, marginLeft: '8px' }}>
-          <Text strong style={{ fontSize: '14px' }}>
+          <Text 
+            strong 
+            style={{ 
+              fontSize: '14px',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              textDecorationColor: 'transparent',
+              transition: 'text-decoration-color 0.2s'
+            }}
+            data-clickable="true"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.textDecorationColor = '#1890ff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.textDecorationColor = 'transparent';
+            }}
+          >
             {application.firstName} {application.lastName}
           </Text>
           {hasPendingChange && (
@@ -423,7 +442,16 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
       </div>
 
       <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-        <div>
+        <div 
+          style={{ cursor: 'pointer' }}
+          data-clickable="true"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#1890ff';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#666';
+          }}
+        >
           <MailOutlined style={{ marginRight: '4px' }} />
           {formatContactInfo(application)}
         </div>
@@ -441,6 +469,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
             icon={<FileTextOutlined />}
             onClick={() => onViewResume?.(application)}
             style={{ padding: '0 4px' }}
+            data-clickable="true"
           >
             CV
           </Button>
@@ -451,6 +480,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
             size="small" 
             onClick={() => onViewResponses?.(application)}
             style={{ padding: '0 4px' }}
+            data-clickable="true"
           >
             {application.questionResponses.length} respostas
           </Button>
