@@ -60,6 +60,7 @@ import type { Application } from '../types/Application';
 import type { ApplicationTag } from '../types/ApplicationTag';
 import type { Tag as TagType } from '../types/Tag';
 import type { Job, JobStage } from '../types/Job';
+import { PREDEFINED_TAG_COLORS, getRandomTagColor, type TagColorOption } from '../utils/tagColors';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -141,6 +142,12 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   const [addTagModalVisible, setAddTagModalVisible] = useState(false);
   const [availableTags, setAvailableTags] = useState<TagType[]>([]);
   const [availableTagsLoading, setAvailableTagsLoading] = useState(false);
+  
+  // Estado para criar nova tag
+  const [showCreateTagForm, setShowCreateTagForm] = useState(false);
+  const [newTagLabel, setNewTagLabel] = useState('');
+  const [selectedTagColor, setSelectedTagColor] = useState<TagColorOption>(getRandomTagColor());
+  const [creatingTag, setCreatingTag] = useState(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setDragStartTime(Date.now());
@@ -249,6 +256,51 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
     } catch (error) {
       console.error('Erro ao remover tag:', error);
       message.error('Erro ao remover tag');
+    }
+  };
+
+  // Função para criar nova tag
+  const handleCreateTag = async () => {
+    if (!newTagLabel.trim()) {
+      message.error('Por favor, insira um nome para a tag');
+      return;
+    }
+
+    try {
+      setCreatingTag(true);
+      
+      const newTag = await apiService.createTag({
+        label: newTagLabel.trim(),
+        color: selectedTagColor.backgroundColor,
+        textColor: selectedTagColor.textColor,
+      });
+      
+      // Adicionar a nova tag à lista de tags disponíveis
+      setAvailableTags([...availableTags, newTag]);
+      
+      // Adicionar a nova tag à aplicação automaticamente
+      await handleAddTag(newTag.id);
+      
+      // Resetar o formulário
+      setNewTagLabel('');
+      setSelectedTagColor(getRandomTagColor());
+      setShowCreateTagForm(false);
+      
+      message.success('Tag criada e adicionada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao criar tag:', error);
+      message.error('Erro ao criar tag');
+    } finally {
+      setCreatingTag(false);
+    }
+  };
+
+  // Função para alternar entre visualizar tags e criar nova tag
+  const toggleCreateTagForm = () => {
+    setShowCreateTagForm(!showCreateTagForm);
+    if (!showCreateTagForm) {
+      setNewTagLabel('');
+      setSelectedTagColor(getRandomTagColor());
     }
   };
 
@@ -566,78 +618,181 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
 
       {/* Modal para adicionar tag */}
       <Modal
-        title="Adicionar Tag"
+        title="Gerenciar Tags"
         open={addTagModalVisible}
         onCancel={() => setAddTagModalVisible(false)}
         onOk={() => setAddTagModalVisible(false)}
         footer={null}
-        width={500}
+        width={600}
         afterOpenChange={(open) => {
           if (open) {
             loadAvailableTags();
+            setShowCreateTagForm(false);
           }
         }}
       >
         <div>
-          {availableTagsLoading ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>
-              <Spin size="large" />
-              <div style={{ marginTop: '10px' }}>Carregando tags disponíveis...</div>
-            </div>
-          ) : availableTags.length > 0 ? (
-            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-              {availableTags.map((tag) => (
-                <div
-                  key={tag.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px',
-                    margin: '8px 0',
-                    border: '1px solid #d9d9d9',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#f5f5f5';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'white';
-                  }}
-                  onClick={() => handleAddTag(tag.id)}
+          {/* Botão para alternar entre visualizar e criar tags */}
+          <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+            <Button
+              type={showCreateTagForm ? 'default' : 'primary'}
+              onClick={toggleCreateTagForm}
+              icon={<TagOutlined />}
+              style={{ marginRight: '8px' }}
+            >
+              {showCreateTagForm ? 'Ver Tags Existentes' : 'Criar Nova Tag'}
+            </Button>
+          </div>
+
+          {showCreateTagForm ? (
+            /* Formulário para criar nova tag */
+            <div>
+              <Form layout="vertical">
+                <Form.Item
+                  label="Nome da Tag"
+                  required
+                  style={{ marginBottom: '16px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <Input
+                    placeholder="Digite o nome da tag"
+                    value={newTagLabel}
+                    onChange={(e) => setNewTagLabel(e.target.value)}
+                    onPressEnter={handleCreateTag}
+                    maxLength={50}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="Cor da Tag"
+                  style={{ marginBottom: '20px' }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                    {PREDEFINED_TAG_COLORS.map((colorOption, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          backgroundColor: colorOption.backgroundColor,
+                          border: selectedTagColor.backgroundColor === colorOption.backgroundColor 
+                            ? '3px solid #1890ff' 
+                            : '2px solid #d9d9d9',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'relative',
+                          transition: 'all 0.2s',
+                        }}
+                        onClick={() => setSelectedTagColor(colorOption)}
+                        title={colorOption.name}
+                      >
+                        {selectedTagColor.backgroundColor === colorOption.backgroundColor && (
+                          <CheckCircleOutlined 
+                            style={{ 
+                              color: colorOption.textColor, 
+                              fontSize: '16px',
+                              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))'
+                            }} 
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                    Cor selecionada: <strong>{selectedTagColor.name}</strong>
+                  </div>
+                </Form.Item>
+
+                <Form.Item style={{ marginBottom: '0', textAlign: 'center' }}>
+                  <Space>
+                    <Button onClick={toggleCreateTagForm}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="primary"
+                      onClick={handleCreateTag}
+                      loading={creatingTag}
+                      disabled={!newTagLabel.trim()}
+                    >
+                      Criar e Adicionar Tag
+                    </Button>
+                  </Space>
+                </Form.Item>
+              </Form>
+            </div>
+          ) : (
+            /* Lista de tags existentes */
+            <>
+              {availableTagsLoading ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                  <Spin size="large" />
+                  <div style={{ marginTop: '10px' }}>Carregando tags disponíveis...</div>
+                </div>
+              ) : availableTags.length > 0 ? (
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  {availableTags.map((tag) => (
                     <div
+                      key={tag.id}
                       style={{
-                        width: '16px',
-                        height: '16px',
-                        borderRadius: '3px',
-                        backgroundColor: tag.color,
-                        marginRight: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px',
+                        margin: '8px 0',
                         border: '1px solid #d9d9d9',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
                       }}
-                    />
-                    <span style={{ fontSize: '14px' }}>{tag.label}</span>
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'white';
+                      }}
+                      onClick={() => handleAddTag(tag.id)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <Tag
+                          color={tag.color}
+                          style={{
+                            marginRight: '12px',
+                            border: '1px solid #d9d9d9',
+                          }}
+                        >
+                          {tag.label}
+                        </Tag>
+                      </div>
+                      <Button
+                        type="primary"
+                        size="small"
+                        style={{
+                          backgroundColor: tag.color,
+                          borderColor: tag.color,
+                        }}
+                      >
+                        Adicionar
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                  <div style={{ marginBottom: '16px' }}>
+                    Nenhuma tag disponível para esta empresa.
                   </div>
                   <Button
                     type="primary"
-                    size="small"
-                    style={{
-                      backgroundColor: tag.color,
-                      borderColor: tag.color,
-                    }}
+                    onClick={toggleCreateTagForm}
+                    icon={<TagOutlined />}
                   >
-                    Adicionar
+                    Criar Primeira Tag
                   </Button>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-              Nenhuma tag disponível para esta empresa.
-            </div>
+              )}
+            </>
           )}
         </div>
       </Modal>
