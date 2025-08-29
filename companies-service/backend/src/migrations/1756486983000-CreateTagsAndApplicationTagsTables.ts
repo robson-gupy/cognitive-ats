@@ -111,7 +111,15 @@ export class CreateTagsAndApplicationTagsTables1756486983000
       }),
     );
 
-    // Nota: O índice único composto company_id + label será criado na migração AddCompanyIdToTags
+    // Criar índice único composto para company_id + label
+    await queryRunner.createIndex(
+      'tags',
+      new TableIndex({
+        name: 'IDX_tags_company_label_unique',
+        columnNames: ['company_id', 'label'],
+        isUnique: true,
+      }),
+    );
 
     // Criar índices para a tabela application_tags
     await queryRunner.createIndex(

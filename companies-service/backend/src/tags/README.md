@@ -1,84 +1,200 @@
-# Sistema de Tags para Applications
+# Módulo de Tags
 
-## Visão Geral
+Este módulo fornece funcionalidades completas de CRUD para gerenciar tags no sistema.
 
-Este módulo implementa um sistema de tags reutilizáveis que podem ser adicionadas às applications. As tags permitem categorizar e organizar as applications de forma flexível.
+## Funcionalidades
 
-## Estrutura de Dados
+- **Criar tag**: Cria uma nova tag para uma empresa
+- **Listar tags**: Lista todas as tags de uma empresa
+- **Buscar tag**: Busca uma tag específica por ID
+- **Atualizar tag**: Atualiza os dados de uma tag existente
+- **Remover tag**: Remove uma tag do sistema
 
-### Entidade Tag
+## Estrutura da Tabela
 
-A entidade `Tag` representa uma tag reutilizável que pode ser aplicada a múltiplas applications:
+A tabela `tags` possui os seguintes campos:
 
-- **id**: UUID único da tag
-- **companyId**: ID da empresa à qual a tag pertence
-- **label**: Nome/texto da tag (único por empresa)
-- **color**: Cor de fundo da tag em formato hex (#RRGGBB)
-- **textColor**: Cor do texto da tag em formato hex (#RRGGBB)
-- **createdAt**: Data de criação da tag
-- **updatedAt**: Data da última atualização da tag
+- `id`: UUID único da tag
+- `label`: Nome/etiqueta da tag (máximo 100 caracteres)
+- `company_id`: ID da empresa à qual a tag pertence
+- `color`: Cor de fundo da tag (formato hexadecimal, padrão: #3B82F6)
+- `text_color`: Cor do texto da tag (formato hexadecimal, padrão: #FFFFFF)
+- `created_at`: Data de criação
+- `updated_at`: Data da última atualização
 
-### Entidade ApplicationTag
+## Endpoints
 
-A entidade `ApplicationTag` representa a relação entre uma application e uma tag, incluindo metadados sobre quem adicionou:
+### POST /tags
+Cria uma nova tag.
 
-- **id**: UUID único da relação
-- **applicationId**: Referência para a application
-- **tagId**: Referência para a tag
-- **addedByUserId**: Referência para o usuário que adicionou a tag
-- **createdAt**: Data em que a tag foi adicionada à application
+**Headers necessários:**
+```
+Authorization: Bearer <jwt_token>
+```
 
-## Relacionamentos
+**Body:**
+```json
+{
+  "label": "Nome da Tag",
+  "color": "#FF0000",        // Opcional, padrão: #3B82F6
+  "textColor": "#FFFFFF"     // Opcional, padrão: #FFFFFF
+}
+```
 
-- Uma `Company` pode ter múltiplas `Tag`s (One-to-Many)
-- Uma `Tag` pode estar associada a múltiplas `Application`s (One-to-Many através de ApplicationTag)
-- Uma `Application` pode ter múltiplas `Tag`s (Many-to-Many através de ApplicationTag)
-- Um `User` pode ter adicionado múltiplas tags a applications (One-to-Many através de ApplicationTag)
+**Resposta (201):**
+```json
+{
+  "id": "uuid-da-tag",
+  "label": "Nome da Tag",
+  "companyId": "uuid-da-empresa",
+  "color": "#FF0000",
+  "textColor": "#FFFFFF",
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
 
-## Constraints
+### GET /tags
+Lista todas as tags da empresa autenticada.
 
-- **Unicidade**: 
-  - Uma tag só pode ser adicionada uma vez por application (constraint único em application_id + tag_id)
-  - O nome da tag deve ser único por empresa (constraint único em company_id + label)
-- **Integridade Referencial**: 
-  - Se uma application for deletada, suas tags são removidas (CASCADE)
-  - Se uma tag for deletada, suas associações com applications são removidas (CASCADE)
-  - Se uma empresa for deletada, suas tags são removidas (CASCADE)
-  - Se um usuário for deletado, as associações de tags que ele adicionou são mantidas (RESTRICT)
+**Headers necessários:**
+```
+Authorization: Bearer <jwt_token>
+```
 
-## Índices
+**Resposta (200):**
+```json
+[
+  {
+    "id": "uuid-da-tag-1",
+    "label": "Tag 1",
+    "companyId": "uuid-da-empresa",
+    "color": "#FF0000",
+    "textColor": "#FFFFFF",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "uuid-da-tag-2",
+    "label": "Tag 2",
+    "companyId": "uuid-da-empresa",
+    "color": "#00FF00",
+    "textColor": "#000000",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+]
+```
 
-- **tags.company_id**: Para busca rápida por empresa
-- **tags.company_id + label** (único): Para garantir unicidade por empresa
-- **application_tags.application_id**: Para buscar todas as tags de uma application
-- **application_tags.tag_id**: Para buscar todas as applications que usam uma tag
-- **application_tags.added_by_user_id**: Para rastrear ações de usuários
+### GET /tags/:id
+Busca uma tag específica por ID.
 
-## Migração
+**Headers necessários:**
+```
+Authorization: Bearer <jwt_token>
+```
 
-### Migração Principal: `1756486983000-CreateTagsAndApplicationTagsTables.ts`
-Cria:
-1. Tabela `tags` com todos os campos necessários (incluindo company_id)
-2. Tabela `application_tags` com as relações e metadados
-3. Índices para performance
-4. Foreign keys para integridade referencial
-5. Constraints únicos para evitar duplicatas
+**Resposta (200):**
+```json
+{
+  "id": "uuid-da-tag",
+  "label": "Nome da Tag",
+  "companyId": "uuid-da-empresa",
+  "color": "#FF0000",
+  "textColor": "#FFFFFF",
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
 
-### Migração Adicional: `1756487862000-AddCompanyIdToTags.ts`
-Adiciona:
-1. Campo `company_id` na tabela `tags`
-2. Índice único composto para `company_id + label`
-3. Foreign key para `companies` com CASCADE
-4. Remove o índice único antigo de `label`
+### PATCH /tags/:id
+Atualiza uma tag existente.
 
-## Uso Futuro
+**Headers necessários:**
+```
+Authorization: Bearer <jwt_token>
+```
 
-Esta estrutura permite:
+**Body:**
+```json
+{
+  "label": "Novo Nome da Tag",  // Opcional
+  "color": "#00FF00",           // Opcional
+  "textColor": "#000000"        // Opcional
+}
+```
 
-- **Filtros**: Buscar applications por tags específicas
-- **Agrupamento**: Agrupar applications por tags
-- **Auditoria**: Rastrear quem adicionou cada tag
-- **Reutilização**: Usar as mesmas tags em múltiplas applications
-- **Personalização**: Cores customizáveis para cada tag
-- **Isolamento por Empresa**: Cada empresa tem seu próprio conjunto de tags
-- **Organização**: Tags organizadas por contexto empresarial
+**Resposta (200):**
+```json
+{
+  "id": "uuid-da-tag",
+  "label": "Novo Nome da Tag",
+  "companyId": "uuid-da-empresa",
+  "color": "#00FF00",
+  "textColor": "#000000",
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### DELETE /tags/:id
+Remove uma tag do sistema.
+
+**Headers necessários:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Resposta (204):** Sem conteúdo
+
+## Regras de Negócio
+
+1. **Autenticação**: Todos os endpoints requerem autenticação JWT válida
+2. **Isolamento por empresa**: Cada usuário só pode acessar tags da sua própria empresa
+3. **Label único**: Não é possível criar duas tags com o mesmo nome na mesma empresa
+4. **Validação de cores**: As cores devem estar no formato hexadecimal válido (#RRGGBB)
+5. **Valores padrão**: Se não especificadas, as cores usam valores padrão:
+   - `color`: #3B82F6 (azul)
+   - `textColor`: #FFFFFF (branco)
+
+## Códigos de Erro
+
+- **400 Bad Request**: Dados inválidos no body da requisição
+- **401 Unauthorized**: Token JWT inválido ou ausente
+- **404 Not Found**: Tag não encontrada
+- **409 Conflict**: Já existe uma tag com o mesmo nome na empresa
+
+## Segurança
+
+- O `companyId` é automaticamente extraído do token JWT do usuário autenticado
+- Usuários não podem acessar tags de outras empresas
+- Todas as operações são validadas contra a empresa do usuário logado
+
+## Exemplo de Uso
+
+```bash
+# 1. Fazer login para obter o token JWT
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@company.com", "password": "password"}'
+
+# 2. Criar uma nova tag
+curl -X POST http://localhost:3000/tags \
+  -H "Authorization: Bearer <jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"label": "Candidato Promissor", "color": "#10B981"}'
+
+# 3. Listar todas as tags
+curl -X GET http://localhost:3000/tags \
+  -H "Authorization: Bearer <jwt_token>"
+
+# 4. Atualizar uma tag
+curl -X PATCH http://localhost:3000/tags/<tag_id> \
+  -H "Authorization: Bearer <jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"color": "#EF4444"}'
+
+# 5. Remover uma tag
+curl -X DELETE http://localhost:3000/tags/<tag_id> \
+  -H "Authorization: Bearer <jwt_token>"
+```
