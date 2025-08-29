@@ -9,6 +9,7 @@ import { QuestionResponsesService } from './services/question-responses.service'
 import { Application } from './entities/application.entity';
 import { ApplicationStageHistory } from './entities/application-stage-history.entity';
 import { ApplicationQuestionResponse } from './entities/application-question-response.entity';
+import { ApplicationTag } from './entities/application-tag.entity';
 import { Job } from '../jobs/entities/job.entity';
 import { JobStage } from '../jobs/entities/job-stage.entity';
 import { JobQuestion } from '../jobs/entities/job-question.entity';
@@ -26,6 +27,7 @@ import { SharedModule } from '../shared/shared.module';
       Application,
       ApplicationStageHistory,
       ApplicationQuestionResponse,
+      ApplicationTag,
       Job,
       JobStage,
       JobQuestion,

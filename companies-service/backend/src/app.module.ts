@@ -10,6 +10,7 @@ import { RolesModule } from './roles/roles.module';
 import { JobsModule } from './jobs/jobs.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { ResumesModule } from './resumes/resumes.module';
+import { TagsModule } from './tags/tags.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ResumesModule } from './resumes/resumes.module';
     JobsModule,
     ApplicationsModule,
     ResumesModule,
+    TagsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
