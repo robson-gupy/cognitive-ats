@@ -75,6 +75,15 @@ docker run --rm --network cognitive-ats_cognitive-ats-network \
     --attributes '{"VisibilityTimeout": "30", "MessageRetentionPeriod": "1209600"}' \
     --endpoint-url=http://localstack:4566
 
+docker run --rm --network cognitive-ats_cognitive-ats-network \
+    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+    amazon/aws-cli:latest sqs create-queue \
+    --queue-name $QUESTION_RESPONSES_SQS_QUEUE_NAME \
+    --attributes '{"VisibilityTimeout": "30", "MessageRetentionPeriod": "1209600"}' \
+    --endpoint-url=http://localstack:4566
+
 # Listar recursos criados
 echo "Recursos criados:"
 echo "Buckets S3:"

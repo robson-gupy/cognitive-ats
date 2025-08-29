@@ -11,6 +11,7 @@ import { Application } from '../entities/application.entity';
 import { CreateQuestionResponseDto } from '../dto/create-question-response.dto';
 import { CreateMultipleQuestionResponsesDto } from '../dto/create-multiple-question-responses.dto';
 import { UpdateQuestionResponseDto } from '../dto/update-question-response.dto';
+import { SqsClientService } from '../../shared/services/sqs-client.service';
 
 @Injectable()
 export class QuestionResponsesService {
@@ -21,6 +22,7 @@ export class QuestionResponsesService {
     private jobQuestionRepository: Repository<JobQuestion>,
     @InjectRepository(Application)
     private applicationRepository: Repository<Application>,
+    private sqsClientService: SqsClientService,
   ) {}
 
   async create(
@@ -30,6 +32,7 @@ export class QuestionResponsesService {
     // Buscar a aplicação para obter jobId e companyId
     const application = await this.applicationRepository.findOne({
       where: { id: applicationId },
+      relations: ['job', 'company'],
     });
 
     if (!application) {
@@ -76,7 +79,17 @@ export class QuestionResponsesService {
       answer: createQuestionResponseDto.answer,
     });
 
-    return this.questionResponseRepository.save(questionResponse);
+    const savedResponse = await this.questionResponseRepository.save(questionResponse);
+
+    // Emitir evento para a fila SQS
+    try {
+      await this.emitQuestionResponseEvent(savedResponse, application);
+    } catch (error) {
+      // Log do erro mas não falhar a operação principal
+      console.error('Erro ao emitir evento SQS para resposta da pergunta:', error);
+    }
+
+    return savedResponse;
   }
 
   async createMultiple(
@@ -86,6 +99,7 @@ export class QuestionResponsesService {
     // Buscar a aplicação para obter jobId e companyId
     const application = await this.applicationRepository.findOne({
       where: { id: applicationId },
+      relations: ['job', 'company'],
     });
 
     if (!application) {
@@ -176,7 +190,17 @@ export class QuestionResponsesService {
       },
     );
 
-    return this.questionResponseRepository.save(questionResponses);
+    const savedResponses = await this.questionResponseRepository.save(questionResponses);
+
+    // Emitir evento para a fila SQS com todas as respostas
+    try {
+      await this.emitMultipleQuestionResponsesEvent(savedResponses, application);
+    } catch (error) {
+      // Log do erro mas não falhar a operação principal
+      console.error('Erro ao emitir evento SQS para múltiplas respostas de perguntas:', error);
+    }
+
+    return savedResponses;
   }
 
   async findAllByApplication(
@@ -210,11 +234,125 @@ export class QuestionResponsesService {
 
     Object.assign(questionResponse, updateQuestionResponseDto);
 
-    return this.questionResponseRepository.save(questionResponse);
+    const updatedResponse = await this.questionResponseRepository.save(questionResponse);
+
+    // Emitir evento para a fila SQS após atualização
+    try {
+      const application = await this.applicationRepository.findOne({
+        where: { id: questionResponse.applicationId },
+        relations: ['job', 'company'],
+      });
+      
+      if (application) {
+        await this.emitQuestionResponseEvent(updatedResponse, application);
+      }
+    } catch (error) {
+      // Log do erro mas não falhar a operação principal
+      console.error('Erro ao emitir evento SQS para atualização de resposta da pergunta:', error);
+    }
+
+    return updatedResponse;
   }
 
   async remove(id: string): Promise<void> {
     const questionResponse = await this.findOne(id);
     await this.questionResponseRepository.remove(questionResponse);
+  }
+
+  /**
+   * Emite evento para a fila SQS quando uma resposta de pergunta é criada/atualizada
+   */
+  private async emitQuestionResponseEvent(
+    questionResponse: ApplicationQuestionResponse,
+    application: Application,
+  ): Promise<void> {
+    const queueName = process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME || 'question-responses-queue';
+    
+    const messageBody = {
+      eventType: 'QUESTION_RESPONSE_CREATED',
+      timestamp: new Date().toISOString(),
+      data: {
+        questionResponseId: questionResponse.id,
+        applicationId: questionResponse.applicationId,
+        jobId: questionResponse.jobId,
+        companyId: questionResponse.companyId,
+        jobQuestionId: questionResponse.jobQuestionId,
+        question: questionResponse.question,
+        answer: questionResponse.answer,
+        createdAt: questionResponse.createdAt,
+      },
+      job: {
+        id: application.job.id,
+        title: application.job.title,
+        slug: application.job.slug,
+        description: application.job.description,
+        requirements: application.job.requirements,
+      },
+      company: {
+        id: application.company.id,
+        name: application.company.name,
+        slug: application.company.slug,
+      },
+      application: {
+        id: application.id,
+        firstName: application.firstName,
+        lastName: application.lastName,
+        email: application.email,
+        phone: application.phone,
+        createdAt: application.createdAt,
+      },
+    };
+
+    await this.sqsClientService.sendMessage(queueName, messageBody);
+  }
+
+  /**
+   * Emite evento para a fila SQS quando múltiplas respostas de perguntas são criadas
+   */
+  private async emitMultipleQuestionResponsesEvent(
+    questionResponses: ApplicationQuestionResponse[],
+    application: Application,
+  ): Promise<void> {
+    const queueName = process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME || 'question-responses-queue';
+    
+    const messageBody = {
+      eventType: 'MULTIPLE_QUESTION_RESPONSES_CREATED',
+      timestamp: new Date().toISOString(),
+      data: {
+        totalResponses: questionResponses.length,
+        responses: questionResponses.map(response => ({
+          questionResponseId: response.id,
+          jobQuestionId: response.jobQuestionId,
+          question: response.question,
+          answer: response.answer,
+          createdAt: response.createdAt,
+        })),
+        applicationId: application.id,
+        jobId: application.job.id,
+        companyId: application.company.id,
+      },
+      job: {
+        id: application.job.id,
+        title: application.job.title,
+        slug: application.job.slug,
+        description: application.job.description,
+        requirements: application.job.requirements,
+      },
+      company: {
+        id: application.company.id,
+        name: application.company.name,
+        slug: application.company.slug,
+      },
+      application: {
+        id: application.id,
+        firstName: application.firstName,
+        lastName: application.lastName,
+        email: application.email,
+        phone: application.phone,
+        createdAt: application.createdAt,
+      },
+    };
+
+    await this.sqsClientService.sendMessage(queueName, messageBody);
   }
 }

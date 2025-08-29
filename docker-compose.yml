@@ -40,6 +40,7 @@ services:
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       - RESUMES_BUCKET_NAME=${RESUMES_BUCKET_NAME}
       - APPLICATIONS_SQS_QUEUE_NAME=${APPLICATIONS_SQS_QUEUE_NAME}
+      - QUESTION_RESPONSES_SQS_QUEUE_NAME=${QUESTION_RESPONSES_SQS_QUEUE_NAME}
       - JWT_SECRET=${JWT_SECRET}
     volumes:
       - ./companies-service/backend:/app
@@ -169,6 +170,30 @@ services:
       - localstack
       - companies-backend
       - postgres
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+  # SQS Question Responses Listener Service (Respostas das perguntas)
+  sqs-question-responses-listener:
+    build:
+      context: ./ai-service
+      dockerfile: consumer/Dockerfile.question-responses-listener
+    container_name: cognitive-ats-sqs-question-responses-listener
+    environment:
+      - QUESTION_RESPONSES_SQS_QUEUE_NAME=${QUESTION_RESPONSES_SQS_QUEUE_NAME}
+      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
+      - SQS_WAIT_TIME=${SQS_WAIT_TIME:-20}
+      - SQS_MAX_MESSAGES=${SQS_MAX_MESSAGES:-10}
+    volumes:
+      - ./ai-service:/app
+    depends_on:
+      - localstack
+      - companies-backend
     networks:
       - cognitive-ats-network
     restart: unless-stopped
