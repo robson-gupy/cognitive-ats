@@ -37,7 +37,8 @@ import {
   MoreOutlined,
   EditOutlined,
   DeleteOutlined,
-  CopyOutlined
+  CopyOutlined,
+  TagOutlined
 } from '@ant-design/icons';
 import {
   DndContext,
@@ -57,6 +58,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { apiService } from '../services/api';
 import type { Application } from '../types/Application';
 import type { ApplicationTag } from '../types/ApplicationTag';
+import type { Tag as TagType } from '../types/Tag';
 import type { Job, JobStage } from '../types/Job';
 
 const { Title, Text } = Typography;
@@ -134,6 +136,11 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   // Estado para as tags da aplicação
   const [applicationTags, setApplicationTags] = useState<ApplicationTag[]>([]);
   const [tagsLoading, setTagsLoading] = useState(false);
+  
+  // Estado para o modal de adicionar tag
+  const [addTagModalVisible, setAddTagModalVisible] = useState(false);
+  const [availableTags, setAvailableTags] = useState<TagType[]>([]);
+  const [availableTagsLoading, setAvailableTagsLoading] = useState(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setDragStartTime(Date.now());
@@ -189,6 +196,58 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   useEffect(() => {
     loadApplicationTags();
   }, [application.id]);
+
+  // Função para carregar tags disponíveis
+  const loadAvailableTags = async () => {
+    try {
+      setAvailableTagsLoading(true);
+      const tags = await apiService.getTags();
+      setAvailableTags(tags);
+    } catch (error) {
+      console.error('Erro ao carregar tags disponíveis:', error);
+      setAvailableTags([]);
+    } finally {
+      setAvailableTagsLoading(false);
+    }
+  };
+
+  // Função para adicionar tag à aplicação
+  const handleAddTag = async (tagId: string) => {
+    try {
+      await apiService.createApplicationTag({
+        applicationId: application.id,
+        tagId: tagId,
+      });
+      
+      // Recarregar as tags da aplicação
+      await loadApplicationTags();
+      
+      // Fechar o modal
+      setAddTagModalVisible(false);
+      
+      // Mostrar mensagem de sucesso
+      message.success('Tag adicionada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao adicionar tag:', error);
+      message.error('Erro ao adicionar tag');
+    }
+  };
+
+  // Função para remover tag da aplicação
+  const handleRemoveTag = async (tagId: string) => {
+    try {
+      await apiService.removeApplicationTag(application.id, tagId);
+      
+      // Recarregar as tags da aplicação
+      await loadApplicationTags();
+      
+      // Mostrar mensagem de sucesso
+      message.success('Tag removida com sucesso!');
+    } catch (error) {
+      console.error('Erro ao remover tag:', error);
+      message.error('Erro ao remover tag');
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -267,6 +326,11 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
               label: 'Favoritar',
             },
             {
+              key: 'addTag',
+              icon: <TagOutlined />,
+              label: 'Adicionar Tag',
+            },
+            {
               type: 'divider',
             },
             {
@@ -293,6 +357,9 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
                 break;
               case 'favorite':
                 onFavorite?.(application);
+                break;
+              case 'addTag':
+                setAddTagModalVisible(true);
                 break;
               case 'delete':
                 onDelete?.(application);
@@ -409,16 +476,48 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
             </Tag>
           ) : applicationTags.length > 0 ? (
             applicationTags.map((appTag) => (
-              <Tag
+              <div
                 key={appTag.id}
                 style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
                   backgroundColor: appTag.tag?.color || '#f0f0f0',
                   color: appTag.tag?.textColor || '#000',
-                  border: '1px solid #d9d9d9'
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '12px',
+                  position: 'relative',
+                  marginRight: '4px',
+                  marginBottom: '4px'
                 }}
               >
-                {appTag.tag?.label || 'Tag'}
-              </Tag>
+                <span style={{ marginRight: '6px' }}>
+                  {appTag.tag?.label || 'Tag'}
+                </span>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<CloseOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveTag(appTag.tagId);
+                  }}
+                  style={{
+                    padding: '0',
+                    height: '16px',
+                    width: '16px',
+                    minWidth: '16px',
+                    color: appTag.tag?.textColor || '#000',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="Remover tag"
+                />
+              </div>
             ))
           ) : (
             <Tag color="default" style={{ fontSize: '11px', opacity: 0.7 }}>
@@ -434,6 +533,84 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
           )}
         </div>
       </div>
+
+      {/* Modal para adicionar tag */}
+      <Modal
+        title="Adicionar Tag"
+        open={addTagModalVisible}
+        onCancel={() => setAddTagModalVisible(false)}
+        onOk={() => setAddTagModalVisible(false)}
+        footer={null}
+        width={500}
+        afterOpenChange={(open) => {
+          if (open) {
+            loadAvailableTags();
+          }
+        }}
+      >
+        <div>
+          {availableTagsLoading ? (
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <Spin size="large" />
+              <div style={{ marginTop: '10px' }}>Carregando tags disponíveis...</div>
+            </div>
+          ) : availableTags.length > 0 ? (
+            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              {availableTags.map((tag) => (
+                <div
+                  key={tag.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px',
+                    margin: '8px 0',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f5f5f5';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white';
+                  }}
+                  onClick={() => handleAddTag(tag.id)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '3px',
+                        backgroundColor: tag.color,
+                        marginRight: '12px',
+                        border: '1px solid #d9d9d9',
+                      }}
+                    />
+                    <span style={{ fontSize: '14px' }}>{tag.label}</span>
+                  </div>
+                  <Button
+                    type="primary"
+                    size="small"
+                    style={{
+                      backgroundColor: tag.color,
+                      borderColor: tag.color,
+                    }}
+                  >
+                    Adicionar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+              Nenhuma tag disponível para esta empresa.
+            </div>
+          )}
+        </div>
+      </Modal>
     </Card>
   );
 };

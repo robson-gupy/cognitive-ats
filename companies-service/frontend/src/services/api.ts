@@ -4,7 +4,8 @@ import type { Company, CreateCompanyData, UpdateCompanyData } from '../types/Com
 import type { Department, CreateDepartmentRequest, UpdateDepartmentRequest } from '../types/Department';
 import type { Role, CreateRoleRequest, UpdateRoleRequest } from '../types/Role';
 import type { Application, CreateApplicationData, UpdateApplicationData, UpdateApplicationScoreData, ChangeApplicationStageData } from '../types/Application';
-import type { ApplicationTag } from '../types/ApplicationTag';
+import type { ApplicationTag, CreateApplicationTagData } from '../types/ApplicationTag';
+import type { Tag, CreateTagData, UpdateTagData } from '../types/Tag';
 import { appConfig, getCurrentConfig } from '../config/config';
 
 // URL base da API - agora é dinâmica baseada no subdomínio
@@ -504,6 +505,48 @@ export class ApiService {
   // Application Tags
   async getApplicationTags(applicationId: string): Promise<ApplicationTag[]> {
     return this.request<ApplicationTag[]>(`/application-tags/application/${applicationId}`);
+  }
+
+  async createApplicationTag(applicationTagData: CreateApplicationTagData): Promise<ApplicationTag> {
+    return this.request<ApplicationTag>('/application-tags', {
+      method: 'POST',
+      body: JSON.stringify(applicationTagData),
+    });
+  }
+
+  async removeApplicationTag(applicationId: string, tagId: string): Promise<void> {
+    return this.request<void>(`/application-tags/application/${applicationId}/tag/${tagId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Tags
+  async getTags(): Promise<Tag[]> {
+    return this.request<Tag[]>('/tags');
+  }
+
+  async getTag(id: string): Promise<Tag> {
+    return this.request<Tag>(`/tags/${id}`);
+  }
+
+  async createTag(tagData: CreateTagData): Promise<Tag> {
+    return this.request<Tag>('/tags', {
+      method: 'POST',
+      body: JSON.stringify(tagData),
+    });
+  }
+
+  async updateTag(id: string, tagData: UpdateTagData): Promise<Tag> {
+    return this.request<Tag>(`/tags/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(tagData),
+    });
+  }
+
+  async deleteTag(id: string): Promise<void> {
+    return this.request<void>(`/tags/${id}`, {
+      method: 'DELETE',
+    });
   }
 }
 
