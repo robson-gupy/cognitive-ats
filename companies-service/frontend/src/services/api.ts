@@ -4,6 +4,7 @@ import type { Company, CreateCompanyData, UpdateCompanyData } from '../types/Com
 import type { Department, CreateDepartmentRequest, UpdateDepartmentRequest } from '../types/Department';
 import type { Role, CreateRoleRequest, UpdateRoleRequest } from '../types/Role';
 import type { Application, CreateApplicationData, UpdateApplicationData, UpdateApplicationScoreData, ChangeApplicationStageData } from '../types/Application';
+import type { ApplicationTag } from '../types/ApplicationTag';
 import { appConfig, getCurrentConfig } from '../config/config';
 
 // URL base da API - agora é dinâmica baseada no subdomínio
@@ -498,6 +499,11 @@ export class ApiService {
 
   async getApplicationsByStage(jobId: string, stageId: string): Promise<Application[]> {
     return this.request<Application[]>(`/jobs/${jobId}/applications/by-stage/${stageId}`);
+  }
+
+  // Application Tags
+  async getApplicationTags(applicationId: string): Promise<ApplicationTag[]> {
+    return this.request<ApplicationTag[]>(`/application-tags/application/${applicationId}`);
   }
 }
 

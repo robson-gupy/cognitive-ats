@@ -56,13 +56,16 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { apiService } from '../services/api';
 import type { Application } from '../types/Application';
+import type { ApplicationTag } from '../types/ApplicationTag';
 import type { Job, JobStage } from '../types/Job';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 // Função para formatar número de telefone com máscara
-const formatPhoneNumber = (phone: string) => {
+const formatPhoneNumber = (phone: string | null | undefined) => {
+  if (!phone) return '';
+  
   // Remove todos os caracteres não numéricos
   const cleanPhone = phone.replace(/\D/g, '');
   
@@ -101,6 +104,12 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   onFavorite,
   onDelete
 }) => {
+  // Verificação de segurança para garantir que application.id existe
+  if (!application?.id) {
+    console.error('Application sem ID:', application);
+    return null;
+  }
+
   const {
     attributes,
     listeners,
@@ -121,6 +130,10 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   
   // Estado para controlar se o dropdown está aberto
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Estado para as tags da aplicação
+  const [applicationTags, setApplicationTags] = useState<ApplicationTag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(false);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setDragStartTime(Date.now());
@@ -158,6 +171,25 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
     setIsDraggingState(false);
   };
 
+  // Função para buscar as tags da aplicação
+  const loadApplicationTags = async () => {
+    try {
+      setTagsLoading(true);
+      const tags = await apiService.getApplicationTags(application.id);
+      setApplicationTags(tags);
+    } catch (error) {
+      console.error('Erro ao carregar tags da aplicação:', error);
+      setApplicationTags([]);
+    } finally {
+      setTagsLoading(false);
+    }
+  };
+
+  // Carregar tags quando o componente montar
+  useEffect(() => {
+    loadApplicationTags();
+  }, [application.id]);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -178,7 +210,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
 
 
   const getAdherenceLevel = (overallScore?: number) => {
-    if (overallScore === undefined || overallScore === null) return null;
+    if (typeof overallScore !== 'number' || isNaN(overallScore)) return null;
     if (overallScore >= 90) return 'Muito alta';
     if (overallScore >= 70) return 'Alta';
     if (overallScore >= 50) return 'Média';
@@ -186,7 +218,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   };
 
   const getAdherenceColor = (overallScore?: number) => {
-    if (overallScore === undefined || overallScore === null) return 'default';
+    if (typeof overallScore !== 'number' || isNaN(overallScore)) return 'default';
     if (overallScore >= 90) return 'blue'; // Azul mais escuro
     if (overallScore >= 70) return 'cyan'; // Azul claro
     if (overallScore >= 50) return 'gold'; // Amarela
@@ -320,13 +352,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
           )}
         </div>
         
-        <Space size="small">
-          {application.overallScore !== undefined && (
-            <Tag color={getAdherenceColor(application.overallScore)}>
-              {getAdherenceLevel(application.overallScore)}
-            </Tag>
-          )}
-        </Space>
+
       </div>
 
       <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
@@ -340,7 +366,7 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '4px' }}>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
         {application.resumeUrl && (
           <Button 
             type="text" 
@@ -362,6 +388,51 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
             {application.questionResponses.length} respostas
           </Button>
         )}
+      </div>
+
+      {/* Seção de tags da aplicação */}
+      <div style={{ 
+        borderTop: '1px solid #f0f0f0', 
+        paddingTop: '8px',
+        marginTop: '4px'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: '4px',
+          alignItems: 'center'
+        }}>
+          {/* Tags dinâmicas da API */}
+          {tagsLoading ? (
+            <Tag color="default">
+              ⏳ Carregando tags...
+            </Tag>
+          ) : applicationTags.length > 0 ? (
+            applicationTags.map((appTag) => (
+              <Tag
+                key={appTag.id}
+                style={{
+                  backgroundColor: appTag.tag?.color || '#f0f0f0',
+                  color: appTag.tag?.textColor || '#000',
+                  border: '1px solid #d9d9d9'
+                }}
+              >
+                {appTag.tag?.label || 'Tag'}
+              </Tag>
+            ))
+          ) : (
+            <Tag color="default" style={{ fontSize: '11px', opacity: 0.7 }}>
+              Nenhuma tag
+            </Tag>
+          )}
+
+          {/* Tag de score geral (mantida para compatibilidade) */}
+          {typeof application.overallScore === 'number' && !isNaN(application.overallScore) && (
+            <Tag color={getAdherenceColor(application.overallScore)}>
+              🎯 {getAdherenceLevel(application.overallScore)}
+            </Tag>
+          )}
+        </div>
       </div>
     </Card>
   );
