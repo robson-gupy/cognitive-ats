@@ -27,19 +27,20 @@ import {
   MailOutlined, 
   CalendarOutlined, 
   FileTextOutlined, 
-  DragOutlined,
-  CloseOutlined,
-  TrophyOutlined,
-  BookOutlined,
-  GlobalOutlined,
-  StarOutlined,
-  CheckCircleOutlined,
-  WhatsAppOutlined,
-  MoreOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  CopyOutlined,
-  TagOutlined
+  DragOutlined, 
+  CloseOutlined, 
+  TrophyOutlined, 
+  BookOutlined, 
+  GlobalOutlined, 
+  StarOutlined, 
+  CheckCircleOutlined, 
+  WhatsAppOutlined, 
+  MoreOutlined, 
+  EditOutlined, 
+  DeleteOutlined, 
+  CopyOutlined, 
+  TagOutlined,
+  PlusOutlined 
 } from '@ant-design/icons';
 import {
   DndContext,
@@ -809,6 +810,47 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
   );
 };
 
+// Componente para o botão de adicionar nova etapa
+const AddStageButton: React.FC<{
+  onAddStage: () => void;
+  disabled?: boolean;
+}> = ({ onAddStage, disabled = false }) => {
+  return (
+    <div
+      style={{
+        minWidth: '280px',
+        height: 'fit-content',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'flex-start',
+        paddingTop: '8px'
+      }}
+    >
+      <Button
+        type="dashed"
+        onClick={onAddStage}
+        disabled={disabled}
+        className="add-stage-button"
+        style={{
+          width: '100%',
+          height: '60px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '500',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          cursor: disabled ? 'not-allowed' : 'pointer'
+        }}
+      >
+        <PlusOutlined />
+        Adicionar outra lista
+      </Button>
+    </div>
+  );
+};
+
 interface StageColumnProps {
   stage: JobStage;
   applications: Application[];
@@ -1011,6 +1053,7 @@ export const ApplicationsList: React.FC = () => {
   const [isChangingStage, setIsChangingStage] = useState(false);
   const [isReorderingStages, setIsReorderingStages] = useState(false);
   const [hoveredStageId, setHoveredStageId] = useState<string | null>(null);
+  const [isCreatingStage, setIsCreatingStage] = useState(false);
   
   // Estado para controlar mudanças temporárias de stage
   const [pendingStageChanges, setPendingStageChanges] = useState<Map<string, string>>(new Map());
@@ -1022,6 +1065,17 @@ export const ApplicationsList: React.FC = () => {
   }>({
     visible: false,
     application: null,
+  });
+
+  // Estado para controlar o modal de criação de stage
+  const [createStageModal, setCreateStageModal] = useState<{
+    visible: boolean;
+    stageName: string;
+    stageDescription: string;
+  }>({
+    visible: false,
+    stageName: '',
+    stageDescription: '',
   });
 
   // Estado para armazenar os dados do resume
@@ -1280,12 +1334,14 @@ export const ApplicationsList: React.FC = () => {
 
     if (activeStage && overStage) {
       // Reordenação de etapas
-      const oldIndex = job.stages.findIndex(stage => stage.id === activeId);
-      const newIndex = job.stages.findIndex(stage => stage.id === overId);
+      // Usar apenas as etapas ativas para a reordenação
+      const activeStages = job.stages.filter(stage => stage.isActive).sort((a, b) => a.orderIndex - b.orderIndex);
+      
+      // Encontrar os índices corretos dentro das etapas ativas
+      const oldIndex = activeStages.findIndex(stage => stage.id === activeId);
+      const newIndex = activeStages.findIndex(stage => stage.id === overId);
 
       if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        // Usar apenas as etapas ativas para a reordenação
-        const activeStages = job.stages.filter(stage => stage.isActive).sort((a, b) => a.orderIndex - b.orderIndex);
         const newActiveStages = arrayMove(activeStages, oldIndex, newIndex);
         
         // Atualizar os orderIndex das etapas ativas
@@ -1440,6 +1496,79 @@ export const ApplicationsList: React.FC = () => {
     }
   };
 
+  // Função para abrir o modal de criação de stage
+  const handleOpenCreateStageModal = () => {
+    setCreateStageModal({
+      visible: true,
+      stageName: '',
+      stageDescription: '',
+    });
+  };
+
+  // Função para fechar o modal de criação de stage
+  const handleCloseCreateStageModal = () => {
+    setCreateStageModal({
+      visible: false,
+      stageName: '',
+      stageDescription: '',
+    });
+  };
+
+  // Função para criar um novo stage
+  const handleCreateStage = async (stageName: string, stageDescription: string) => {
+    if (!job) return;
+
+    try {
+      setIsCreatingStage(true);
+
+      // Determinar o próximo orderIndex baseado nas etapas ativas
+      const activeStages = job.stages.filter(stage => stage.isActive).sort((a, b) => a.orderIndex - b.orderIndex);
+      const nextOrderIndex = activeStages.length;
+
+      // Criar novo stage
+      const newStage: JobStage = {
+        id: `temp-${Date.now()}`, // ID temporário
+        name: stageName,
+        description: stageDescription,
+        orderIndex: nextOrderIndex,
+        isActive: true,
+      };
+
+      // Atualizar estado local imediatamente
+      const updatedStages = [...job.stages, newStage];
+      setJob({ ...job, stages: updatedStages });
+
+      // Preparar dados para a API
+      const stagesData = updatedStages.map((stage) => ({
+        id: stage.id,
+        name: stage.name,
+        description: stage.description,
+        orderIndex: stage.orderIndex,
+        isActive: stage.isActive,
+      }));
+
+      console.log('Dados das stages após criação:', stagesData);
+
+      // Fazer a requisição para criar o stage
+      await apiService.updateJob(jobId!, {
+        stages: stagesData,
+      });
+
+      message.success('Etapa criada com sucesso!');
+      handleCloseCreateStageModal();
+    } catch (error) {
+      console.error('Erro ao criar etapa:', error);
+      message.error('Erro ao criar etapa');
+      
+      // Reverter para o estado anterior em caso de erro
+      if (job) {
+        setJob(job);
+      }
+    } finally {
+      setIsCreatingStage(false);
+    }
+  };
+
   // Função para excluir uma etapa
   const handleDeleteStage = async (stageId: string) => {
     if (!job) return;
@@ -1463,22 +1592,44 @@ export const ApplicationsList: React.FC = () => {
       cancelText: 'Cancelar',
       onOk: async () => {
         try {
-          // Marcar etapa como inativa
-          const updatedStages = job.stages.map(s => 
-            s.id === stageId ? { ...s, isActive: false } : s
-          );
+          // Encontrar a etapa que será excluída
+          const stageToDelete = job.stages.find(s => s.id === stageId);
+          if (!stageToDelete) return;
+
+          // Marcar etapa como inativa e definir orderIndex como -1
+          const updatedStages = job.stages.map(s => {
+            if (s.id === stageId) {
+              return { ...s, isActive: false, orderIndex: -1 };
+            }
+            return s;
+          });
+
+          // Reordenar as etapas ativas restantes
+          const activeStages = updatedStages
+            .filter(s => s.isActive)
+            .sort((a, b) => a.orderIndex - b.orderIndex)
+            .map((stage, index) => ({
+              ...stage,
+              orderIndex: index,
+            }));
+
+          // Combinar com as etapas inativas (que já têm orderIndex -1)
+          const inactiveStages = updatedStages.filter(s => !s.isActive);
+          const finalStages = [...activeStages, ...inactiveStages];
 
           // Atualizar estado local
-          setJob({ ...job, stages: updatedStages });
+          setJob({ ...job, stages: finalStages });
 
           // Preparar dados para a API
-          const stagesData = updatedStages.map((stage) => ({
+          const stagesData = finalStages.map((stage) => ({
             id: stage.id,
             name: stage.name,
             description: stage.description,
             orderIndex: stage.orderIndex,
             isActive: stage.isActive,
           }));
+
+          console.log('Dados das stages após exclusão:', stagesData);
 
           // Fazer a requisição para atualizar
           await apiService.updateJob(jobId!, {
@@ -1511,14 +1662,31 @@ export const ApplicationsList: React.FC = () => {
       // Atualizar o estado local imediatamente
       setJob({ ...job, stages: newStages });
 
-      // Preparar dados para a API
-      const stagesData = newStages.map((stage) => ({
-        id: stage.id,
-        name: stage.name,
-        description: stage.description,
-        orderIndex: stage.orderIndex,
-        isActive: stage.isActive,
-      }));
+      // Preparar dados para a API - filtrar objetos inválidos
+      const stagesData = newStages
+        .filter(stage => {
+          // Validar se o stage é válido
+          const isValid = stage && 
+                         stage.id && 
+                         stage.name && 
+                         typeof stage.name === 'string' && 
+                         stage.name.trim().length >= 2;
+          
+          if (!isValid) {
+            console.warn('Stage inválido encontrado:', stage);
+          }
+          
+          return isValid;
+        })
+        .map((stage) => ({
+          id: stage.id,
+          name: stage.name.trim(),
+          description: stage.description || '',
+          orderIndex: stage.orderIndex,
+          isActive: stage.isActive,
+        }));
+
+      console.log('Dados das stages sendo enviados:', stagesData);
 
       // Fazer a requisição para atualizar a ordem
       await apiService.updateJob(jobId!, {
@@ -1757,20 +1925,20 @@ export const ApplicationsList: React.FC = () => {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext
-              items={job.stages
-                .filter(stage => stage.isActive)
-                .sort((a, b) => a.orderIndex - b.orderIndex)
-                .map(stage => stage.id!)}
-              strategy={rectSortingStrategy}
-            >
-              <div className="stages-container" style={{ 
-                display: 'flex', 
-                gap: '16px', 
-                overflowX: 'auto',
-                padding: '8px',
-                minHeight: 'calc(100vh - 240px)'
-              }}>
+            <div className="stages-container" style={{ 
+              display: 'flex', 
+              gap: '16px', 
+              overflowX: 'auto',
+              padding: '8px',
+              minHeight: 'calc(100vh - 240px)'
+            }}>
+              <SortableContext
+                items={job.stages
+                  .filter(stage => stage.isActive)
+                  .sort((a, b) => a.orderIndex - b.orderIndex)
+                  .map(stage => stage.id!)}
+                strategy={rectSortingStrategy}
+              >
                 {job.stages
                   .filter(stage => stage.isActive)
                   .sort((a, b) => a.orderIndex - b.orderIndex)
@@ -1791,8 +1959,14 @@ export const ApplicationsList: React.FC = () => {
                       onDeleteStage={handleDeleteStage}
                     />
                   ))}
-              </div>
-            </SortableContext>
+              </SortableContext>
+
+              {/* Botão para adicionar nova etapa */}
+              <AddStageButton
+                onAddStage={handleOpenCreateStageModal}
+                disabled={isCreatingStage || isReorderingStages}
+              />
+            </div>
 
             <DragOverlay>
               {activeId ? (
@@ -2393,6 +2567,58 @@ export const ApplicationsList: React.FC = () => {
             )}
           </div>
         )}
+      </Modal>
+
+      {/* Modal para criar nova etapa */}
+      <Modal
+        title="Criar Nova Etapa"
+        open={createStageModal.visible}
+        onCancel={handleCloseCreateStageModal}
+        footer={[
+          <Button key="cancel" onClick={handleCloseCreateStageModal}>
+            Cancelar
+          </Button>,
+          <Button
+            key="create"
+            type="primary"
+            loading={isCreatingStage}
+            disabled={!createStageModal.stageName.trim()}
+            onClick={() => handleCreateStage(createStageModal.stageName, createStageModal.stageDescription)}
+          >
+            Criar Etapa
+          </Button>,
+        ]}
+        width={500}
+      >
+        <Form layout="vertical">
+          <Form.Item
+            label="Nome da Etapa"
+            required
+            validateStatus={!createStageModal.stageName.trim() ? 'error' : ''}
+            help={!createStageModal.stageName.trim() ? 'Nome da etapa é obrigatório' : ''}
+          >
+            <Input
+              placeholder="Ex: Entrevista Técnica"
+              value={createStageModal.stageName}
+              onChange={(e) => setCreateStageModal(prev => ({ ...prev, stageName: e.target.value }))}
+              onPressEnter={() => {
+                if (createStageModal.stageName.trim()) {
+                  handleCreateStage(createStageModal.stageName, createStageModal.stageDescription);
+                }
+              }}
+              autoFocus
+            />
+          </Form.Item>
+          
+          <Form.Item label="Descrição (Opcional)">
+            <TextArea
+              placeholder="Descreva o que acontece nesta etapa..."
+              value={createStageModal.stageDescription}
+              onChange={(e) => setCreateStageModal(prev => ({ ...prev, stageDescription: e.target.value }))}
+              rows={3}
+            />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

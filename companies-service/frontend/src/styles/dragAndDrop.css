@@ -168,6 +168,28 @@
   transform: none !important;
 }
 
+/* Estilos para o botão de adicionar nova etapa */
+.add-stage-button {
+  transition: all 0.2s ease-in-out;
+  border: 2px dashed #d9d9d9 !important;
+  background-color: transparent !important;
+  color: #666 !important;
+}
+
+.add-stage-button:hover:not(:disabled) {
+  border-color: #1890ff !important;
+  color: #1890ff !important;
+  background-color: #f0f8ff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+}
+
+.add-stage-button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
 /* Animação para o badge de contagem */
 .stage-badge {
   transition: all 0.2s ease-in-out;
