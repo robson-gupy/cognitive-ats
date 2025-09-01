@@ -55,11 +55,17 @@ import {
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { apiService } from '../services/api';
 import type { Application } from '../types/Application';
 import type { ApplicationTag } from '../types/ApplicationTag';
 import type { Tag as TagType } from '../types/Tag';
+import { EditableStageName } from './EditableStageName';
 import type { Job, JobStage } from '../types/Job';
 import { PREDEFINED_TAG_COLORS, getRandomTagColor, type TagColorOption } from '../utils/tagColors';
 
@@ -808,6 +814,8 @@ interface StageColumnProps {
   onViewResponses: (application: Application) => void;
   onCardClick: (application: Application) => void;
   pendingStageChanges: Map<string, string>;
+  jobId: string;
+  onStageUpdated: (updatedStage: JobStage) => void;
 }
 
 const StageColumn: React.FC<StageColumnProps> = ({ 
@@ -816,7 +824,9 @@ const StageColumn: React.FC<StageColumnProps> = ({
   onViewResume,
   onViewResponses,
   onCardClick,
-  pendingStageChanges
+  pendingStageChanges,
+  jobId,
+  onStageUpdated
 }) => {
   const {
     setNodeRef,
@@ -864,9 +874,11 @@ const StageColumn: React.FC<StageColumnProps> = ({
         border: '1px solid #e8e8e8'
       }}>
         <div>
-          <Title level={5} style={{ margin: 0, fontSize: '16px' }}>
-            {stage.name}
-          </Title>
+          <EditableStageName
+            stage={stage}
+            jobId={jobId}
+            onStageUpdated={onStageUpdated}
+          />
         </div>
         <Badge count={applications.length} showZero style={{ backgroundColor: '#1890ff' }} />
       </div>
@@ -974,6 +986,8 @@ export const ApplicationsList: React.FC = () => {
     }),
     useSensor(KeyboardSensor),
   );
+
+
 
   useEffect(() => {
     if (jobId) {
@@ -1167,14 +1181,33 @@ export const ApplicationsList: React.FC = () => {
     const { active, over } = event;
     setActiveId(null);
 
-    if (!over) return;
+    if (!over || !job) return;
 
-    const applicationId = active.id as string;
-    const toStageId = over.id as string;
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
-    // Encontrar a aplicação e o stage atual
+    // Verificar se é uma reordenação de etapa
+    const isStageReorder = job.stages.some(stage => stage.id === activeId) && 
+                          job.stages.some(stage => stage.id === overId);
+
+    if (isStageReorder) {
+      // Reordenação de etapas
+      const oldIndex = job.stages.findIndex(stage => stage.id === activeId);
+      const newIndex = job.stages.findIndex(stage => stage.id === overId);
+
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const newStages = arrayMove(job.stages, oldIndex, newIndex);
+        await handleStageReorder(newStages);
+      }
+      return;
+    }
+
+    // Movimento de aplicação entre etapas (lógica original)
+    const applicationId = activeId;
+    const toStageId = overId;
+
     const application = applications.find(app => app.id === applicationId);
-    const toStage = job?.stages.find(stage => stage.id === toStageId);
+    const toStage = job.stages.find(stage => stage.id === toStageId);
 
     if (!application || !toStage) {
       return;
@@ -1291,6 +1324,50 @@ export const ApplicationsList: React.FC = () => {
       visible: true,
       application,
     });
+  };
+
+  // Função para atualizar uma etapa quando seu nome é editado
+  const handleStageUpdated = (updatedStage: JobStage) => {
+    if (job) {
+      const updatedStages = job.stages.map(stage => 
+        stage.id === updatedStage.id ? updatedStage : stage
+      );
+      setJob({ ...job, stages: updatedStages });
+    }
+  };
+
+  // Função para reordenar as etapas
+  const handleStageReorder = async (newStages: JobStage[]) => {
+    if (!job) return;
+
+    try {
+      // Atualizar o estado local primeiro para feedback imediato
+      setJob({ ...job, stages: newStages });
+
+      // Preparar dados para a API
+      const stagesData = newStages.map((stage, index) => ({
+        id: stage.id,
+        name: stage.name,
+        description: stage.description,
+        orderIndex: index,
+        isActive: stage.isActive,
+      }));
+
+      // Fazer a requisição para atualizar a ordem
+      await apiService.updateJob(jobId!, {
+        stages: stagesData,
+      });
+
+      message.success('Ordem das etapas atualizada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao reordenar etapas:', error);
+      message.error('Erro ao reordenar etapas');
+      
+      // Reverter para o estado anterior em caso de erro
+      if (job) {
+        setJob(job);
+      }
+    }
   };
 
   // Função para abrir o drawer de detalhes da aplicação
@@ -1511,54 +1588,94 @@ export const ApplicationsList: React.FC = () => {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <div style={{ 
-              display: 'flex', 
-              gap: '16px', 
-              overflowX: 'auto',
-              padding: '8px',
-              minHeight: 'calc(100vh - 240px)'
-            }}>
-              {job.stages
+            <SortableContext
+              items={job.stages
                 .filter(stage => stage.isActive)
                 .sort((a, b) => a.orderIndex - b.orderIndex)
-                .map((stage) => (
-                  <StageColumn
-                    key={stage.id}
-                    stage={stage}
-                    applications={getApplicationsByStage(stage.id!)}
-                    onViewResume={handleViewResume}
-                    onViewResponses={handleViewResponses}
-                    onCardClick={handleApplicationCardClick}
-                    pendingStageChanges={pendingStageChanges}
-                  />
-                ))}
-            </div>
+                .map(stage => stage.id!)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div style={{ 
+                display: 'flex', 
+                gap: '16px', 
+                overflowX: 'auto',
+                padding: '8px',
+                minHeight: 'calc(100vh - 240px)'
+              }}>
+                {job.stages
+                  .filter(stage => stage.isActive)
+                  .sort((a, b) => a.orderIndex - b.orderIndex)
+                  .map((stage) => (
+                    <StageColumn
+                      key={stage.id}
+                      stage={stage}
+                      applications={getApplicationsByStage(stage.id!)}
+                      onViewResume={handleViewResume}
+                      onViewResponses={handleViewResponses}
+                      onCardClick={handleApplicationCardClick}
+                      pendingStageChanges={pendingStageChanges}
+                      jobId={jobId!}
+                      onStageUpdated={handleStageUpdated}
+                    />
+                  ))}
+              </div>
+            </SortableContext>
 
             <DragOverlay>
               {activeId ? (
-                <div style={{ 
-                  backgroundColor: 'white',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                  border: '2px solid #1890ff',
-                  maxWidth: '300px',
-                  transform: 'rotate(5deg)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                    <DragOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
-                    <Avatar 
-                      size="small" 
-                      icon={<UserOutlined />} 
-                      style={{ backgroundColor: '#1890ff' }}
-                    />
-                    <div style={{ flex: 1, marginLeft: '8px' }}>
-                      <Text strong style={{ fontSize: '14px', color: '#1890ff' }}>
-                        Arrastando candidato...
-                      </Text>
+                (() => {
+                  // Verificar se está arrastando uma etapa
+                  const isDraggingStage = job?.stages.some(stage => stage.id === activeId);
+                  
+                  if (isDraggingStage) {
+                    const stage = job?.stages.find(stage => stage.id === activeId);
+                    return (
+                      <div style={{ 
+                        backgroundColor: 'white',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                        border: '2px solid #52c41a',
+                        minWidth: '200px',
+                        transform: 'rotate(2deg)',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <DragOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
+                          <Text strong style={{ fontSize: '16px', color: '#52c41a' }}>
+                            {stage?.name}
+                          </Text>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Arrastando aplicação (lógica original)
+                  return (
+                    <div style={{ 
+                      backgroundColor: 'white',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                      border: '2px solid #1890ff',
+                      maxWidth: '300px',
+                      transform: 'rotate(5deg)',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                        <DragOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
+                        <Avatar 
+                          size="small" 
+                          icon={<UserOutlined />} 
+                          style={{ backgroundColor: '#1890ff' }}
+                        />
+                        <div style={{ flex: 1, marginLeft: '8px' }}>
+                          <Text strong style={{ fontSize: '14px', color: '#1890ff' }}>
+                            Arrastando candidato...
+                          </Text>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()
               ) : null}
             </DragOverlay>
           </DndContext>

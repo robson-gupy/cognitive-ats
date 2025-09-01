@@ -82,6 +82,7 @@ interface UpdateStageData {
   description?: string;
   orderIndex?: number;
   isActive?: boolean;
+  jobId?: string;
 }
 
 @Injectable()
@@ -285,7 +286,11 @@ export class JobsService {
     const jobs = await this.jobsRepository.find({
       where: { companyId: userCompanyId },
       relations: ['company', 'department', 'createdBy', 'questions', 'stages'],
-      order: { createdAt: 'DESC' },
+      order: { 
+        createdAt: 'DESC',
+        questions: { orderIndex: 'ASC' },
+        stages: { orderIndex: 'ASC' },
+      },
     });
 
     console.log(`Found ${jobs.length} jobs for company ${userCompanyId}`);
@@ -351,6 +356,10 @@ export class JobsService {
         'logs',
         'logs.user',
       ],
+      order: {
+        questions: { orderIndex: 'ASC' },
+        stages: { orderIndex: 'ASC' },
+      },
     });
 
     if (!job) {
@@ -635,6 +644,7 @@ export class JobsService {
           description: stageData.description,
           orderIndex: stageData.orderIndex ?? index,
           isActive: stageData.isActive ?? true,
+          jobId: jobId,
         });
       }
     });
