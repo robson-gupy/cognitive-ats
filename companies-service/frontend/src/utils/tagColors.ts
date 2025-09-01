@@ -5,30 +5,45 @@ export interface TagColorOption {
   preset: string; // Nome do preset do Ant Design
 }
 
-// Cores baseadas nos presets do Ant Design (já têm bom contraste garantido)
+// Cores suaves e pastéis para as tags (tons menos fortes)
 export const PREDEFINED_TAG_COLORS: TagColorOption[] = [
-  { backgroundColor: '#f50', textColor: '#ffffff', name: 'Laranja', preset: 'orange' },
-  { backgroundColor: '#2db7f5', textColor: '#ffffff', name: 'Azul', preset: 'blue' },
-  { backgroundColor: '#87d068', textColor: '#ffffff', name: 'Verde', preset: 'green' },
-  { backgroundColor: '#108ee9', textColor: '#ffffff', name: 'Azul Escuro', preset: 'geekblue' },
-  { backgroundColor: '#722ed1', textColor: '#ffffff', name: 'Roxo', preset: 'purple' },
-  { backgroundColor: '#eb2f96', textColor: '#ffffff', name: 'Rosa', preset: 'magenta' },
-  { backgroundColor: '#fa8c16', textColor: '#ffffff', name: 'Laranja Escuro', preset: 'orange' },
-  { backgroundColor: '#a0d911', textColor: '#ffffff', name: 'Lima', preset: 'lime' },
-  { backgroundColor: '#13c2c2', textColor: '#ffffff', name: 'Ciano', preset: 'cyan' },
-  { backgroundColor: '#fa541c', textColor: '#ffffff', name: 'Vermelho Laranja', preset: 'volcano' },
-  { backgroundColor: '#f5222d', textColor: '#ffffff', name: 'Vermelho', preset: 'red' },
-  { backgroundColor: '#faad14', textColor: '#ffffff', name: 'Amarelo', preset: 'gold' },
-  { backgroundColor: '#52c41a', textColor: '#ffffff', name: 'Verde Escuro', preset: 'green' },
-  { backgroundColor: '#1890ff', textColor: '#ffffff', name: 'Azul Claro', preset: 'blue' },
-  { backgroundColor: '#722ed1', textColor: '#ffffff', name: 'Violeta', preset: 'purple' },
-  { backgroundColor: '#eb2f96', textColor: '#ffffff', name: 'Rosa Escuro', preset: 'magenta' },
-  { backgroundColor: '#13c2c2', textColor: '#ffffff', name: 'Teal', preset: 'cyan' },
-  { backgroundColor: '#fa8c16', textColor: '#ffffff', name: 'Laranja Claro', preset: 'orange' },
-  { backgroundColor: '#a0d911', textColor: '#ffffff', name: 'Verde Lima', preset: 'lime' },
-  { backgroundColor: '#1890ff', textColor: '#ffffff', name: 'Azul Sky', preset: 'blue' },
-  { backgroundColor: '#52c41a', textColor: '#ffffff', name: 'Verde Emerald', preset: 'green' },
-];
+  { backgroundColor: '#A3E1D4', textColor: '#1B4D3E', name: 'Verde Água', preset: 'aqua' },
+  { backgroundColor: '#F6E1A7', textColor: '#665200', name: 'Amarelo', preset: 'yellow' },
+  { backgroundColor: '#F9C9B3', textColor: '#7A3A1D', name: 'Pêssego', preset: 'peach' },
+  { backgroundColor: '#F9B3B3', textColor: '#7A1F1F', name: 'Rosa Claro', preset: 'pink' },
+  { backgroundColor: '#D1C2F0', textColor: '#3F2A7A', name: 'Lilás', preset: 'lilac' },
+
+  { backgroundColor: '#63C6A7', textColor: '#114D3A', name: 'Verde Claro', preset: 'green' },
+  { backgroundColor: '#E6C04E', textColor: '#5A4500', name: 'Amarelo Escuro', preset: 'dark-yellow' },
+  { backgroundColor: '#F48C45', textColor: '#663300', name: 'Laranja', preset: 'orange' },
+  { backgroundColor: '#E05D5D', textColor: '#5A1F1F', name: 'Vermelho', preset: 'red' },
+  { backgroundColor: '#9A7FEA', textColor: '#2E1F66', name: 'Roxo', preset: 'purple' },
+
+  { backgroundColor: '#2F7D5D', textColor: '#FFFFFF', name: 'Verde Escuro', preset: 'dark-green' },
+  { backgroundColor: '#8C6D1F', textColor: '#FFFFFF', name: 'Mostarda', preset: 'mustard' },
+  { backgroundColor: '#CC4B16', textColor: '#FFFFFF', name: 'Laranja Escuro', preset: 'dark-orange' },
+  { backgroundColor: '#B32626', textColor: '#FFFFFF', name: 'Vermelho Escuro', preset: 'dark-red' },
+  { backgroundColor: '#5A3AAE', textColor: '#FFFFFF', name: 'Roxo Escuro', preset: 'dark-purple' },
+
+  { backgroundColor: '#D1E6FA', textColor: '#1F4D7A', name: 'Azul Claro', preset: 'light-blue' },
+  { backgroundColor: '#B3E5FC', textColor: '#1F4D7A', name: 'Ciano Claro', preset: 'light-cyan' },
+  { backgroundColor: '#CDEAA8', textColor: '#3F6600', name: 'Verde Limão', preset: 'lime' },
+  { backgroundColor: '#F5B3DA', textColor: '#66224D', name: 'Rosa Pastel', preset: 'pastel-pink' },
+  { backgroundColor: '#C4C9D1', textColor: '#2E2E2E', name: 'Cinza Claro', preset: 'gray' },
+
+  { backgroundColor: '#4A90E2', textColor: '#FFFFFF', name: 'Azul', preset: 'blue' },
+  { backgroundColor: '#3D9FBF', textColor: '#FFFFFF', name: 'Azul Ciano', preset: 'cyan' },
+  { backgroundColor: '#6EA042', textColor: '#FFFFFF', name: 'Verde Médio', preset: 'medium-green' },
+  { backgroundColor: '#D25CA4', textColor: '#FFFFFF', name: 'Rosa Forte', preset: 'strong-pink' },
+  { backgroundColor: '#707785', textColor: '#FFFFFF', name: 'Cinza Médio', preset: 'dark-gray' },
+
+  { backgroundColor: '#0052CC', textColor: '#FFFFFF', name: 'Azul Escuro', preset: 'dark-blue' },
+  { backgroundColor: '#005F73', textColor: '#FFFFFF', name: 'Azul Petróleo', preset: 'petrol' },
+  { backgroundColor: '#4F772D', textColor: '#FFFFFF', name: 'Verde Musgo', preset: 'moss-green' },
+  { backgroundColor: '#9B3675', textColor: '#FFFFFF', name: 'Magenta Escuro', preset: 'dark-magenta' },
+  { backgroundColor: '#495057', textColor: '#FFFFFF', name: 'Cinza Escuro', preset: 'darker-gray' }
+]
+;
 
 // Função para obter uma cor aleatória da lista
 export const getRandomTagColor = (): TagColorOption => {
