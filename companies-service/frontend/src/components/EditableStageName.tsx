@@ -3,8 +3,6 @@ import { Input, message } from 'antd';
 import { EditOutlined, DragOutlined } from '@ant-design/icons';
 import { apiService } from '../services/api';
 import type { JobStage } from '../types/Job';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 interface EditableStageNameProps {
   stage: JobStage;
@@ -22,20 +20,7 @@ export const EditableStageName: React.FC<EditableStageNameProps> = ({
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<any>(null);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: stage.id! });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -136,50 +121,44 @@ export const EditableStageName: React.FC<EditableStageNameProps> = ({
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
       onClick={handleClick}
       className="editable-stage-name"
-      title="Clique para editar o nome da etapa ou arraste para reordenar"
+      title="Clique para editar o nome da etapa"
+      style={{
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        transition: 'background-color 0.2s',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = '#f5f5f5';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'transparent';
+      }}
     >
-      <div
-        {...listeners}
-        style={{
+      <DragOutlined 
+        className="drag-handle"
+        style={{ 
+          fontSize: '12px', 
+          color: '#999',
+          opacity: 0.7,
           cursor: 'grab',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          transition: 'background-color 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#f5f5f5';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent';
-        }}
-      >
-        <DragOutlined 
-          style={{ 
-            fontSize: '12px', 
-            color: '#999',
-            opacity: 0.7,
-            cursor: 'grab',
-          }} 
-        />
-        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-          {stage.name}
-        </span>
-        <EditOutlined 
-          style={{ 
-            fontSize: '12px', 
-            color: '#999',
-            opacity: 0.7,
-          }} 
-        />
-      </div>
+        }} 
+      />
+      <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+        {stage.name}
+      </span>
+      <EditOutlined 
+        style={{ 
+          fontSize: '12px', 
+          color: '#999',
+          opacity: 0.7,
+        }} 
+      />
     </div>
   );
 };

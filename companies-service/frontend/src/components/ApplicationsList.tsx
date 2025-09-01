@@ -58,7 +58,8 @@ import {
 import {
   arrayMove,
   SortableContext,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
+  useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { apiService } from '../services/api';
@@ -68,6 +69,7 @@ import type { Tag as TagType } from '../types/Tag';
 import { EditableStageName } from './EditableStageName';
 import type { Job, JobStage } from '../types/Job';
 import { PREDEFINED_TAG_COLORS, getRandomTagColor, type TagColorOption } from '../utils/tagColors';
+import '../styles/dragAndDrop.css';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -816,6 +818,10 @@ interface StageColumnProps {
   pendingStageChanges: Map<string, string>;
   jobId: string;
   onStageUpdated: (updatedStage: JobStage) => void;
+  activeId?: string | null;
+  hoveredStageId?: string | null;
+  onStageHover?: (stageId: string | null) => void;
+  onDeleteStage?: (stageId: string) => void;
 }
 
 const StageColumn: React.FC<StageColumnProps> = ({ 
@@ -826,16 +832,43 @@ const StageColumn: React.FC<StageColumnProps> = ({
   onCardClick,
   pendingStageChanges,
   jobId,
-  onStageUpdated
+  onStageUpdated,
+  activeId,
+  hoveredStageId,
+  onStageHover,
+  onDeleteStage
 }) => {
   const {
-    setNodeRef,
+    attributes,
+    listeners,
+    setNodeRef: setSortableNodeRef,
+    transform,
+    transition,
+    isDragging: isSortableDragging,
+  } = useSortable({ id: stage.id! });
+
+  const {
+    setNodeRef: setDroppableNodeRef,
     isOver,
   } = useDroppable({ id: stage.id! });
 
+  const isDragging = activeId === stage.id;
+
+  // Combinar as refs
+  const setNodeRef = (node: HTMLElement | null) => {
+    setSortableNodeRef(node);
+    setDroppableNodeRef(node);
+  };
 
 
 
+
+
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isSortableDragging ? 0.3 : 1,
+  };
 
   const style = {
     backgroundColor: isOver ? '#f0f8ff' : 'white',
@@ -845,9 +878,11 @@ const StageColumn: React.FC<StageColumnProps> = ({
   return (
     <div
       ref={setNodeRef}
-      className="stage-column"
+      {...attributes}
+      className={`stage-column ${isOver ? 'drag-over drop-zone-active' : ''} ${isDragging ? 'dragging' : ''}`}
       style={{
         ...style,
+        ...sortableStyle,
         minWidth: '320px',
         maxWidth: '380px',
         backgroundColor: 'white',
@@ -857,30 +892,79 @@ const StageColumn: React.FC<StageColumnProps> = ({
         height: 'fit-content',
         maxHeight: 'calc(100vh - 240px)',
         overflowY: 'auto',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        border: '1px solid #e8e8e8',
+        boxShadow: isOver ? '0 6px 20px rgba(24, 144, 255, 0.3)' : '0 2px 8px rgba(0,0,0,0.1)',
+        border: isOver ? '2px solid #1890ff' : '1px solid #e8e8e8',
         position: 'relative',
-        zIndex: 2
+        zIndex: isOver ? 10 : 2
       }}
     >
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '16px',
-        padding: '12px',
-        backgroundColor: '#fafafa',
-        borderRadius: '8px',
-        border: '1px solid #e8e8e8'
-      }}>
-        <div>
+      <div 
+        className="stage-header" 
+        {...listeners}
+        onMouseEnter={() => onStageHover?.(stage.id!)}
+        onMouseLeave={() => onStageHover?.(null)}
+        style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '16px',
+          padding: '12px',
+          backgroundColor: isOver ? '#f0f8ff' : '#fafafa',
+          borderRadius: '8px',
+          border: isOver ? '1px solid #1890ff' : '1px solid #e8e8e8',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          cursor: 'grab',
+          position: 'relative'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <EditableStageName
             stage={stage}
             jobId={jobId}
             onStageUpdated={onStageUpdated}
           />
+          
+          {/* Botão de excluir - aparece no hover */}
+          {hoveredStageId === stage.id && (
+            <Button
+              type="text"
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
+              className="stage-delete-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteStage?.(stage.id!);
+              }}
+              style={{
+                padding: '4px',
+                height: '24px',
+                width: '24px',
+                minWidth: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: applications.length > 0 ? 0.5 : 1,
+                cursor: applications.length > 0 ? 'not-allowed' : 'pointer'
+              }}
+              disabled={applications.length > 0}
+              title={applications.length > 0 ? 
+                `Não é possível excluir pois há ${applications.length} candidato(s) nesta etapa` : 
+                'Excluir etapa'
+              }
+            />
+          )}
         </div>
-        <Badge count={applications.length} showZero style={{ backgroundColor: '#1890ff' }} />
+        
+        <Badge 
+          count={applications.length} 
+          showZero 
+          className="stage-badge"
+          style={{ 
+            backgroundColor: isOver ? '#40a9ff' : '#1890ff',
+            transition: 'all 0.2s ease-in-out'
+          }} 
+        />
       </div>
 
       <div>
@@ -925,6 +1009,8 @@ export const ApplicationsList: React.FC = () => {
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isChangingStage, setIsChangingStage] = useState(false);
+  const [isReorderingStages, setIsReorderingStages] = useState(false);
+  const [hoveredStageId, setHoveredStageId] = useState<string | null>(null);
   
   // Estado para controlar mudanças temporárias de stage
   const [pendingStageChanges, setPendingStageChanges] = useState<Map<string, string>>(new Map());
@@ -1179,26 +1265,42 @@ export const ApplicationsList: React.FC = () => {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
-
-    if (!over || !job) return;
+    
+    if (!over || !job) {
+      setActiveId(null);
+      return;
+    }
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
     // Verificar se é uma reordenação de etapa
-    const isStageReorder = job.stages.some(stage => stage.id === activeId) && 
-                          job.stages.some(stage => stage.id === overId);
+    const activeStage = job.stages.find(stage => stage.id === activeId);
+    const overStage = job.stages.find(stage => stage.id === overId);
 
-    if (isStageReorder) {
+    if (activeStage && overStage) {
       // Reordenação de etapas
       const oldIndex = job.stages.findIndex(stage => stage.id === activeId);
       const newIndex = job.stages.findIndex(stage => stage.id === overId);
 
       if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        const newStages = arrayMove(job.stages, oldIndex, newIndex);
-        await handleStageReorder(newStages);
+        // Usar apenas as etapas ativas para a reordenação
+        const activeStages = job.stages.filter(stage => stage.isActive).sort((a, b) => a.orderIndex - b.orderIndex);
+        const newActiveStages = arrayMove(activeStages, oldIndex, newIndex);
+        
+        // Atualizar os orderIndex das etapas ativas
+        const updatedActiveStages = newActiveStages.map((stage, index) => ({
+          ...stage,
+          orderIndex: index,
+        }));
+        
+        // Combinar com as etapas inativas
+        const inactiveStages = job.stages.filter(stage => !stage.isActive);
+        const allStages = [...updatedActiveStages, ...inactiveStages];
+        
+        await handleStageReorder(allStages);
       }
+      setActiveId(null);
       return;
     }
 
@@ -1228,6 +1330,8 @@ export const ApplicationsList: React.FC = () => {
       toStage,
       notes: '',
     });
+    
+    setActiveId(null);
   };
 
   const handleStageChange = async () => {
@@ -1336,20 +1440,83 @@ export const ApplicationsList: React.FC = () => {
     }
   };
 
-  // Função para reordenar as etapas
-  const handleStageReorder = async (newStages: JobStage[]) => {
+  // Função para excluir uma etapa
+  const handleDeleteStage = async (stageId: string) => {
     if (!job) return;
 
+    const stage = job.stages.find(s => s.id === stageId);
+    if (!stage) return;
+
+    // Verificar se há aplicações nesta etapa
+    const applicationsInStage = applications.filter(app => app.currentStageId === stageId);
+    if (applicationsInStage.length > 0) {
+      message.warning(`Não é possível excluir a etapa "${stage.name}" pois há ${applicationsInStage.length} candidato(s) nesta etapa.`);
+      return;
+    }
+
+    // Confirmar exclusão
+    Modal.confirm({
+      title: 'Confirmar exclusão',
+      content: `Tem certeza que deseja excluir a etapa "${stage.name}"?`,
+      okText: 'Excluir',
+      okType: 'danger',
+      cancelText: 'Cancelar',
+      onOk: async () => {
+        try {
+          // Marcar etapa como inativa
+          const updatedStages = job.stages.map(s => 
+            s.id === stageId ? { ...s, isActive: false } : s
+          );
+
+          // Atualizar estado local
+          setJob({ ...job, stages: updatedStages });
+
+          // Preparar dados para a API
+          const stagesData = updatedStages.map((stage) => ({
+            id: stage.id,
+            name: stage.name,
+            description: stage.description,
+            orderIndex: stage.orderIndex,
+            isActive: stage.isActive,
+          }));
+
+          // Fazer a requisição para atualizar
+          await apiService.updateJob(jobId!, {
+            stages: stagesData,
+          });
+
+          message.success('Etapa excluída com sucesso!');
+        } catch (error) {
+          console.error('Erro ao excluir etapa:', error);
+          message.error('Erro ao excluir etapa');
+          
+          // Reverter para o estado anterior em caso de erro
+          if (job) {
+            setJob(job);
+          }
+        }
+      },
+    });
+  };
+
+  // Função para reordenar as etapas
+  const handleStageReorder = async (newStages: JobStage[]) => {
+    if (!job || isReorderingStages) return;
+
     try {
-      // Atualizar o estado local primeiro para feedback imediato
+      setIsReorderingStages(true);
+      
+
+      
+      // Atualizar o estado local imediatamente
       setJob({ ...job, stages: newStages });
 
       // Preparar dados para a API
-      const stagesData = newStages.map((stage, index) => ({
+      const stagesData = newStages.map((stage) => ({
         id: stage.id,
         name: stage.name,
         description: stage.description,
-        orderIndex: index,
+        orderIndex: stage.orderIndex,
         isActive: stage.isActive,
       }));
 
@@ -1367,6 +1534,8 @@ export const ApplicationsList: React.FC = () => {
       if (job) {
         setJob(job);
       }
+    } finally {
+      setIsReorderingStages(false);
     }
   };
 
@@ -1593,9 +1762,9 @@ export const ApplicationsList: React.FC = () => {
                 .filter(stage => stage.isActive)
                 .sort((a, b) => a.orderIndex - b.orderIndex)
                 .map(stage => stage.id!)}
-              strategy={verticalListSortingStrategy}
+              strategy={rectSortingStrategy}
             >
-              <div style={{ 
+              <div className="stages-container" style={{ 
                 display: 'flex', 
                 gap: '16px', 
                 overflowX: 'auto',
@@ -1616,6 +1785,10 @@ export const ApplicationsList: React.FC = () => {
                       pendingStageChanges={pendingStageChanges}
                       jobId={jobId!}
                       onStageUpdated={handleStageUpdated}
+                      activeId={activeId}
+                      hoveredStageId={hoveredStageId}
+                      onStageHover={setHoveredStageId}
+                      onDeleteStage={handleDeleteStage}
                     />
                   ))}
               </div>
@@ -1630,11 +1803,11 @@ export const ApplicationsList: React.FC = () => {
                   if (isDraggingStage) {
                     const stage = job?.stages.find(stage => stage.id === activeId);
                     return (
-                      <div style={{ 
+                      <div className="drag-overlay-stage" style={{ 
                         backgroundColor: 'white',
                         padding: '12px 16px',
                         borderRadius: '8px',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                        boxShadow: '0 8px 24px rgba(82, 196, 26, 0.3)',
                         border: '2px solid #52c41a',
                         minWidth: '200px',
                         transform: 'rotate(2deg)',
@@ -1651,11 +1824,11 @@ export const ApplicationsList: React.FC = () => {
                   
                   // Arrastando aplicação (lógica original)
                   return (
-                    <div style={{ 
+                    <div className="drag-overlay-application" style={{ 
                       backgroundColor: 'white',
                       padding: '16px',
                       borderRadius: '8px',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                      boxShadow: '0 8px 24px rgba(24, 144, 255, 0.3)',
                       border: '2px solid #1890ff',
                       maxWidth: '300px',
                       transform: 'rotate(5deg)',
