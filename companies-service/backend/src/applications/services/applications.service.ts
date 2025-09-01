@@ -321,33 +321,52 @@ export class ApplicationsService {
     await this.applicationsRepository.remove(application);
   }
 
-  async findByJobId(jobId: string, companyId: string): Promise<Application[]> {
-    return this.applicationsRepository.find({
-      where: { jobId, companyId },
-      relations: ['currentStage'],
-      order: { createdAt: 'DESC' },
-    });
+  async findByJobId(jobId: string, companyId: string, search?: string): Promise<Application[]> {
+    const queryBuilder = this.applicationsRepository
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.currentStage', 'currentStage')
+      .where('application.jobId = :jobId', { jobId })
+      .andWhere('application.companyId = :companyId', { companyId });
+
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim().toLowerCase()}%`;
+      queryBuilder.andWhere(
+        '(LOWER(application.firstName) LIKE :search OR LOWER(application.lastName) LIKE :search OR LOWER(application.email) LIKE :search OR application.phone LIKE :search)',
+        { search: searchTerm }
+      );
+    }
+
+    return queryBuilder
+      .orderBy('application.createdAt', 'DESC')
+      .getMany();
   }
 
   async findByJobIdWithQuestionResponses(
     jobId: string,
     companyId: string,
+    search?: string,
   ): Promise<Application[]> {
-    return this.applicationsRepository.find({
-      where: { jobId, companyId },
-      relations: [
-        'job',
-        'currentStage',
-        'questionResponses',
-        'questionResponses.jobQuestion',
-      ],
-      order: {
-        createdAt: 'DESC',
-        questionResponses: {
-          createdAt: 'ASC',
-        },
-      },
-    });
+    const queryBuilder = this.applicationsRepository
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.job', 'job')
+      .leftJoinAndSelect('application.currentStage', 'currentStage')
+      .leftJoinAndSelect('application.questionResponses', 'questionResponses')
+      .leftJoinAndSelect('questionResponses.jobQuestion', 'jobQuestion')
+      .where('application.jobId = :jobId', { jobId })
+      .andWhere('application.companyId = :companyId', { companyId });
+
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim().toLowerCase()}%`;
+      queryBuilder.andWhere(
+        '(LOWER(application.firstName) LIKE :search OR LOWER(application.lastName) LIKE :search OR LOWER(application.email) LIKE :search OR application.phone LIKE :search)',
+        { search: searchTerm }
+      );
+    }
+
+    return queryBuilder
+      .orderBy('application.createdAt', 'DESC')
+      .addOrderBy('questionResponses.createdAt', 'ASC')
+      .getMany();
   }
 
   async findOneByJobId(

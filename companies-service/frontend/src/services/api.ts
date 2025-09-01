@@ -448,8 +448,14 @@ export class ApiService {
     return this.request<Application[]>(`/jobs/${jobId}/applications`);
   }
 
-  async getApplicationsWithQuestionResponses(jobId: string): Promise<Application[]> {
-    return this.request<Application[]>(`/jobs/${jobId}/applications/with-question-responses`);
+  async getApplicationsWithQuestionResponses(jobId: string, search?: string): Promise<Application[]> {
+    const params = new URLSearchParams();
+    if (search && search.trim()) {
+      params.append('search', search.trim());
+    }
+    const queryString = params.toString();
+    const url = `/jobs/${jobId}/applications/with-question-responses${queryString ? `?${queryString}` : ''}`;
+    return this.request<Application[]>(url);
   }
 
   async getApplicationResume(applicationId: string): Promise<any> {

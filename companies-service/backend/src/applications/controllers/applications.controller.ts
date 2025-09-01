@@ -12,6 +12,7 @@ import {
   HttpStatus,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApplicationsService } from '../services/applications.service';
@@ -78,9 +79,10 @@ export class ApplicationsController {
   async findAll(
     @Param('jobId') jobId: string,
     @Request() req: AuthenticatedRequest,
+    @Query('search') search?: string,
   ) {
     const companyId = req.user.companyId;
-    return this.applicationsService.findByJobId(jobId, companyId);
+    return this.applicationsService.findByJobId(jobId, companyId, search);
   }
 
   @Get('with-question-responses')
@@ -88,11 +90,13 @@ export class ApplicationsController {
   async findAllWithQuestionResponses(
     @Param('jobId') jobId: string,
     @Request() req: AuthenticatedRequest,
+    @Query('search') search?: string,
   ) {
     const companyId = req.user.companyId;
     return this.applicationsService.findByJobIdWithQuestionResponses(
       jobId,
       companyId,
+      search,
     );
   }
 

@@ -40,7 +40,8 @@ import {
   DeleteOutlined, 
   CopyOutlined, 
   TagOutlined,
-  PlusOutlined 
+  PlusOutlined,
+  SearchOutlined
 } from '@ant-design/icons';
 import {
   DndContext,
@@ -1098,6 +1099,10 @@ export const ApplicationsList: React.FC = () => {
   const [debouncedSelectedTags, setDebouncedSelectedTags] = useState<string[]>([]);
   const [applicationTagsCache, setApplicationTagsCache] = useState<Map<string, string[]>>(new Map());
 
+  // Estados para busca por texto
+  const [searchText, setSearchText] = useState<string>('');
+  const [allApplications, setAllApplications] = useState<Application[]>([]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -1125,6 +1130,27 @@ export const ApplicationsList: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [selectedTags]);
+
+  // useEffect para aplicar busca local
+  useEffect(() => {
+    if (!searchText.trim()) {
+      // Se não há busca, mostrar todas as applications
+      setApplications(allApplications);
+    } else {
+      // Aplicar busca local
+      const searchTerm = searchText.toLowerCase().trim();
+      const filtered = allApplications.filter(app => {
+        const fullName = `${app.firstName} ${app.lastName}`.toLowerCase();
+        const email = app.email?.toLowerCase() || '';
+        const phone = app.phone || '';
+        
+        return fullName.includes(searchTerm) || 
+               email.includes(searchTerm) || 
+               phone.includes(searchTerm);
+      });
+      setApplications(filtered);
+    }
+  }, [searchText, allApplications]);
 
   // useEffect para aplicar filtro por tag (usando debounced tags e cache)
   useEffect(() => {
@@ -1255,6 +1281,7 @@ export const ApplicationsList: React.FC = () => {
       
       const data = await apiService.getApplicationsWithQuestionResponses(jobId!);
       
+      setAllApplications(data);
       setApplications(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar aplicações');
@@ -1756,7 +1783,7 @@ export const ApplicationsList: React.FC = () => {
           <Title level={4} type="danger">Erro ao carregar aplicações</Title>
           <Text type="secondary">{error}</Text>
           <div style={{ marginTop: '16px' }}>
-            <Button type="primary" onClick={loadApplications}>
+            <Button type="primary" onClick={() => loadApplications()}>
               Tentar novamente
             </Button>
           </div>
@@ -1800,7 +1827,12 @@ export const ApplicationsList: React.FC = () => {
                 </span>
               ) : (
                 <>
-                  {filteredApplications.length} de {applications.length} candidato{applications.length !== 1 ? 's' : ''} inscrito{applications.length !== 1 ? 's' : ''} • Ordenados por aderência (maior para menor)
+                  {filteredApplications.length} de {allApplications.length} candidato{allApplications.length !== 1 ? 's' : ''} inscrito{allApplications.length !== 1 ? 's' : ''} • Ordenados por aderência (maior para menor)
+                  {searchText && (
+                    <span style={{ color: '#52c41a', fontWeight: '500' }}>
+                      {' '}• Busca: "{searchText}"
+                    </span>
+                  )}
                   {selectedTags.length > 0 && (
                     <span style={{ color: '#1890ff', fontWeight: '500' }}>
                       {' '}• Filtrado por {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''}
@@ -1812,6 +1844,21 @@ export const ApplicationsList: React.FC = () => {
           </div>
           
           <Space direction="vertical" align="end" size="middle">
+            {/* Campo de Busca */}
+            <div style={{ textAlign: 'right' }}>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                Buscar candidatos:
+              </Text>
+              <Input
+                placeholder="Nome, email ou telefone..."
+                prefix={<SearchOutlined />}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ width: '300px' }}
+                allowClear
+              />
+            </div>
+
             {/* Filtro por Tags */}
             <div style={{ textAlign: 'right' }}>
               <Text strong style={{ display: 'block', marginBottom: '8px' }}>
@@ -1880,6 +1927,19 @@ export const ApplicationsList: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Botão para limpar busca */}
+            {searchText && (
+              <div style={{ textAlign: 'right' }}>
+                <Button 
+                  size="small" 
+                  onClick={() => setSearchText('')}
+                  style={{ fontSize: '12px' }}
+                >
+                  Limpar busca
+                </Button>
+              </div>
+            )}
             
             <Button type="primary" onClick={loadApplications}>
               Atualizar
