@@ -60,6 +60,33 @@ code {
   align-items: center;
 }
 
+/* Responsividade para navegação */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  .mobile-menu-button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .desktop-nav {
+    display: flex !important;
+  }
+  
+  .mobile-menu-button {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+}
+
 .header-nav-button {
   color: white !important;
   border: none !important;
@@ -97,6 +124,40 @@ code {
 
 .user-menu-trigger:active {
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Estilos para o menu mobile */
+.mobile-nav-button {
+  transition: all 0.3s ease;
+}
+
+.mobile-nav-button:hover {
+  background-color: #f5f5f5 !important;
+  color: #1890ff !important;
+}
+
+/* Estilos para o botão hambúrguer */
+.mobile-menu-button {
+  color: white !important;
+  border: none !important;
+  background: transparent !important;
+  transition: all 0.3s ease;
+  padding: 8px 12px !important;
+  border-radius: 6px;
+  min-width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.mobile-menu-button:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.mobile-menu-button .anticon {
+  font-size: 16px !important;
 }
 
 /* Estilos para o dropdown do usuário */
