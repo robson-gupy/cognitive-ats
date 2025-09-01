@@ -376,34 +376,13 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
         menu={{
           items: [
             {
-              key: 'edit',
-              icon: <EditOutlined />,
-              label: 'Editar Candidato',
-            },
-            {
-              key: 'copy',
-              icon: <CopyOutlined />,
-              label: 'Duplicar',
-            },
-            {
-              key: 'favorite',
-              icon: <StarOutlined />,
-              label: 'Favoritar',
-            },
-            {
               key: 'addTag',
               icon: <TagOutlined />,
               label: 'Adicionar Tag',
             },
             {
               type: 'divider',
-            },
-            {
-              key: 'delete',
-              icon: <DeleteOutlined />,
-              label: 'Excluir',
-              danger: true,
-            },
+            }
           ],
           onClick: ({ key, domEvent }) => {
             // Prevenir que o clique no menu dispare a visualização do CV
