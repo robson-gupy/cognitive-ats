@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Card, 
@@ -1054,6 +1054,7 @@ export const ApplicationsList: React.FC = () => {
   const [isReorderingStages, setIsReorderingStages] = useState(false);
   const [hoveredStageId, setHoveredStageId] = useState<string | null>(null);
   const [isCreatingStage, setIsCreatingStage] = useState(false);
+  const stageNameInputRef = useRef<any>(null);
   
   // Estado para controlar mudanças temporárias de stage
   const [pendingStageChanges, setPendingStageChanges] = useState<Map<string, string>>(new Map());
@@ -1505,6 +1506,16 @@ export const ApplicationsList: React.FC = () => {
     });
   };
 
+  // Focar no input quando o modal de criação abrir
+  useEffect(() => {
+    if (createStageModal.visible && stageNameInputRef.current) {
+      // Pequeno delay para garantir que o modal foi renderizado
+      setTimeout(() => {
+        stageNameInputRef.current?.focus();
+      }, 100);
+    }
+  }, [createStageModal.visible]);
+
   // Função para fechar o modal de criação de stage
   const handleCloseCreateStageModal = () => {
     setCreateStageModal({
@@ -1525,45 +1536,44 @@ export const ApplicationsList: React.FC = () => {
       const activeStages = job.stages.filter(stage => stage.isActive).sort((a, b) => a.orderIndex - b.orderIndex);
       const nextOrderIndex = activeStages.length;
 
-      // Criar novo stage
-      const newStage: JobStage = {
-        id: `temp-${Date.now()}`, // ID temporário
-        name: stageName,
-        description: stageDescription,
-        orderIndex: nextOrderIndex,
-        isActive: true,
-      };
+      // Preparar dados para a API - não incluir ID para novos stages
+      const stagesData = [
+        ...job.stages.map((stage) => ({
+          id: stage.id,
+          name: stage.name,
+          description: stage.description,
+          orderIndex: stage.orderIndex,
+          isActive: stage.isActive,
+        })),
+        {
+          // Não incluir ID - deixar o backend gerar
+          name: stageName,
+          description: stageDescription,
+          orderIndex: nextOrderIndex,
+          isActive: true,
+        }
+      ];
 
-      // Atualizar estado local imediatamente
-      const updatedStages = [...job.stages, newStage];
-      setJob({ ...job, stages: updatedStages });
-
-      // Preparar dados para a API
-      const stagesData = updatedStages.map((stage) => ({
-        id: stage.id,
-        name: stage.name,
-        description: stage.description,
-        orderIndex: stage.orderIndex,
-        isActive: stage.isActive,
-      }));
-
-      console.log('Dados das stages após criação:', stagesData);
+      console.log('Dados das stages sendo enviados para criação:', stagesData);
 
       // Fazer a requisição para criar o stage
-      await apiService.updateJob(jobId!, {
+      const response = await apiService.updateJob(jobId!, {
         stages: stagesData,
       });
+
+      // Atualizar estado local com os dados retornados pelo backend
+      if (response && response.stages) {
+        setJob({ ...job, stages: response.stages });
+      } else {
+        // Fallback: recarregar os dados do job
+        await loadJob();
+      }
 
       message.success('Etapa criada com sucesso!');
       handleCloseCreateStageModal();
     } catch (error) {
       console.error('Erro ao criar etapa:', error);
       message.error('Erro ao criar etapa');
-      
-      // Reverter para o estado anterior em caso de erro
-      if (job) {
-        setJob(job);
-      }
     } finally {
       setIsCreatingStage(false);
     }
@@ -2598,6 +2608,7 @@ export const ApplicationsList: React.FC = () => {
             help={!createStageModal.stageName.trim() ? 'Nome da etapa é obrigatório' : ''}
           >
             <Input
+              ref={stageNameInputRef}
               placeholder="Ex: Entrevista Técnica"
               value={createStageModal.stageName}
               onChange={(e) => setCreateStageModal(prev => ({ ...prev, stageName: e.target.value }))}
@@ -2606,7 +2617,6 @@ export const ApplicationsList: React.FC = () => {
                   handleCreateStage(createStageModal.stageName, createStageModal.stageDescription);
                 }
               }}
-              autoFocus
             />
           </Form.Item>
           
