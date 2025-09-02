@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tag } from '../entities/tag.entity';
@@ -13,7 +17,10 @@ export class TagsService {
     private readonly tagRepository: Repository<Tag>,
   ) {}
 
-  async create(createTagDto: CreateTagDto, companyId: string): Promise<TagResponseDto> {
+  async create(
+    createTagDto: CreateTagDto,
+    companyId: string,
+  ): Promise<TagResponseDto> {
     // Verificar se já existe uma tag com o mesmo label na empresa
     const existingTag = await this.tagRepository.findOne({
       where: { label: createTagDto.label, companyId },
@@ -40,7 +47,7 @@ export class TagsService {
       order: { label: 'ASC' },
     });
 
-    return tags.map(tag => this.mapToResponseDto(tag));
+    return tags.map((tag) => this.mapToResponseDto(tag));
   }
 
   async findOne(id: string, companyId: string): Promise<TagResponseDto> {
@@ -55,7 +62,11 @@ export class TagsService {
     return this.mapToResponseDto(tag);
   }
 
-  async update(id: string, updateTagDto: UpdateTagDto, companyId: string): Promise<TagResponseDto> {
+  async update(
+    id: string,
+    updateTagDto: UpdateTagDto,
+    companyId: string,
+  ): Promise<TagResponseDto> {
     const tag = await this.tagRepository.findOne({
       where: { id, companyId },
     });
@@ -71,7 +82,9 @@ export class TagsService {
       });
 
       if (existingTag) {
-        throw new ConflictException('Já existe uma tag com este nome na empresa');
+        throw new ConflictException(
+          'Já existe uma tag com este nome na empresa',
+        );
       }
     }
 

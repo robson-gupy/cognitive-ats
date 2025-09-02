@@ -7,7 +7,11 @@ import { Application } from './entities/application.entity';
 import { Tag } from '../tags/entities/tag.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateApplicationTagDto } from './dto/create-application-tag.dto';
-import { NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 
 describe('ApplicationTagsService', () => {
   let service: ApplicationTagsService;
@@ -72,13 +76,19 @@ describe('ApplicationTagsService', () => {
     }).compile();
 
     service = module.get<ApplicationTagsService>(ApplicationTagsService);
-    applicationTagRepository = module.get<Repository<ApplicationTag>>(getRepositoryToken(ApplicationTag));
-    applicationRepository = module.get<Repository<Application>>(getRepositoryToken(Application));
+    applicationTagRepository = module.get<Repository<ApplicationTag>>(
+      getRepositoryToken(ApplicationTag),
+    );
+    applicationRepository = module.get<Repository<Application>>(
+      getRepositoryToken(Application),
+    );
     tagRepository = module.get<Repository<Tag>>(getRepositoryToken(Tag));
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
 
     // Configurar mock do query builder
-    mockApplicationTagRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+    mockApplicationTagRepository.createQueryBuilder.mockReturnValue(
+      mockQueryBuilder,
+    );
   });
 
   afterEach(() => {
@@ -146,9 +156,9 @@ describe('ApplicationTagsService', () => {
 
       mockApplicationRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.create(createDto, userId, companyId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.create(createDto, userId, companyId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException if tag not found', async () => {
@@ -164,9 +174,9 @@ describe('ApplicationTagsService', () => {
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
       mockTagRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.create(createDto, userId, companyId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.create(createDto, userId, companyId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException if tag already exists for application', async () => {
@@ -183,11 +193,13 @@ describe('ApplicationTagsService', () => {
 
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
       mockTagRepository.findOne.mockResolvedValue(mockTag);
-      mockApplicationTagRepository.findOne.mockResolvedValue(existingApplicationTag);
-
-      await expect(service.create(createDto, userId, companyId)).rejects.toThrow(
-        ConflictException,
+      mockApplicationTagRepository.findOne.mockResolvedValue(
+        existingApplicationTag,
       );
+
+      await expect(
+        service.create(createDto, userId, companyId),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -208,7 +220,10 @@ describe('ApplicationTagsService', () => {
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
       mockApplicationTagRepository.find.mockResolvedValue(mockApplicationTags);
 
-      const result = await service.findAllByApplication(applicationId, companyId);
+      const result = await service.findAllByApplication(
+        applicationId,
+        companyId,
+      );
 
       expect(result).toHaveLength(1);
       expect(mockApplicationRepository.findOne).toHaveBeenCalledWith({
@@ -223,9 +238,9 @@ describe('ApplicationTagsService', () => {
 
       mockApplicationRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findAllByApplication(applicationId, companyId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.findAllByApplication(applicationId, companyId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -278,7 +293,9 @@ describe('ApplicationTagsService', () => {
         addedByUser: { id: 'user-123' },
       };
 
-      mockApplicationTagRepository.findOne.mockResolvedValue(mockApplicationTag);
+      mockApplicationTagRepository.findOne.mockResolvedValue(
+        mockApplicationTag,
+      );
 
       const result = await service.findOne(id, companyId);
 
@@ -309,7 +326,9 @@ describe('ApplicationTagsService', () => {
         tag: { id: 'tag-123', companyId: 'different-company' },
       };
 
-      mockApplicationTagRepository.findOne.mockResolvedValue(mockApplicationTag);
+      mockApplicationTagRepository.findOne.mockResolvedValue(
+        mockApplicationTag,
+      );
 
       await expect(service.findOne(id, companyId)).rejects.toThrow(
         ForbiddenException,
@@ -329,12 +348,16 @@ describe('ApplicationTagsService', () => {
         addedByUserId: 'user-123',
       };
 
-      mockApplicationTagRepository.findOne.mockResolvedValue(mockApplicationTag);
+      mockApplicationTagRepository.findOne.mockResolvedValue(
+        mockApplicationTag,
+      );
       mockApplicationTagRepository.remove.mockResolvedValue(undefined);
 
       await service.remove(id, userId, companyId);
 
-      expect(mockApplicationTagRepository.remove).toHaveBeenCalledWith(mockApplicationTag);
+      expect(mockApplicationTagRepository.remove).toHaveBeenCalledWith(
+        mockApplicationTag,
+      );
     });
 
     it('should throw NotFoundException if application tag not found', async () => {
@@ -359,7 +382,9 @@ describe('ApplicationTagsService', () => {
         tag: { id: 'tag-123', companyId: 'different-company' },
       };
 
-      mockApplicationTagRepository.findOne.mockResolvedValue(mockApplicationTag);
+      mockApplicationTagRepository.findOne.mockResolvedValue(
+        mockApplicationTag,
+      );
 
       await expect(service.remove(id, userId, companyId)).rejects.toThrow(
         ForbiddenException,
@@ -380,7 +405,10 @@ describe('ApplicationTagsService', () => {
       const result = await service.getApplicationTagsSummary(companyId);
 
       expect(result).toEqual(mockSummary);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('tag.companyId = :companyId', { companyId });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'tag.companyId = :companyId',
+        { companyId },
+      );
     });
   });
 });

@@ -1,10 +1,10 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ApplicationQuestionResponse } from '../entities/application-question-response.entity';
 import { JobQuestion } from '../../jobs/entities/job-question.entity';
 import { Application } from '../entities/application.entity';
@@ -79,14 +79,18 @@ export class QuestionResponsesService {
       answer: createQuestionResponseDto.answer,
     });
 
-    const savedResponse = await this.questionResponseRepository.save(questionResponse);
+    const savedResponse =
+      await this.questionResponseRepository.save(questionResponse);
 
     // Emitir evento para a fila SQS
     try {
       await this.emitQuestionResponseEvent(savedResponse, application);
     } catch (error) {
       // Log do erro mas não falhar a operação principal
-      console.error('Erro ao emitir evento SQS para resposta da pergunta:', error);
+      console.error(
+        'Erro ao emitir evento SQS para resposta da pergunta:',
+        error,
+      );
     }
 
     return savedResponse;
@@ -190,14 +194,21 @@ export class QuestionResponsesService {
       },
     );
 
-    const savedResponses = await this.questionResponseRepository.save(questionResponses);
+    const savedResponses =
+      await this.questionResponseRepository.save(questionResponses);
 
     // Emitir evento para a fila SQS com todas as respostas
     try {
-      await this.emitMultipleQuestionResponsesEvent(savedResponses, application);
+      await this.emitMultipleQuestionResponsesEvent(
+        savedResponses,
+        application,
+      );
     } catch (error) {
       // Log do erro mas não falhar a operação principal
-      console.error('Erro ao emitir evento SQS para múltiplas respostas de perguntas:', error);
+      console.error(
+        'Erro ao emitir evento SQS para múltiplas respostas de perguntas:',
+        error,
+      );
     }
 
     return savedResponses;
@@ -234,7 +245,8 @@ export class QuestionResponsesService {
 
     Object.assign(questionResponse, updateQuestionResponseDto);
 
-    const updatedResponse = await this.questionResponseRepository.save(questionResponse);
+    const updatedResponse =
+      await this.questionResponseRepository.save(questionResponse);
 
     // Emitir evento para a fila SQS após atualização
     try {
@@ -242,13 +254,16 @@ export class QuestionResponsesService {
         where: { id: questionResponse.applicationId },
         relations: ['job', 'company'],
       });
-      
+
       if (application) {
         await this.emitQuestionResponseEvent(updatedResponse, application);
       }
     } catch (error) {
       // Log do erro mas não falhar a operação principal
-      console.error('Erro ao emitir evento SQS para atualização de resposta da pergunta:', error);
+      console.error(
+        'Erro ao emitir evento SQS para atualização de resposta da pergunta:',
+        error,
+      );
     }
 
     return updatedResponse;
@@ -266,8 +281,10 @@ export class QuestionResponsesService {
     questionResponse: ApplicationQuestionResponse,
     application: Application,
   ): Promise<void> {
-    const queueName = process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME || 'question-responses-queue';
-    
+    const queueName =
+      process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME ||
+      'question-responses-queue';
+
     const messageBody = {
       eventType: 'QUESTION_RESPONSE_CREATED',
       timestamp: new Date().toISOString(),
@@ -313,14 +330,16 @@ export class QuestionResponsesService {
     questionResponses: ApplicationQuestionResponse[],
     application: Application,
   ): Promise<void> {
-    const queueName = process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME || 'question-responses-queue';
-    
+    const queueName =
+      process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME ||
+      'question-responses-queue';
+
     const messageBody = {
       eventType: 'MULTIPLE_QUESTION_RESPONSES_CREATED',
       timestamp: new Date().toISOString(),
       data: {
         totalResponses: questionResponses.length,
-        responses: questionResponses.map(response => ({
+        responses: questionResponses.map((response) => ({
           questionResponseId: response.id,
           jobQuestionId: response.jobQuestionId,
           question: response.question,

@@ -1,9 +1,9 @@
 import {
+  IsDateString,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
-  IsObject,
-  IsDateString,
 } from 'class-validator';
 
 // Interface para os detalhes de avaliação

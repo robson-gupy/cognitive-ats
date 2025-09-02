@@ -1,14 +1,14 @@
 import {
-  IsString,
-  IsNotEmpty,
-  IsDateString,
-  IsOptional,
   IsArray,
-  ValidateNested,
-  MinLength,
+  IsDateString,
   IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
   IsUUID,
   MaxLength,
+  MinLength,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JobStatus } from '../entities/job.entity';

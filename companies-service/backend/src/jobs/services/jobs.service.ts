@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Job, JobStatus } from '../entities/job.entity';
@@ -13,10 +9,7 @@ import { CreateJobDto } from '../dto/create-job.dto';
 import { UpdateJobDto } from '../dto/update-job.dto';
 import { CreateJobWithAiDto } from '../dto/create-job-with-ai.dto';
 import { User } from '../../users/entities/user.entity';
-import {
-  AiServiceClient,
-  JobCreationRequest,
-} from '../../shared/ai/ai-service.client';
+import { AiServiceClient, JobCreationRequest, } from '../../shared/ai/ai-service.client';
 import { generateUniqueSlug } from '../../shared/utils/slug.util';
 
 // Interface para o resultado da query SQL
@@ -286,7 +279,7 @@ export class JobsService {
     const jobs = await this.jobsRepository.find({
       where: { companyId: userCompanyId },
       relations: ['company', 'department', 'createdBy', 'questions', 'stages'],
-      order: { 
+      order: {
         createdAt: 'DESC',
         questions: { orderIndex: 'ASC' },
         stages: { orderIndex: 'ASC' },
@@ -708,48 +701,6 @@ export class JobsService {
     }
   }
 
-  private hasStageChanges(
-    existingStages: JobStage[],
-    newStages: UpdateStageData[],
-  ): boolean {
-    // Se o número de stages mudou, há mudanças
-    if (existingStages.length !== newStages.length) {
-      return true;
-    }
-
-    // Criar map dos stages existentes por ID
-    const existingStagesMap = new Map(
-      existingStages.map((stage) => [stage.id, stage]),
-    );
-
-    // Verificar se cada stage novo corresponde ao existente
-    for (const newStage of newStages) {
-      if (!newStage.id) {
-        // Stage sem ID é considerado novo
-        return true;
-      }
-
-      const existingStage = existingStagesMap.get(newStage.id);
-      if (!existingStage) {
-        // Stage com ID não encontrado é considerado novo
-        return true;
-      }
-
-      // Verificar se os campos principais mudaram
-      if (
-        existingStage.name !== newStage.name ||
-        existingStage.description !== newStage.description ||
-        existingStage.orderIndex !==
-          (newStage.orderIndex ?? existingStage.orderIndex) ||
-        existingStage.isActive !== (newStage.isActive ?? existingStage.isActive)
-      ) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
   async remove(id: string, userCompanyId: string): Promise<void> {
     const job = await this.findOne(id, userCompanyId);
 
@@ -991,15 +942,17 @@ export class JobsService {
   async findPublicJobQuestionsBySlug(
     companySlug: string,
     jobSlug: string,
-  ): Promise<{
-    id: string;
-    question: string;
-    orderIndex: number;
-    isRequired: boolean;
-  }[]> {
+  ): Promise<
+    {
+      id: string;
+      question: string;
+      orderIndex: number;
+      isRequired: boolean;
+    }[]
+  > {
     // Primeiro verificar se a job existe e está publicada
     const job = await this.findPublicJobBySlug(companySlug, jobSlug);
-    
+
     // Buscar as questions da job
     const questions = await this.jobQuestionsRepository.find({
       where: { jobId: job.id },
@@ -1008,5 +961,47 @@ export class JobsService {
     });
 
     return questions;
+  }
+
+  private hasStageChanges(
+    existingStages: JobStage[],
+    newStages: UpdateStageData[],
+  ): boolean {
+    // Se o número de stages mudou, há mudanças
+    if (existingStages.length !== newStages.length) {
+      return true;
+    }
+
+    // Criar map dos stages existentes por ID
+    const existingStagesMap = new Map(
+      existingStages.map((stage) => [stage.id, stage]),
+    );
+
+    // Verificar se cada stage novo corresponde ao existente
+    for (const newStage of newStages) {
+      if (!newStage.id) {
+        // Stage sem ID é considerado novo
+        return true;
+      }
+
+      const existingStage = existingStagesMap.get(newStage.id);
+      if (!existingStage) {
+        // Stage com ID não encontrado é considerado novo
+        return true;
+      }
+
+      // Verificar se os campos principais mudaram
+      if (
+        existingStage.name !== newStage.name ||
+        existingStage.description !== newStage.description ||
+        existingStage.orderIndex !==
+          (newStage.orderIndex ?? existingStage.orderIndex) ||
+        existingStage.isActive !== (newStage.isActive ?? existingStage.isActive)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

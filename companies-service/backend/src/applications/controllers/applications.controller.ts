@@ -1,21 +1,24 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
-  Request,
+  Get,
   HttpCode,
   HttpStatus,
-  UseInterceptors,
-  UploadedFile,
+  Param,
+  Patch,
+  Post,
   Query,
+  Request,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApplicationsService } from '../services/applications.service';
+import {
+  ApplicationsService,
+  ResumeFile,
+} from '../services/applications.service';
 import { ApplicationStageService } from '../services/application-stage.service';
 import { CreateApplicationDto } from '../dto/create-application.dto';
 import { UpdateApplicationDto } from '../dto/update-application.dto';
@@ -25,7 +28,6 @@ import { UploadResumeDto } from '../../resumes/dto/upload-resume.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AdminAuthGuard } from '../../auth/guards/admin-auth.guard';
 import { CandidateEvaluationService } from '../services/candidate-evaluation.service';
-import { ResumeFile } from '../services/applications.service';
 
 // Interface para tipar o request com user
 interface AuthenticatedRequest extends Request {

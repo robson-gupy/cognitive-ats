@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApplicationTag } from '../entities/application-tag.entity';
@@ -21,7 +26,11 @@ export class ApplicationTagsService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(createApplicationTagDto: CreateApplicationTagDto, userId: string, companyId: string): Promise<ApplicationTagResponseDto> {
+  async create(
+    createApplicationTagDto: CreateApplicationTagDto,
+    userId: string,
+    companyId: string,
+  ): Promise<ApplicationTagResponseDto> {
     // Verificar se a application existe e pertence à empresa
     const application = await this.applicationRepository.findOne({
       where: { id: createApplicationTagDto.applicationId },
@@ -60,11 +69,15 @@ export class ApplicationTagsService {
       addedByUserId: userId,
     });
 
-    const savedApplicationTag = await this.applicationTagRepository.save(applicationTag);
+    const savedApplicationTag =
+      await this.applicationTagRepository.save(applicationTag);
     return this.mapToResponseDto(savedApplicationTag);
   }
 
-  async findAllByApplication(applicationId: string, companyId: string): Promise<ApplicationTagResponseDto[]> {
+  async findAllByApplication(
+    applicationId: string,
+    companyId: string,
+  ): Promise<ApplicationTagResponseDto[]> {
     // Verificar se a application existe e pertence à empresa
     const application = await this.applicationRepository.findOne({
       where: { id: applicationId },
@@ -82,10 +95,13 @@ export class ApplicationTagsService {
       order: { createdAt: 'DESC' },
     });
 
-    return applicationTags.map(tag => this.mapToResponseDto(tag));
+    return applicationTags.map((tag) => this.mapToResponseDto(tag));
   }
 
-  async findAllByTag(tagId: string, companyId: string): Promise<ApplicationTagResponseDto[]> {
+  async findAllByTag(
+    tagId: string,
+    companyId: string,
+  ): Promise<ApplicationTagResponseDto[]> {
     // Verificar se a tag existe e pertence à empresa
     const tag = await this.tagRepository.findOne({
       where: { id: tagId, companyId },
@@ -102,10 +118,13 @@ export class ApplicationTagsService {
       order: { createdAt: 'DESC' },
     });
 
-    return applicationTags.map(tag => this.mapToResponseDto(tag));
+    return applicationTags.map((tag) => this.mapToResponseDto(tag));
   }
 
-  async findOne(id: string, companyId: string): Promise<ApplicationTagResponseDto> {
+  async findOne(
+    id: string,
+    companyId: string,
+  ): Promise<ApplicationTagResponseDto> {
     const applicationTag = await this.applicationTagRepository.findOne({
       where: { id },
       relations: ['tag', 'application', 'application.job', 'addedByUser'],
@@ -147,7 +166,12 @@ export class ApplicationTagsService {
     await this.applicationTagRepository.remove(applicationTag);
   }
 
-  async removeByApplicationAndTag(applicationId: string, tagId: string, userId: string, companyId: string): Promise<void> {
+  async removeByApplicationAndTag(
+    applicationId: string,
+    tagId: string,
+    userId: string,
+    companyId: string,
+  ): Promise<void> {
     const applicationTag = await this.applicationTagRepository.findOne({
       where: { applicationId, tagId },
       relations: ['tag'],
@@ -186,7 +210,9 @@ export class ApplicationTagsService {
     return tagUsage;
   }
 
-  private mapToResponseDto(applicationTag: ApplicationTag): ApplicationTagResponseDto {
+  private mapToResponseDto(
+    applicationTag: ApplicationTag,
+  ): ApplicationTagResponseDto {
     const response: ApplicationTagResponseDto = {
       id: applicationTag.id,
       applicationId: applicationTag.applicationId,
@@ -208,7 +234,7 @@ export class ApplicationTagsService {
     if (applicationTag.application) {
       response.application = {
         id: applicationTag.application.id,
-        candidateName: applicationTag.application.firstName 
+        candidateName: applicationTag.application.firstName
           ? `${applicationTag.application.firstName} ${applicationTag.application.lastName || ''}`.trim()
           : undefined,
         jobTitle: applicationTag.application.job?.title,

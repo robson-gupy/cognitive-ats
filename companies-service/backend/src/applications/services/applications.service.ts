@@ -1,7 +1,7 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,25 +25,6 @@ export interface ResumeFile {
 
 @Injectable()
 export class ApplicationsService {
-  /**
-   * Gera um nome de arquivo aleatório e seguro para evitar enumeração
-   * @param originalName Nome original do arquivo
-   * @returns Nome de arquivo aleatório com extensão preservada
-   */
-  private generateSecureFileName(originalName: string): string {
-    // Gerar 32 bytes aleatórios (256 bits) e converter para hex
-    const randomBytes = crypto.randomBytes(32).toString('hex');
-
-    // Extrair a extensão do arquivo original
-    const extension = originalName.includes('.')
-      ? originalName.substring(originalName.lastIndexOf('.'))
-      : '';
-
-    // Combinar timestamp, bytes aleatórios e extensão
-    const timestamp = Date.now();
-    return `resume_${timestamp}_${randomBytes}${extension}`;
-  }
-
   constructor(
     @InjectRepository(Application)
     private applicationsRepository: Repository<Application>,
@@ -321,7 +302,11 @@ export class ApplicationsService {
     await this.applicationsRepository.remove(application);
   }
 
-  async findByJobId(jobId: string, companyId: string, search?: string): Promise<Application[]> {
+  async findByJobId(
+    jobId: string,
+    companyId: string,
+    search?: string,
+  ): Promise<Application[]> {
     const queryBuilder = this.applicationsRepository
       .createQueryBuilder('application')
       .leftJoinAndSelect('application.currentStage', 'currentStage')
@@ -332,13 +317,11 @@ export class ApplicationsService {
       const searchTerm = `%${search.trim().toLowerCase()}%`;
       queryBuilder.andWhere(
         '(LOWER(application.firstName) LIKE :search OR LOWER(application.lastName) LIKE :search OR LOWER(application.email) LIKE :search OR application.phone LIKE :search)',
-        { search: searchTerm }
+        { search: searchTerm },
       );
     }
 
-    return queryBuilder
-      .orderBy('application.createdAt', 'DESC')
-      .getMany();
+    return queryBuilder.orderBy('application.createdAt', 'DESC').getMany();
   }
 
   async findByJobIdWithQuestionResponses(
@@ -359,7 +342,7 @@ export class ApplicationsService {
       const searchTerm = `%${search.trim().toLowerCase()}%`;
       queryBuilder.andWhere(
         '(LOWER(application.firstName) LIKE :search OR LOWER(application.lastName) LIKE :search OR LOWER(application.email) LIKE :search OR application.phone LIKE :search)',
-        { search: searchTerm }
+        { search: searchTerm },
       );
     }
 
@@ -438,5 +421,24 @@ export class ApplicationsService {
 
     Object.assign(application, updateScoreDto);
     return this.applicationsRepository.save(application);
+  }
+
+  /**
+   * Gera um nome de arquivo aleatório e seguro para evitar enumeração
+   * @param originalName Nome original do arquivo
+   * @returns Nome de arquivo aleatório com extensão preservada
+   */
+  private generateSecureFileName(originalName: string): string {
+    // Gerar 32 bytes aleatórios (256 bits) e converter para hex
+    const randomBytes = crypto.randomBytes(32).toString('hex');
+
+    // Extrair a extensão do arquivo original
+    const extension = originalName.includes('.')
+      ? originalName.substring(originalName.lastIndexOf('.'))
+      : '';
+
+    // Combinar timestamp, bytes aleatórios e extensão
+    const timestamp = Date.now();
+    return `resume_${timestamp}_${randomBytes}${extension}`;
   }
 }

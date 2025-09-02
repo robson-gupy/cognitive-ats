@@ -1,15 +1,15 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
-  Request,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { TagsService } from '../services/tags.service';
 import { CreateTagDto } from '../dto/create-tag.dto';
@@ -47,7 +47,10 @@ export class TagsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req): Promise<TagResponseDto> {
+  async findOne(
+    @Param('id') id: string,
+    @Request() req,
+  ): Promise<TagResponseDto> {
     const companyId = req.user.companyId;
     if (!companyId) {
       throw new Error('CompanyId não encontrado no token de autenticação');

@@ -8,7 +8,7 @@ import { Application } from '../entities/application.entity';
 import { SqsClientService } from '../../shared/services/sqs-client.service';
 import { CreateQuestionResponseDto } from '../dto/create-question-response.dto';
 import { CreateMultipleQuestionResponsesDto } from '../dto/create-multiple-question-responses.dto';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 describe('QuestionResponsesService', () => {
   let service: QuestionResponsesService;
@@ -62,9 +62,9 @@ describe('QuestionResponsesService', () => {
     }).compile();
 
     service = module.get<QuestionResponsesService>(QuestionResponsesService);
-    questionResponseRepository = module.get<Repository<ApplicationQuestionResponse>>(
-      getRepositoryToken(ApplicationQuestionResponse),
-    );
+    questionResponseRepository = module.get<
+      Repository<ApplicationQuestionResponse>
+    >(getRepositoryToken(ApplicationQuestionResponse));
     jobQuestionRepository = module.get<Repository<JobQuestion>>(
       getRepositoryToken(JobQuestion),
     );
@@ -124,8 +124,12 @@ describe('QuestionResponsesService', () => {
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
       mockJobQuestionRepository.findOne.mockResolvedValue(mockJobQuestion);
       mockQuestionResponseRepository.findOne.mockResolvedValue(null);
-      mockQuestionResponseRepository.create.mockReturnValue(mockQuestionResponse);
-      mockQuestionResponseRepository.save.mockResolvedValue(mockQuestionResponse);
+      mockQuestionResponseRepository.create.mockReturnValue(
+        mockQuestionResponse,
+      );
+      mockQuestionResponseRepository.save.mockResolvedValue(
+        mockQuestionResponse,
+      );
       mockSqsClientService.sendMessage.mockResolvedValue(undefined);
 
       const result = await service.create(applicationId, createDto);
@@ -231,8 +235,12 @@ describe('QuestionResponsesService', () => {
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
       mockJobQuestionRepository.find.mockResolvedValue(mockJobQuestions);
       mockQuestionResponseRepository.find.mockResolvedValue([]);
-      mockQuestionResponseRepository.create.mockReturnValue(mockQuestionResponses[0]);
-      mockQuestionResponseRepository.save.mockResolvedValue(mockQuestionResponses);
+      mockQuestionResponseRepository.create.mockReturnValue(
+        mockQuestionResponses[0],
+      );
+      mockQuestionResponseRepository.save.mockResolvedValue(
+        mockQuestionResponses,
+      );
       mockSqsClientService.sendMessage.mockResolvedValue(undefined);
 
       const result = await service.createMultiple(applicationId, createDto);
@@ -292,8 +300,12 @@ describe('QuestionResponsesService', () => {
         },
       };
 
-      mockQuestionResponseRepository.findOne.mockResolvedValue(mockExistingResponse);
-      mockQuestionResponseRepository.save.mockResolvedValue(mockUpdatedResponse);
+      mockQuestionResponseRepository.findOne.mockResolvedValue(
+        mockExistingResponse,
+      );
+      mockQuestionResponseRepository.save.mockResolvedValue(
+        mockUpdatedResponse,
+      );
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
       mockSqsClientService.sendMessage.mockResolvedValue(undefined);
 

@@ -24,14 +24,17 @@ A tabela `application_tags` possui os seguintes campos:
 ## Endpoints
 
 ### POST /application-tags
+
 Adiciona uma tag a uma application.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Body:**
+
 ```json
 {
   "applicationId": "uuid-da-application",
@@ -40,6 +43,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Resposta (201):**
+
 ```json
 {
   "id": "uuid-da-associacao",
@@ -68,14 +72,17 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### GET /application-tags/application/:applicationId
+
 Lista todas as tags de uma application específica.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Resposta (200):**
+
 ```json
 [
   {
@@ -120,14 +127,17 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### GET /application-tags/tag/:tagId
+
 Lista todas as applications que usam uma tag específica.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Resposta (200):**
+
 ```json
 [
   {
@@ -170,14 +180,17 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### GET /application-tags/summary
+
 Retorna um resumo de uso das tags na empresa.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Resposta (200):**
+
 ```json
 [
   {
@@ -205,14 +218,17 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### GET /application-tags/:id
+
 Busca uma associação específica por ID.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Resposta (200):**
+
 ```json
 {
   "id": "uuid-da-associacao",
@@ -241,9 +257,11 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### DELETE /application-tags/:id
+
 Remove uma associação específica por ID.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
@@ -251,9 +269,11 @@ Authorization: Bearer <jwt_token>
 **Resposta (204):** Sem conteúdo
 
 ### DELETE /application-tags/application/:applicationId/tag/:tagId
+
 Remove uma tag específica de uma application específica.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
@@ -287,18 +307,22 @@ Authorization: Bearer <jwt_token>
 ## Casos de Uso
 
 ### 1. **Categorização de Candidatos**
+
 - Adicionar tags como "Candidato Promissor", "Experiência Relevante", "Perfil Júnior"
 - Organizar applications por características específicas
 
 ### 2. **Filtros e Buscas**
+
 - Buscar todas as applications com uma tag específica
 - Filtrar candidatos por critérios predefinidos
 
 ### 3. **Análise de Dados**
+
 - Ver quais tags são mais usadas na empresa
 - Identificar padrões de recrutamento
 
 ### 4. **Workflow de Recrutamento**
+
 - Marcar candidatos em diferentes estágios do processo
 - Acompanhar o progresso com tags temporárias
 

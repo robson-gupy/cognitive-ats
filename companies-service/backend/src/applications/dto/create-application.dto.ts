@@ -1,10 +1,10 @@
 import {
-  IsUUID,
-  IsString,
   IsEmail,
   IsOptional,
-  ValidateIf,
+  IsString,
   IsUrl,
+  IsUUID,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateApplicationDto {

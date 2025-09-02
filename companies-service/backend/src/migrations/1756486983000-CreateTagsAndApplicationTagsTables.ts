@@ -2,8 +2,8 @@ import {
   MigrationInterface,
   QueryRunner,
   Table,
-  TableIndex,
   TableForeignKey,
+  TableIndex,
 } from 'typeorm';
 
 export class CreateTagsAndApplicationTagsTables1756486983000
@@ -205,10 +205,7 @@ export class CreateTagsAndApplicationTagsTables1756486983000
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remover foreign keys
-    await queryRunner.dropForeignKey(
-      'tags',
-      'FK_tags_company_id',
-    );
+    await queryRunner.dropForeignKey('tags', 'FK_tags_company_id');
     await queryRunner.dropForeignKey(
       'application_tags',
       'FK_application_tags_added_by_user_id',

@@ -25,14 +25,17 @@ A tabela `tags` possui os seguintes campos:
 ## Endpoints
 
 ### POST /tags
+
 Cria uma nova tag.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Body:**
+
 ```json
 {
   "label": "Nome da Tag",
@@ -42,6 +45,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Resposta (201):**
+
 ```json
 {
   "id": "uuid-da-tag",
@@ -55,14 +59,17 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### GET /tags
+
 Lista todas as tags da empresa autenticada.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Resposta (200):**
+
 ```json
 [
   {
@@ -87,14 +94,17 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### GET /tags/:id
+
 Busca uma tag específica por ID.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Resposta (200):**
+
 ```json
 {
   "id": "uuid-da-tag",
@@ -108,14 +118,17 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### PATCH /tags/:id
+
 Atualiza uma tag existente.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
 
 **Body:**
+
 ```json
 {
   "label": "Novo Nome da Tag",  // Opcional
@@ -125,6 +138,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Resposta (200):**
+
 ```json
 {
   "id": "uuid-da-tag",
@@ -138,9 +152,11 @@ Authorization: Bearer <jwt_token>
 ```
 
 ### DELETE /tags/:id
+
 Remove uma tag do sistema.
 
 **Headers necessários:**
+
 ```
 Authorization: Bearer <jwt_token>
 ```
@@ -154,8 +170,8 @@ Authorization: Bearer <jwt_token>
 3. **Label único**: Não é possível criar duas tags com o mesmo nome na mesma empresa
 4. **Validação de cores**: As cores devem estar no formato hexadecimal válido (#RRGGBB)
 5. **Valores padrão**: Se não especificadas, as cores usam valores padrão:
-   - `color`: #3B82F6 (azul)
-   - `textColor`: #FFFFFF (branco)
+    - `color`: #3B82F6 (azul)
+    - `textColor`: #FFFFFF (branco)
 
 ## Códigos de Erro
 

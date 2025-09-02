@@ -47,7 +47,7 @@ import { SharedModule } from '../shared/shared.module';
     SharedModule,
   ],
   controllers: [
-    ApplicationsController, 
+    ApplicationsController,
     QuestionResponsesController,
     ApplicationTagsController,
   ],

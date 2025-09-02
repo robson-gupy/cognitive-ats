@@ -3,7 +3,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import { UsersService } from '../../users/users.service';
 import { User } from '../../users/entities/user.entity';
-import * as bcrypt from 'bcrypt';
 
 // Interface para o usuário retornado sem a senha
 interface UserWithoutPassword {

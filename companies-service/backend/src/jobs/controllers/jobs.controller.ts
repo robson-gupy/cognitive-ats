@@ -1,10 +1,20 @@
-import {Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards,} from '@nestjs/common';
-import {JobsService} from '../services/jobs.service';
-import {CreateJobDto} from '../dto/create-job.dto';
-import {UpdateJobDto} from '../dto/update-job.dto';
-import {CreateJobWithAiDto} from '../dto/create-job-with-ai.dto';
-import {JwtAuthGuard} from '../../auth/guards/jwt-auth.guard';
-import {AdminAuthGuard} from '../../auth/guards/admin-auth.guard';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { JobsService } from '../services/jobs.service';
+import { CreateJobDto } from '../dto/create-job.dto';
+import { UpdateJobDto } from '../dto/update-job.dto';
+import { CreateJobWithAiDto } from '../dto/create-job-with-ai.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminAuthGuard } from '../../auth/guards/admin-auth.guard';
 
 // Interface para tipar o request com user
 interface AuthenticatedRequest extends Request {
@@ -18,8 +28,7 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('jobs')
 export class JobsController {
-  constructor(private readonly jobsService: JobsService) {
-  }
+  constructor(private readonly jobsService: JobsService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, AdminAuthGuard)
@@ -119,7 +128,7 @@ export class JobsController {
   @UseGuards(JwtAuthGuard, AdminAuthGuard)
   async remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     await this.jobsService.remove(id, req.user.companyId);
-    return {message: 'Vaga excluída com sucesso'};
+    return { message: 'Vaga excluída com sucesso' };
   }
 
   @Get(':id/logs')

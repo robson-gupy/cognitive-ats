@@ -1,12 +1,12 @@
 import {
-  Controller,
-  Post,
   Body,
+  Controller,
   Get,
   Patch,
-  UseGuards,
+  Post,
   Request,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
