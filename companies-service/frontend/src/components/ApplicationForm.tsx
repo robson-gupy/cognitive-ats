@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 
 interface ApplicationFormProps {
   jobId: string;
@@ -12,7 +12,7 @@ interface FormData {
   phone: string;
 }
 
-export function ApplicationForm({ jobId, onSuccess }: ApplicationFormProps) {
+export function ApplicationForm({jobId, onSuccess}: ApplicationFormProps) {
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -24,7 +24,7 @@ export function ApplicationForm({ jobId, onSuccess }: ApplicationFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const {name, value} = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -55,7 +55,7 @@ export function ApplicationForm({ jobId, onSuccess }: ApplicationFormProps) {
         // Usar endpoint sem resume
         await submitWithoutResume();
       }
-      
+
       onSuccess();
       // Limpar formulário
       setFormData({

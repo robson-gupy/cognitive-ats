@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { appConfig, getCurrentConfig, validateConfig } from '../config/config';
+import {useEffect, useState} from 'react';
+import {appConfig, getCurrentConfig, validateConfig} from '../config/config';
 
 export interface UseConfigReturn {
   companySlug: string;
@@ -25,11 +25,11 @@ export function useConfig(): UseConfigReturn {
     try {
       const newConfig = getCurrentConfig();
       setConfig(newConfig);
-      
+
       // Validar a nova configuração
       const valid = validateConfig();
       setIsValid(valid);
-      
+
       if (!valid) {
         setError('Configuração inválida detectada');
       } else {
@@ -57,7 +57,7 @@ export function useConfig(): UseConfigReturn {
     };
 
     window.addEventListener('focus', handleFocus);
-    
+
     return () => {
       window.removeEventListener('focus', handleFocus);
     };
@@ -77,7 +77,7 @@ export function useConfig(): UseConfigReturn {
  * Hook para obter apenas o slug da empresa
  */
 export function useCompanySlug(): string {
-  const { companySlug } = useConfig();
+  const {companySlug} = useConfig();
   return companySlug;
 }
 
@@ -85,6 +85,6 @@ export function useCompanySlug(): string {
  * Hook para obter apenas a URL do backend
  */
 export function useBackendUrl(): string {
-  const { backendUrl } = useConfig();
+  const {backendUrl} = useConfig();
   return backendUrl;
 }

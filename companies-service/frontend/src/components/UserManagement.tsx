@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, Button, message, Typography } from 'antd';
-import { UserList } from './UserList';
-import { UserForm } from './UserForm';
-import { apiService } from '../services/api';
-import { useAuthContext } from '../contexts/AuthContext';
-import type { User, CreateUserData, UpdateUserData } from '../types/User';
+import React, {useEffect, useState} from 'react';
+import {Button, Layout, message, Typography} from 'antd';
+import {UserList} from './UserList';
+import {UserForm} from './UserForm';
+import {apiService} from '../services/api';
+import {useAuthContext} from '../contexts/AuthContext';
+import type {CreateUserData, UpdateUserData, User} from '../types/User';
 
-const { Content } = Layout;
-const { Title } = Typography;
+const {Content} = Layout;
+const {Title} = Typography;
 
 export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
-  const { currentUser } = useAuthContext();
+  const {currentUser} = useAuthContext();
 
   useEffect(() => {
     loadUsers();
@@ -40,10 +40,10 @@ export const UserManagement: React.FC = () => {
         ...userData,
         companyId: currentUser?.companyId || '',
       };
-      
+
       console.log('Criando usuário com dados:', userDataWithCompany);
       console.log('currentUser:', currentUser);
-      
+
       const newUser = await apiService.createUser(userDataWithCompany);
       setUsers([...users, newUser]);
       message.success('Usuário criado com sucesso!');
@@ -56,7 +56,7 @@ export const UserManagement: React.FC = () => {
 
   const handleUpdateUser = async (userData: UpdateUserData) => {
     if (!editingUser) return;
-    
+
     try {
       const updatedUser = await apiService.updateUser(editingUser.id, userData);
       setUsers(users.map(user => user.id === editingUser.id ? updatedUser : user));
@@ -94,26 +94,26 @@ export const UserManagement: React.FC = () => {
   };
 
   return (
-    <Content style={{ padding: '24px' }}>
-      <div style={{ 
-        background: 'white', 
-        padding: '24px', 
+    <Content style={{padding: '24px'}}>
+      <div style={{
+        background: 'white',
+        padding: '24px',
         borderRadius: '8px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: '24px' 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px'
         }}>
-          <Title level={2} style={{ margin: 0 }}>Gerenciamento de Usuários</Title>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <Title level={2} style={{margin: 0}}>Gerenciamento de Usuários</Title>
+          <div style={{display: 'flex', gap: '12px'}}>
             <Button onClick={() => window.history.back()}>
               Voltar
             </Button>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               onClick={() => {
                 setEditingUser(undefined);
                 setIsModalOpen(true);
@@ -123,10 +123,10 @@ export const UserManagement: React.FC = () => {
             </Button>
           </div>
         </div>
-        
-        <UserList 
-          users={users} 
-          isLoading={loading} 
+
+        <UserList
+          users={users}
+          isLoading={loading}
           onEdit={handleEditUser}
           onDelete={handleDeleteUser}
         />

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Button, message, Select } from 'antd';
-import type { User, CreateUserData, UpdateUserData } from '../types/User';
-import type { Role } from '../types/Role';
-import { apiService } from '../services/api';
+import React, {useEffect, useState} from 'react';
+import {Button, Form, Input, message, Modal, Select} from 'antd';
+import type {CreateUserData, UpdateUserData, User} from '../types/User';
+import type {Role} from '../types/Role';
+import {apiService} from '../services/api';
 
 interface UserFormProps {
   isModalOpen: boolean;
@@ -12,13 +12,13 @@ interface UserFormProps {
   isLoading?: boolean;
 }
 
-export const UserForm: React.FC<UserFormProps> = ({ 
-  isModalOpen,
-  onClose,
-  user, 
-  onSubmit, 
-  isLoading = false 
-}) => {
+export const UserForm: React.FC<UserFormProps> = ({
+                                                    isModalOpen,
+                                                    onClose,
+                                                    user,
+                                                    onSubmit,
+                                                    isLoading = false
+                                                  }) => {
   const [form] = Form.useForm();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
@@ -80,9 +80,9 @@ export const UserForm: React.FC<UserFormProps> = ({
         <Button key="cancel" onClick={handleCancel}>
           Cancelar
         </Button>,
-        <Button 
-          key="submit" 
-          type="primary" 
+        <Button
+          key="submit"
+          type="primary"
           loading={isLoading}
           onClick={handleSubmit}
         >
@@ -106,51 +106,51 @@ export const UserForm: React.FC<UserFormProps> = ({
           label="Primeiro Nome"
           name="firstName"
           rules={[
-            { required: true, message: 'Por favor, insira o primeiro nome!' },
-            { min: 2, message: 'O primeiro nome deve ter pelo menos 2 caracteres!' }
+            {required: true, message: 'Por favor, insira o primeiro nome!'},
+            {min: 2, message: 'O primeiro nome deve ter pelo menos 2 caracteres!'}
           ]}
         >
-          <Input placeholder="Digite o primeiro nome" />
+          <Input placeholder="Digite o primeiro nome"/>
         </Form.Item>
 
         <Form.Item
           label="Sobrenome"
           name="lastName"
           rules={[
-            { required: true, message: 'Por favor, insira o sobrenome!' },
-            { min: 2, message: 'O sobrenome deve ter pelo menos 2 caracteres!' }
+            {required: true, message: 'Por favor, insira o sobrenome!'},
+            {min: 2, message: 'O sobrenome deve ter pelo menos 2 caracteres!'}
           ]}
         >
-          <Input placeholder="Digite o sobrenome" />
+          <Input placeholder="Digite o sobrenome"/>
         </Form.Item>
 
         <Form.Item
           label="Email"
           name="email"
           rules={[
-            { required: true, message: 'Por favor, insira o email!' },
-            { type: 'email', message: 'Por favor, insira um email válido!' }
+            {required: true, message: 'Por favor, insira o email!'},
+            {type: 'email', message: 'Por favor, insira um email válido!'}
           ]}
         >
-          <Input placeholder="Digite o email" />
+          <Input placeholder="Digite o email"/>
         </Form.Item>
 
         <Form.Item
           label="Senha"
           name="password"
           rules={[
-            { required: !user, message: 'Por favor, insira a senha!' },
-            { min: 6, message: 'A senha deve ter pelo menos 6 caracteres!' }
+            {required: !user, message: 'Por favor, insira a senha!'},
+            {min: 6, message: 'A senha deve ter pelo menos 6 caracteres!'}
           ]}
         >
-          <Input.Password placeholder="Digite a senha" />
+          <Input.Password placeholder="Digite a senha"/>
         </Form.Item>
 
         <Form.Item
           label="Role"
           name="roleId"
           rules={[
-            { required: true, message: 'Por favor, selecione um role!' }
+            {required: true, message: 'Por favor, selecione um role!'}
           ]}
         >
           <Select

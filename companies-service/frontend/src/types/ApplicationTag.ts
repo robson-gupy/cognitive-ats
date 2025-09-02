@@ -4,7 +4,7 @@ export interface ApplicationTag {
   tagId: string;
   addedByUserId: string;
   createdAt: Date;
-  
+
   // Dados relacionados (opcional)
   tag?: {
     id: string;
@@ -12,13 +12,13 @@ export interface ApplicationTag {
     color: string;
     textColor: string;
   };
-  
+
   application?: {
     id: string;
     candidateName?: string;
     jobTitle?: string;
   };
-  
+
   addedByUser?: {
     id: string;
     firstName: string;

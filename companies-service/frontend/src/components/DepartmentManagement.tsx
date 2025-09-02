@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, Button, message, Typography, Table, Modal, Form, Input, Space, Tag, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, ApartmentOutlined } from '@ant-design/icons';
-import { apiService } from '../services/api';
-import type { Department, CreateDepartmentRequest, UpdateDepartmentRequest } from '../types/Department';
+import React, {useEffect, useState} from 'react';
+import {Button, Form, Input, Layout, message, Modal, Popconfirm, Space, Table, Tag, Typography} from 'antd';
+import {ApartmentOutlined, DeleteOutlined, EditOutlined, PlusOutlined, StopOutlined} from '@ant-design/icons';
+import {apiService} from '../services/api';
+import type {CreateDepartmentRequest, Department, UpdateDepartmentRequest} from '../types/Department';
 
-const { Content } = Layout;
-const { Title, Text } = Typography;
-const { TextArea } = Input;
+const {Content} = Layout;
+const {Title, Text} = Typography;
+const {TextArea} = Input;
 
 interface DepartmentManagementProps {
   currentUser: {
@@ -18,7 +18,7 @@ interface DepartmentManagementProps {
   } | null;
 }
 
-export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ currentUser }) => {
+export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({currentUser}) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,7 +33,7 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ curr
 
   const loadDepartments = async () => {
     if (!currentUser?.companyId) return;
-    
+
     setLoading(true);
     try {
       const data = await apiService.getDepartments(currentUser.companyId);
@@ -64,10 +64,10 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ curr
 
   const handleUpdateDepartment = async (values: UpdateDepartmentRequest) => {
     if (!editingDepartment) return;
-    
+
     try {
       const updatedDepartment = await apiService.updateDepartment(editingDepartment.id, values);
-      setDepartments(departments.map(dept => 
+      setDepartments(departments.map(dept =>
         dept.id === editingDepartment.id ? updatedDepartment : dept
       ));
       message.success('Departamento atualizado com sucesso!');
@@ -133,8 +133,8 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ curr
       key: 'name',
       render: (text: string, record: Department) => (
         <div>
-          <div style={{ fontWeight: 500 }}>{text}</div>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
+          <div style={{fontWeight: 500}}>{text}</div>
+          <Text type="secondary" style={{fontSize: '12px'}}>
             Código: {record.code}
           </Text>
         </div>
@@ -172,7 +172,7 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ curr
         <Space>
           <Button
             type="link"
-            icon={<EditOutlined />}
+            icon={<EditOutlined/>}
             onClick={() => handleEditDepartment(record)}
           >
             Editar
@@ -185,7 +185,7 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ curr
               okText="Sim"
               cancelText="Não"
             >
-              <Button type="link" icon={<StopOutlined />}>
+              <Button type="link" icon={<StopOutlined/>}>
                 Desativar
               </Button>
             </Popconfirm>
@@ -198,7 +198,7 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ curr
               okText="Sim"
               cancelText="Não"
             >
-              <Button type="link" danger icon={<DeleteOutlined />}>
+              <Button type="link" danger icon={<DeleteOutlined/>}>
                 Excluir
               </Button>
             </Popconfirm>
@@ -209,31 +209,31 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ curr
   ];
 
   return (
-    <Content style={{ padding: '24px' }}>
-      <div style={{ 
-        background: 'white', 
-        padding: '24px', 
+    <Content style={{padding: '24px'}}>
+      <div style={{
+        background: 'white',
+        padding: '24px',
         borderRadius: '8px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: '24px' 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px'
         }}>
           <div>
-            <Title level={2} style={{ margin: 0 }}>
-              <ApartmentOutlined style={{ marginRight: '8px' }} />
+            <Title level={2} style={{margin: 0}}>
+              <ApartmentOutlined style={{marginRight: '8px'}}/>
               Gerenciamento de Departamentos
             </Title>
             <Text type="secondary">
               Gerencie os departamentos da sua empresa
             </Text>
           </div>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
+          <Button
+            type="primary"
+            icon={<PlusOutlined/>}
             onClick={() => {
               setEditingDepartment(null);
               setIsModalOpen(true);
@@ -255,7 +255,7 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ curr
             pageSize: 10,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `${range[0]}-${range[1]} de ${total} departamentos`,
           }}
           locale={{
@@ -286,35 +286,35 @@ export const DepartmentManagement: React.FC<DepartmentManagementProps> = ({ curr
             name="name"
             label="Nome do Departamento"
             rules={[
-              { required: true, message: 'Por favor, insira o nome do departamento' },
-              { max: 100, message: 'O nome deve ter no máximo 100 caracteres' }
+              {required: true, message: 'Por favor, insira o nome do departamento'},
+              {max: 100, message: 'O nome deve ter no máximo 100 caracteres'}
             ]}
           >
-            <Input placeholder="Ex: Tecnologia, RH, Comercial" />
+            <Input placeholder="Ex: Tecnologia, RH, Comercial"/>
           </Form.Item>
 
           <Form.Item
             name="code"
             label="Código"
             rules={[
-              { required: true, message: 'Por favor, insira o código do departamento' },
-              { max: 10, message: 'O código deve ter no máximo 10 caracteres' }
+              {required: true, message: 'Por favor, insira o código do departamento'},
+              {max: 10, message: 'O código deve ter no máximo 10 caracteres'}
             ]}
           >
-            <Input placeholder="Ex: TEC, RH, COM" />
+            <Input placeholder="Ex: TEC, RH, COM"/>
           </Form.Item>
 
           <Form.Item
             name="description"
             label="Descrição"
           >
-            <TextArea 
-              rows={3} 
+            <TextArea
+              rows={3}
               placeholder="Descrição opcional do departamento"
             />
           </Form.Item>
 
-          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+          <Form.Item style={{marginBottom: 0, textAlign: 'right'}}>
             <Space>
               <Button onClick={handleModalClose}>
                 Cancelar

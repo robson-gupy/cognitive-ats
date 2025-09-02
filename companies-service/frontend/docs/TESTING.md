@@ -5,6 +5,7 @@ Este documento explica como configurar e executar testes no frontend da aplicaç
 ## Configuração
 
 Os testes estão configurados usando:
+
 - **Vitest**: Framework de testes rápido
 - **React Testing Library**: Para testar componentes React
 - **jsdom**: Ambiente DOM para testes
@@ -121,6 +122,7 @@ describe('ApiService', () => {
 ## Mocks Configurados
 
 ### Ant Design
+
 Componentes do Ant Design são mockados para evitar problemas de renderização:
 
 ```typescript
@@ -133,6 +135,7 @@ vi.mock('antd', () => ({
 ```
 
 ### React Router
+
 Hooks e componentes do React Router são mockados:
 
 ```typescript
@@ -144,6 +147,7 @@ vi.mock('react-router-dom', () => ({
 ```
 
 ### Day.js
+
 Biblioteca de datas é mockada:
 
 ```typescript
@@ -158,21 +162,25 @@ vi.mock('dayjs', () => ({
 ## Boas Práticas
 
 ### 1. Nomenclatura
+
 - Use nomes descritivos para testes
 - Agrupe testes relacionados em `describe`
 - Use `it` para casos de teste individuais
 
 ### 2. Organização
+
 - Coloque testes em `__tests__` dentro de cada diretório
 - Use `.test.ts` ou `.test.tsx` como extensão
 - Mantenha testes próximos ao código que testam
 
 ### 3. Assertions
+
 - Use assertions específicas e descritivas
 - Teste comportamento, não implementação
 - Use `toBeInTheDocument()` para verificar presença de elementos
 
 ### 4. Mocks
+
 - Mock apenas o necessário
 - Use `vi.clearAllMocks()` no `beforeEach`
 - Documente mocks complexos
@@ -180,6 +188,7 @@ vi.mock('dayjs', () => ({
 ## Exemplos de Testes
 
 ### Teste de Formulário
+
 ```typescript
 it('deve validar campos obrigatórios', async () => {
   render(<LoginForm onLoginSuccess={mockOnLoginSuccess} />)
@@ -194,6 +203,7 @@ it('deve validar campos obrigatórios', async () => {
 ```
 
 ### Teste de Hook com API
+
 ```typescript
 it('deve fazer login com sucesso', async () => {
   mockApiService.login.mockResolvedValue(mockResponse)
@@ -217,6 +227,7 @@ npm run test:coverage
 ```
 
 Isso gerará um relatório mostrando:
+
 - Linhas cobertas
 - Branches cobertos
 - Funções cobertas
@@ -227,16 +238,16 @@ Isso gerará um relatório mostrando:
 ### Problemas Comuns
 
 1. **Erro de módulo não encontrado**
-   - Verifique se o caminho do import está correto
-   - Certifique-se de que o arquivo existe
+    - Verifique se o caminho do import está correto
+    - Certifique-se de que o arquivo existe
 
 2. **Erro de renderização**
-   - Verifique se todos os mocks necessários estão configurados
-   - Use `console.log` para debugar o que está sendo renderizado
+    - Verifique se todos os mocks necessários estão configurados
+    - Use `console.log` para debugar o que está sendo renderizado
 
 3. **Teste falhando inesperadamente**
-   - Use `screen.debug()` para ver o que está sendo renderizado
-   - Verifique se os mocks estão retornando dados corretos
+    - Use `screen.debug()` para ver o que está sendo renderizado
+    - Verifique se os mocks estão retornando dados corretos
 
 ### Debug de Testes
 

@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Input, message } from 'antd';
-import { EditOutlined, DragOutlined } from '@ant-design/icons';
-import { apiService } from '../services/api';
-import type { JobStage } from '../types/Job';
+import React, {useEffect, useRef, useState} from 'react';
+import {Input, message} from 'antd';
+import {DragOutlined, EditOutlined} from '@ant-design/icons';
+import {apiService} from '../services/api';
+import type {JobStage} from '../types/Job';
 
 interface EditableStageNameProps {
   stage: JobStage;
@@ -11,15 +11,14 @@ interface EditableStageNameProps {
 }
 
 export const EditableStageName: React.FC<EditableStageNameProps> = ({
-  stage,
-  jobId,
-  onStageUpdated,
-}) => {
+                                                                      stage,
+                                                                      jobId,
+                                                                      onStageUpdated,
+                                                                    }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [stageName, setStageName] = useState(stage.name);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<any>(null);
-
 
 
   useEffect(() => {
@@ -48,14 +47,14 @@ export const EditableStageName: React.FC<EditableStageNameProps> = ({
 
     try {
       setLoading(true);
-      
+
       // Buscar as etapas atuais da vaga
       const job = await apiService.getJob(jobId);
       const currentStages = job.stages || [];
-      
+
       // Atualizar apenas a etapa específica
-      const updatedStages = currentStages.map((s: JobStage) => 
-        s.id === stage.id ? { ...s, name: stageName.trim() } : s
+      const updatedStages = currentStages.map((s: JobStage) =>
+        s.id === stage.id ? {...s, name: stageName.trim()} : s
       );
 
       // Fazer a requisição de atualização
@@ -70,9 +69,9 @@ export const EditableStageName: React.FC<EditableStageNameProps> = ({
       });
 
       // Atualizar o estado local
-      const updatedStage = { ...stage, name: stageName.trim() };
+      const updatedStage = {...stage, name: stageName.trim()};
       onStageUpdated(updatedStage);
-      
+
       setIsEditing(false);
       message.success('Nome da etapa atualizado com sucesso!');
     } catch (error) {
@@ -140,24 +139,24 @@ export const EditableStageName: React.FC<EditableStageNameProps> = ({
         e.currentTarget.style.backgroundColor = 'transparent';
       }}
     >
-      <DragOutlined 
+      <DragOutlined
         className="drag-handle"
-        style={{ 
-          fontSize: '12px', 
+        style={{
+          fontSize: '12px',
           color: '#999',
           opacity: 0.7,
           cursor: 'grab',
-        }} 
+        }}
       />
-      <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+      <span style={{fontSize: '16px', fontWeight: 'bold'}}>
         {stage.name}
       </span>
-      <EditOutlined 
-        style={{ 
-          fontSize: '12px', 
+      <EditOutlined
+        style={{
+          fontSize: '12px',
           color: '#999',
           opacity: 0.7,
-        }} 
+        }}
       />
     </div>
   );

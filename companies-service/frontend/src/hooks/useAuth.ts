@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { apiService } from '../services/api';
-import type { AuthResponse } from '../types/Auth';
+import {useEffect, useState} from 'react';
+import {apiService} from '../services/api';
+import type {AuthResponse} from '../types/Auth';
 
 export const useAuth = () => {
   const [currentUser, setCurrentUser] = useState<AuthResponse['user'] | null>(null);
@@ -33,11 +33,11 @@ export const useAuth = () => {
     try {
       const response = await apiService.login(loginData);
       apiService.setToken(response.access_token);
-      
+
       // Atualizar estado de forma síncrona
       setCurrentUser(response.user);
       setIsAuthenticated(true);
-      
+
       return response;
     } catch (error) {
       throw error;

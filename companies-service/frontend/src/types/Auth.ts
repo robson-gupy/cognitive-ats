@@ -11,7 +11,7 @@ export interface RegisterData {
   cnpj: string;
   businessArea: string;
   companyDescription?: string;
-  
+
   // Dados do usuário
   firstName: string;
   lastName: string;

@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Layout, Button, message, Typography, Form, Input, Spin, Alert } from 'antd';
-import { SaveOutlined, EditOutlined, BankOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { apiService } from '../services/api';
-import type { Company, UpdateCompanyData } from '../types/Company';
-import { generateSlug } from '../utils/slug';
-import { debounce } from 'lodash';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Alert, Button, Form, Input, Layout, message, Spin, Typography} from 'antd';
+import {BankOutlined, CheckCircleOutlined, CloseCircleOutlined, EditOutlined, SaveOutlined} from '@ant-design/icons';
+import {apiService} from '../services/api';
+import type {Company, UpdateCompanyData} from '../types/Company';
+import {generateSlug} from '../utils/slug';
+import {debounce} from 'lodash';
 
-const { Content } = Layout;
-const { Title, Paragraph } = Typography;
+const {Content} = Layout;
+const {Title, Paragraph} = Typography;
 
 export const CompanyManagement: React.FC = () => {
   const [company, setCompany] = useState<Company | null>(null);
@@ -47,13 +47,13 @@ export const CompanyManagement: React.FC = () => {
 
   const getSlugStatusIcon = () => {
     if (slugLoading) {
-      return <span style={{ color: '#1890ff' }}>⏳</span>;
+      return <span style={{color: '#1890ff'}}>⏳</span>;
     }
     if (slugAvailable === true) {
-      return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+      return <CheckCircleOutlined style={{color: '#52c41a'}}/>;
     }
     if (slugAvailable === false) {
-      return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
+      return <CloseCircleOutlined style={{color: '#ff4d4f'}}/>;
     }
     return null;
   };
@@ -144,12 +144,12 @@ export const CompanyManagement: React.FC = () => {
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
-    
+
     if (name) {
       // Gerar novo slug baseado no nome
       const newSlug = generateSlug(name);
       form.setFieldValue('slug', newSlug);
-      
+
       // Verificar disponibilidade do novo slug
       debouncedSlugCheck(newSlug);
     } else {
@@ -161,7 +161,7 @@ export const CompanyManagement: React.FC = () => {
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const slug = e.target.value;
-    
+
     if (slug) {
       // Verificar disponibilidade do slug digitado
       debouncedSlugCheck(slug);
@@ -172,15 +172,15 @@ export const CompanyManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <Content style={{ padding: '24px' }}>
-        <div style={{ 
-          background: 'white', 
-          padding: '24px', 
+      <Content style={{padding: '24px'}}>
+        <div style={{
+          background: 'white',
+          padding: '24px',
           borderRadius: '8px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}>
-          <Spin size="large" />
-          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+          <Spin size="large"/>
+          <div style={{textAlign: 'center', marginTop: '16px'}}>
             Carregando dados da empresa...
           </div>
         </div>
@@ -190,10 +190,10 @@ export const CompanyManagement: React.FC = () => {
 
   if (!company) {
     return (
-      <Content style={{ padding: '24px' }}>
-        <div style={{ 
-          background: 'white', 
-          padding: '24px', 
+      <Content style={{padding: '24px'}}>
+        <div style={{
+          background: 'white',
+          padding: '24px',
           borderRadius: '8px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}>
@@ -203,9 +203,9 @@ export const CompanyManagement: React.FC = () => {
             type="error"
             showIcon
           />
-          <Button 
+          <Button
             onClick={() => window.history.back()}
-            style={{ marginTop: '16px' }}
+            style={{marginTop: '16px'}}
           >
             Voltar
           </Button>
@@ -215,31 +215,31 @@ export const CompanyManagement: React.FC = () => {
   }
 
   return (
-    <Content style={{ padding: '24px' }}>
-      <div style={{ 
-        background: 'white', 
-        padding: '24px', 
+    <Content style={{padding: '24px'}}>
+      <div style={{
+        background: 'white',
+        padding: '24px',
         borderRadius: '8px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: '24px' 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <BankOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-            <Title level={2} style={{ margin: 0 }}>Dados da Empresa</Title>
+          <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+            <BankOutlined style={{fontSize: '24px', color: '#1890ff'}}/>
+            <Title level={2} style={{margin: 0}}>Dados da Empresa</Title>
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{display: 'flex', gap: '12px'}}>
             <Button onClick={() => window.history.back()}>
               Voltar
             </Button>
             {!isEditing ? (
-              <Button 
-                type="primary" 
-                icon={<EditOutlined />}
+              <Button
+                type="primary"
+                icon={<EditOutlined/>}
                 onClick={handleEdit}
               >
                 Editar
@@ -264,12 +264,12 @@ export const CompanyManagement: React.FC = () => {
                 label="Nome da Empresa"
                 name="name"
                 rules={[
-                  { required: true, message: 'Por favor, insira o nome da empresa!' },
-                  { min: 2, message: 'O nome deve ter pelo menos 2 caracteres!' },
+                  {required: true, message: 'Por favor, insira o nome da empresa!'},
+                  {min: 2, message: 'O nome deve ter pelo menos 2 caracteres!'},
                 ]}
               >
-                <Input 
-                  placeholder="Nome da empresa" 
+                <Input
+                  placeholder="Nome da empresa"
                   onChange={handleNameChange}
                 />
               </Form.Item>
@@ -278,16 +278,19 @@ export const CompanyManagement: React.FC = () => {
                 label="Identificador Legível"
                 name="slug"
                 rules={[
-                  { required: true, message: 'Por favor, insira o identificador legível!' },
-                  { min: 2, message: 'O identificador deve ter pelo menos 2 caracteres!' },
-                  { pattern: /^[a-z0-9-]+$/, message: 'O identificador deve conter apenas letras minúsculas, números e hífens!' },
+                  {required: true, message: 'Por favor, insira o identificador legível!'},
+                  {min: 2, message: 'O identificador deve ter pelo menos 2 caracteres!'},
+                  {
+                    pattern: /^[a-z0-9-]+$/,
+                    message: 'O identificador deve conter apenas letras minúsculas, números e hífens!'
+                  },
                 ]}
                 tooltip="Identificador único e legível para a empresa (ex: minha-empresa-tecnologia)"
                 validateStatus={slugAvailable === false ? 'error' : slugAvailable === true ? 'success' : undefined}
                 help={getSlugStatusText()}
               >
-                <Input 
-                  placeholder="ex: minha-empresa-tecnologia" 
+                <Input
+                  placeholder="ex: minha-empresa-tecnologia"
                   onChange={handleSlugChange}
                   suffix={getSlugStatusIcon()}
                 />
@@ -297,22 +300,22 @@ export const CompanyManagement: React.FC = () => {
                 label="Razão Social"
                 name="corporateName"
                 rules={[
-                  { required: true, message: 'Por favor, insira a razão social!' },
-                  { min: 2, message: 'A razão social deve ter pelo menos 2 caracteres!' },
+                  {required: true, message: 'Por favor, insira a razão social!'},
+                  {min: 2, message: 'A razão social deve ter pelo menos 2 caracteres!'},
                 ]}
               >
-                <Input placeholder="Razão social da empresa" />
+                <Input placeholder="Razão social da empresa"/>
               </Form.Item>
 
               <Form.Item
                 label="CNPJ"
                 name="cnpj"
                 rules={[
-                  { required: true, message: 'Por favor, insira o CNPJ!' },
-                  { min: 14, message: 'CNPJ deve ter pelo menos 14 dígitos!' },
+                  {required: true, message: 'Por favor, insira o CNPJ!'},
+                  {min: 14, message: 'CNPJ deve ter pelo menos 14 dígitos!'},
                 ]}
               >
-                <Input placeholder="00.000.000/0000-00" />
+                <Input placeholder="00.000.000/0000-00"/>
               </Form.Item>
             </div>
 
@@ -321,27 +324,27 @@ export const CompanyManagement: React.FC = () => {
                 label="Área de Atuação"
                 name="businessArea"
                 rules={[
-                  { required: true, message: 'Por favor, insira a área de atuação!' },
-                  { min: 2, message: 'A área deve ter pelo menos 2 caracteres!' },
+                  {required: true, message: 'Por favor, insira a área de atuação!'},
+                  {min: 2, message: 'A área deve ter pelo menos 2 caracteres!'},
                 ]}
               >
-                <Input placeholder="Ex: Tecnologia, Saúde, Educação" />
+                <Input placeholder="Ex: Tecnologia, Saúde, Educação"/>
               </Form.Item>
 
               <Form.Item
                 label="Sobre a Empresa"
                 name="description"
               >
-                <Input.TextArea 
+                <Input.TextArea
                   placeholder="Descreva brevemente sua empresa..."
                   rows={4}
                 />
               </Form.Item>
 
               <div className="company-info">
-                <Paragraph style={{ color: '#666', fontSize: '12px', margin: 0 }}>
-                  <strong>Informações do Sistema:</strong><br />
-                  Empresa criada em: {new Date(company.createdAt).toLocaleDateString('pt-BR')}<br />
+                <Paragraph style={{color: '#666', fontSize: '12px', margin: 0}}>
+                  <strong>Informações do Sistema:</strong><br/>
+                  Empresa criada em: {new Date(company.createdAt).toLocaleDateString('pt-BR')}<br/>
                   Última atualização: {new Date(company.updatedAt).toLocaleDateString('pt-BR')}
                 </Paragraph>
               </div>
@@ -349,10 +352,10 @@ export const CompanyManagement: React.FC = () => {
           </div>
 
           {isEditing && (
-            <div style={{ marginTop: '24px', textAlign: 'right' }}>
-              <Button 
-                type="primary" 
-                icon={<SaveOutlined />}
+            <div style={{marginTop: '24px', textAlign: 'right'}}>
+              <Button
+                type="primary"
+                icon={<SaveOutlined/>}
                 htmlType="submit"
                 loading={saving}
               >
