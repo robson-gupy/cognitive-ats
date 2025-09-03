@@ -254,7 +254,6 @@ export class JobsService {
       description: aiResponse.description,
       requirements: aiResponse.requirements,
       status: JobStatus.DRAFT,
-      slug: generateUniqueSlug(user.company.slug, aiResponse.title, []), // Gerar slug baseado no título
       questions: aiResponse.questions?.map((q: AiQuestion, index) => ({
         question: q.question,
         isRequired: q.isRequired,

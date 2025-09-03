@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional, List
 from shared.exceptions import JobCreationError
 from shared.utils import extract_json_from_text, sanitize_text
 from core.ai.service import AIService
-from shared.config import AIProvider
+from shared.config import Config
 
 
 class JobCreator:
@@ -45,10 +45,18 @@ class JobCreator:
         try:
             # Gera o texto usando IA
             kwargs_without_temp = {k: v for k, v in kwargs.items() if k != 'temperature'}
-            response = await self.ai_service.generate_text(
-                structured_prompt,
-                **kwargs_without_temp
-            )
+            model_for_job_creation = os.getenv("JOB_CREATION_AI_MODEL")
+            if model_for_job_creation:
+                response = await self.ai_service.generate_text(
+                    structured_prompt,
+                    model=model_for_job_creation,
+                    **kwargs_without_temp
+                )
+            else:
+                response = await self.ai_service.generate_text(
+                    structured_prompt,
+                    **kwargs_without_temp
+                )
 
             # Tenta extrair JSON da resposta
             job_data = self._extract_json_from_response(response)
