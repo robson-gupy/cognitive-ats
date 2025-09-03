@@ -103,4 +103,7 @@ export class Job {
 
   @OneToMany(() => Application, (application) => application.job)
   applications: Application[];
+
+  @Column({ name: 'requires_address', type: 'boolean', default: false })
+  requiresAddress: boolean;
 }

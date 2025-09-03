@@ -160,6 +160,24 @@ export class Application {
   })
   resume: Resume;
 
+  // Endereço do candidato (opcional)
+  @Column({ name: 'logradouro', length: 255, nullable: true })
+  logradouro: string;
+
+  @Column({ name: 'bairro', length: 255, nullable: true })
+  bairro: string;
+
+  @Column({ name: 'cidade', length: 255, nullable: true })
+  cidade: string;
+
+  // UF: duas letras. Será validado na aplicação; no BD apenas tamanho fixo
+  @Column({ name: 'uf', length: 2, nullable: true })
+  uf: string;
+
+  // CEP no formato NNNNN-NNN (armazenado como texto)
+  @Column({ name: 'cep', length: 9, nullable: true })
+  cep: string;
+
   @OneToMany(
     () => ApplicationQuestionResponse,
     (response) => response.application,
