@@ -1291,20 +1291,7 @@ export const ApplicationsList: React.FC = () => {
     }
   };
 
-  // Função para verificar se uma aplicação tem alguma das tags selecionadas
-  const hasSelectedTags = async (applicationId: string): Promise<boolean> => {
-    if (selectedTags.length === 0) return true;
 
-    try {
-      const applicationTags = await apiService.getApplicationTags(applicationId);
-      return selectedTags.some(selectedTagId =>
-        applicationTags.some(appTag => appTag.tagId === selectedTagId)
-      );
-    } catch (error) {
-      console.error('Erro ao verificar tags da aplicação:', error);
-      return false;
-    }
-  };
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -1829,36 +1816,33 @@ export const ApplicationsList: React.FC = () => {
             </Text>
           </div>
 
-          <Space direction="vertical" align="end" size="middle">
+          <div style={{display: 'flex', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap'}}>
             {/* Campo de Busca */}
-            <div style={{textAlign: 'right'}}>
-              <Text strong style={{display: 'block', marginBottom: '8px'}}>
-                Buscar candidatos:
-              </Text>
+            <div style={{minWidth: '250px'}}>
               <Input
-                placeholder="Nome, email ou telefone..."
+                placeholder="Buscar por nome, email ou telefone..."
                 prefix={<SearchOutlined/>}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                style={{width: '300px'}}
+                style={{width: '100%'}}
                 allowClear
+                size="small"
               />
             </div>
 
             {/* Filtro por Tags */}
-            <div style={{textAlign: 'right'}}>
-              <Text strong style={{display: 'block', marginBottom: '8px'}}>
-                Filtrar por Tags:
-              </Text>
+            <div style={{minWidth: '250px'}}>
               <Select
                 mode="multiple"
-                placeholder="Selecione as tags para filtrar"
+                placeholder="Filtrar por tags..."
                 value={selectedTags}
                 onChange={setSelectedTags}
-                style={{width: '300px'}}
+                style={{width: '100%'}}
                 loading={tagsForFilterLoading || filteringInProgress}
                 allowClear
                 showSearch
+                size="small"
+                maxTagCount={2}
                 filterOption={(input, option) => {
                   // Buscar o texto da tag no option
                   const tagId = option?.value as string;
@@ -1874,11 +1858,11 @@ export const ApplicationsList: React.FC = () => {
                     <div style={{display: 'flex', alignItems: 'center'}}>
                       <div
                         style={{
-                          width: '12px',
-                          height: '12px',
+                          width: '10px',
+                          height: '10px',
                           borderRadius: '2px',
                           backgroundColor: tag.color,
-                          marginRight: '8px',
+                          marginRight: '6px',
                           border: '1px solid #d9d9d9',
                         }}
                       />
@@ -1887,50 +1871,58 @@ export const ApplicationsList: React.FC = () => {
                   </Select.Option>
                 ))}
               </Select>
-              {selectedTags.length > 0 && (
-                <div style={{marginTop: '8px'}}>
-                  <div style={{fontSize: '12px', color: '#666', marginBottom: '4px'}}>
-                    {filteringInProgress ? 'Aplicando filtro...' : `${filteredApplications.length} candidato${filteredApplications.length !== 1 ? 's' : ''} encontrado${filteredApplications.length !== 1 ? 's' : ''}`}
-                  </div>
-                  {selectedTags.length !== debouncedSelectedTags.length && (
-                    <div style={{fontSize: '11px', color: '#1890ff', marginBottom: '4px', fontStyle: 'italic'}}>
-                      ⏳ Aguardando para aplicar filtro...
-                    </div>
-                  )}
-                  <Button
-                    size="small"
-                    onClick={() => {
-                      setSelectedTags([]);
-                      setDebouncedSelectedTags([]);
-                      setFilteredApplications(applications);
-                      setFilteringInProgress(false);
-                      setApplicationTagsCache(new Map()); // Limpar cache
-                    }}
-                    style={{fontSize: '12px'}}
-                  >
-                    Limpar filtros
-                  </Button>
-                </div>
-              )}
             </div>
 
-            {/* Botão para limpar busca */}
-            {searchText && (
-              <div style={{textAlign: 'right'}}>
+            {/* Botões de ação */}
+            <div style={{display: 'flex', gap: '8px'}}>
+              {(searchText || selectedTags.length > 0) && (
                 <Button
                   size="small"
-                  onClick={() => setSearchText('')}
-                  style={{fontSize: '12px'}}
+                  onClick={() => {
+                    setSearchText('');
+                    setSelectedTags([]);
+                    setDebouncedSelectedTags([]);
+                    setFilteredApplications(applications);
+                    setFilteringInProgress(false);
+                    setApplicationTagsCache(new Map());
+                  }}
                 >
-                  Limpar busca
+                  Limpar
                 </Button>
-              </div>
-            )}
+              )}
+              <Button type="primary" size="small" onClick={loadApplications}>
+                Atualizar
+              </Button>
+            </div>
+          </div>
 
-            <Button type="primary" onClick={loadApplications}>
-              Atualizar
-            </Button>
-          </Space>
+          {/* Informações de filtro em linha compacta */}
+          {(searchText || selectedTags.length > 0 || filteringInProgress) && (
+            <div style={{marginTop: '8px', fontSize: '12px', color: '#666'}}>
+              {filteringInProgress ? (
+                <span style={{color: '#1890ff'}}>
+                  <Spin size="small" style={{marginRight: '4px'}}/>
+                  Aplicando filtro...
+                </span>
+              ) : (
+                <>
+                  {searchText && (
+                    <span style={{color: '#52c41a', fontWeight: '500'}}>
+                      Busca: "{searchText}" •
+                    </span>
+                  )}
+                  {selectedTags.length > 0 && (
+                    <span style={{color: '#1890ff', fontWeight: '500'}}>
+                      {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''} selecionada{selectedTags.length !== 1 ? 's' : ''} •
+                    </span>
+                  )}
+                  <span>
+                    {filteredApplications.length} de {allApplications.length} candidato{allApplications.length !== 1 ? 's' : ''} encontrado{filteredApplications.length !== 1 ? 's' : ''}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </Card>
 
