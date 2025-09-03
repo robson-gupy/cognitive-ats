@@ -340,6 +340,11 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
     return 'red'; // Vermelha
   };
 
+  const getOverallScoreNumber = (value: unknown): number | null => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -436,6 +441,8 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
         />
       </Dropdown>
 
+      {false}
+
       <div style={{display: 'flex', alignItems: 'center', marginBottom: '8px', paddingRight: '32px'}}>
         <DragOutlined style={{marginRight: '8px', color: '#999'}}/>
         <Avatar
@@ -493,7 +500,8 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
         </div>
       </div>
 
-      <div style={{display: 'flex', gap: '4px', marginBottom: '8px'}}>
+      <div style={{display: 'flex', alignItems: 'center', marginBottom: '8px'}}>
+        <div style={{display: 'flex', gap: '4px'}}>
         {application.resumeUrl && (
           <Button
             type="text"
@@ -517,6 +525,17 @@ const DraggableApplicationCard: React.FC<DraggableApplicationCardProps> = ({
             {application.questionResponses.length} respostas
           </Button>
         )}
+        </div>
+        <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px'}}>
+          {getOverallScoreNumber(application.overallScore) !== null && (
+            <>
+              <span style={{fontSize: '12px', color: '#666'}}>Aderência:</span>
+              <Tag color={getAdherenceColor(getOverallScoreNumber(application.overallScore)!)}>
+                {getAdherenceLevel(getOverallScoreNumber(application.overallScore)!)}
+              </Tag>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Seção de tags da aplicação */}
@@ -892,8 +911,8 @@ const StageColumn: React.FC<StageColumnProps> = ({
       style={{
         ...style,
         ...sortableStyle,
-        minWidth: '320px',
-        maxWidth: '380px',
+        minWidth: '400px',
+        maxWidth: '480px',
         backgroundColor: 'white',
         borderRadius: '12px',
         padding: '16px',
@@ -1896,33 +1915,7 @@ export const ApplicationsList: React.FC = () => {
             </div>
           </div>
 
-          {/* Informações de filtro em linha compacta */}
-          {(searchText || selectedTags.length > 0 || filteringInProgress) && (
-            <div style={{marginTop: '8px', fontSize: '12px', color: '#666'}}>
-              {filteringInProgress ? (
-                <span style={{color: '#1890ff'}}>
-                  <Spin size="small" style={{marginRight: '4px'}}/>
-                  Aplicando filtro...
-                </span>
-              ) : (
-                <>
-                  {searchText && (
-                    <span style={{color: '#52c41a', fontWeight: '500'}}>
-                      Busca: "{searchText}" •
-                    </span>
-                  )}
-                  {selectedTags.length > 0 && (
-                    <span style={{color: '#1890ff', fontWeight: '500'}}>
-                      {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''} selecionada{selectedTags.length !== 1 ? 's' : ''} •
-                    </span>
-                  )}
-                  <span>
-                    {filteredApplications.length} de {allApplications.length} candidato{allApplications.length !== 1 ? 's' : ''} encontrado{filteredApplications.length !== 1 ? 's' : ''}
-                  </span>
-                </>
-              )}
-            </div>
-          )}
+          
         </div>
       </Card>
 
