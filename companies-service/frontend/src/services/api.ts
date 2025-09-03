@@ -30,9 +30,26 @@ export class ApiService {
   }
 
   async register(registerData: RegisterData): Promise<RegisterResponse> {
+    const payload = {
+      company: {
+        name: registerData.companyName,
+        corporateName: registerData.corporateName,
+        cnpj: registerData.cnpj,
+        businessArea: registerData.businessArea,
+        description: registerData.companyDescription,
+        slug: registerData.companySlug,
+      },
+      user: {
+        firstName: registerData.firstName,
+        lastName: registerData.lastName,
+        email: registerData.email,
+        password: registerData.password,
+      },
+    };
+
     return this.request<RegisterResponse>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(registerData),
+      body: JSON.stringify(payload),
     });
   }
 

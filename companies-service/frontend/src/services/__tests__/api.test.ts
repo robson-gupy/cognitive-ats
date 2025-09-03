@@ -72,6 +72,7 @@ describe('ApiService', () => {
         email: 'novo@email.com',
         password: 'senha123',
         companyName: 'Empresa Teste',
+        companySlug: 'empresa-teste',
         corporateName: 'Empresa Teste LTDA',
         cnpj: '12345678901234',
         businessArea: 'Tecnologia',

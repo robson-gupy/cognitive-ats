@@ -7,6 +7,7 @@ export interface LoginData {
 export interface RegisterData {
   // Dados da empresa
   companyName: string;
+  companySlug: string;
   corporateName: string;
   cnpj: string;
   businessArea: string;
