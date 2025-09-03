@@ -333,13 +333,14 @@ export class ApiService {
     });
   }
 
-  async createJobWithAi(prompt: string, maxQuestions?: number, maxStages?: number): Promise<any> {
+  async createJobWithAi(prompt: string, maxQuestions?: number, maxStages?: number, requiresAddress?: boolean): Promise<any> {
     return this.request<any>('/jobs/with-ai', {
       method: 'POST',
       body: JSON.stringify({
         prompt,
         maxQuestions: maxQuestions || 5,
         maxStages: maxStages || 3,
+        ...(requiresAddress !== undefined && { requiresAddress }),
       }),
     });
   }

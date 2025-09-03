@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Button, Card, Form, Input, InputNumber, message, Spin, Typography} from 'antd';
+import {Button, Card, Form, Input, InputNumber, message, Spin, Switch, Typography} from 'antd';
 import {useNavigate} from 'react-router-dom';
 import {LoadingOutlined, RobotOutlined} from '@ant-design/icons';
 import {apiService} from '../services/api';
@@ -11,6 +11,7 @@ interface CreateJobWithAiForm {
   prompt: string;
   maxQuestions: number;
   maxStages: number;
+  requiresAddress?: boolean;
 }
 
 export const CreateJobWithAi: React.FC = () => {
@@ -25,7 +26,8 @@ export const CreateJobWithAi: React.FC = () => {
       const job = await apiService.createJobWithAi(
         values.prompt,
         values.maxQuestions,
-        values.maxStages
+        values.maxStages,
+        values.requiresAddress
       );
 
       message.success('Vaga criada com sucesso! Redirecionando para edição...');
@@ -62,6 +64,7 @@ export const CreateJobWithAi: React.FC = () => {
           initialValues={{
             maxQuestions: 5,
             maxStages: 3,
+            requiresAddress: false,
           }}
         >
           <Form.Item
@@ -90,6 +93,14 @@ export const CreateJobWithAi: React.FC = () => {
               style={{width: '100%'}}
               placeholder="Quantidade de perguntas para o processo seletivo"
             />
+          </Form.Item>
+
+          <Form.Item
+            name="requiresAddress"
+            label="Solicitar endereço na inscrição?"
+            valuePropName="checked"
+          >
+            <Switch />
           </Form.Item>
 
           <Form.Item>

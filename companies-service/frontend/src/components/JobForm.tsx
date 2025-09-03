@@ -325,6 +325,7 @@ export const JobForm: React.FC = () => {
         requirements: job.requirements,
         status: job.status,
         departmentId: job.departmentId,
+        requiresAddress: job.requiresAddress ?? false,
         // expirationDate: job.expirationDate ? new Date(job.expirationDate) : null,
       });
 
@@ -482,6 +483,7 @@ export const JobForm: React.FC = () => {
         title: values.title,
         description: values.description,
         requirements: values.requirements,
+        ...(values.requiresAddress !== undefined && { requiresAddress: values.requiresAddress }),
         status: isEditing ? values.status : JobStatus.DRAFT,
         ...(values.departmentId && {departmentId: values.departmentId}),
         ...(values.expirationDate && {expirationDate: values.expirationDate.toISOString()}),
@@ -538,6 +540,7 @@ export const JobForm: React.FC = () => {
           onFinish={onFinish}
           initialValues={{
             status: JobStatus.DRAFT,
+            requiresAddress: false,
           }}
         >
           <Form.Item
@@ -580,6 +583,14 @@ export const JobForm: React.FC = () => {
               rows={4}
               placeholder="Liste os requisitos, habilidades e experiências necessárias..."
             />
+          </Form.Item>
+
+          <Form.Item
+            name="requiresAddress"
+            label="Solicitar endereço na inscrição?"
+            valuePropName="checked"
+          >
+            <Switch />
           </Form.Item>
 
           <Form.Item

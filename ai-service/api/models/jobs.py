@@ -38,6 +38,8 @@ class JobCreationRequest(BaseModel):
     max_stages: Optional[int] = 3
     provider: Optional[str] = None
     api_key: Optional[str] = None
+    # Indica se a vaga deve solicitar endereço na inscrição (camelCase para compatibilidade)
+    requires_address: Optional[bool] = Field(default=None, alias="requiresAddress")
 
 
 class JobEnhancementRequest(BaseModel):

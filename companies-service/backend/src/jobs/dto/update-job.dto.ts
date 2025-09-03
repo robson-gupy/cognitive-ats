@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JobStatus } from '../entities/job.entity';
+import { IsBoolean } from 'class-validator';
 
 export class UpdateJobQuestionDto {
   @IsOptional()
@@ -100,4 +101,8 @@ export class UpdateJobDto {
   @ValidateNested({ each: true })
   @Type(() => UpdateJobStageDto)
   stages?: UpdateJobStageDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  requiresAddress?: boolean;
 }

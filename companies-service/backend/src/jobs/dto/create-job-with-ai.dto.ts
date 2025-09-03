@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -25,4 +26,8 @@ export class CreateJobWithAiDto {
   @Min(1)
   @Max(5)
   maxStages?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  requiresAddress?: boolean;
 }

@@ -12,6 +12,7 @@ export interface JobCreationRequest {
   model?: string;
   max_tokens?: number;
   temperature?: number;
+  requiresAddress?: boolean;
 }
 
 export interface JobCreationResponse {

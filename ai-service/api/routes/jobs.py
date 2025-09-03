@@ -41,8 +41,15 @@ async def create_job_from_prompt(request: JobCreationRequest):
             max_stages=request.max_stages
         )
         
+        # Propagar requiresAddress de volta no objeto job, se informado
+        if request.requires_address is not None:
+            result_job = dict(result.get("job", {}))
+            result_job["requiresAddress"] = request.requires_address
+        else:
+            result_job = result.get("job")
+
         return JobResponse(
-            job=result["job"],
+            job=result_job,
             questions=result.get("questions"),
             stages=result.get("stages"),
             provider=provider_name

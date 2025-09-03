@@ -132,8 +132,8 @@ export class JobsService {
     const result: Job[] = await this.jobsRepository.query(
       `
           INSERT INTO jobs (id, title, description, requirements, expiration_date, status, company_id, department_id,
-                            created_by, slug, created_at, updated_at)
-          VALUES (gen_random_uuid(), $1, $2, $3, ${expirationDateValue}, $4, $5, ${departmentIdValue}, $6, $7, NOW(),
+                            created_by, slug, requires_address, created_at, updated_at)
+          VALUES (gen_random_uuid(), $1, $2, $3, ${expirationDateValue}, $4, $5, ${departmentIdValue}, $6, $7, $8, NOW(),
                   NOW()) RETURNING id, status, created_at, updated_at
       `,
       [
@@ -144,6 +144,7 @@ export class JobsService {
         user.companyId,
         user.id,
         createJobDto.slug,
+        createJobDto.requiresAddress ?? false,
       ],
     );
 
@@ -254,6 +255,7 @@ export class JobsService {
       description: aiResponse.description,
       requirements: aiResponse.requirements,
       status: JobStatus.DRAFT,
+      requiresAddress: createJobWithAiDto.requiresAddress ?? false,
       questions: aiResponse.questions?.map((q: AiQuestion, index) => ({
         question: q.question,
         isRequired: q.isRequired,
