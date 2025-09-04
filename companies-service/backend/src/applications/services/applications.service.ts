@@ -6,6 +6,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Application } from '../entities/application.entity';
+import {
+  mapApplicationToResponse,
+  mapApplicationsToResponse,
+} from '../dto/application-response.dto';
 import { Job } from '../../jobs/entities/job.entity';
 import { CreateApplicationDto } from '../dto/create-application.dto';
 import { UpdateApplicationDto } from '../dto/update-application.dto';
@@ -100,10 +104,14 @@ export class ApplicationsService {
 
     const firstStageId = firstStage?.stages?.[0]?.id || undefined;
 
+    // Extrair address se enviado
+    const { address, ...restDto } = createApplicationDto as any;
+
     const application = this.applicationsRepository.create({
-      ...createApplicationDto,
+      ...restDto,
       companyId: job.companyId,
       currentStageId: firstStageId,
+      address: address ? { ...address } as any : undefined,
     });
 
     const savedApplication =
@@ -204,11 +212,13 @@ export class ApplicationsService {
 
       const firstStageId = firstStage?.stages?.[0]?.id || undefined;
 
+      const { address, ...restDto } = createApplicationDto as any;
       const application = this.applicationsRepository.create({
-        ...createApplicationDto,
+        ...restDto,
         companyId: job.companyId,
         resumeUrl,
         currentStageId: firstStageId,
+        address: address ? { ...address } as any : undefined,
       });
 
       const savedApplication =
@@ -306,10 +316,11 @@ export class ApplicationsService {
     jobId: string,
     companyId: string,
     search?: string,
-  ): Promise<Application[]> {
+  ): Promise<ReturnType<typeof mapApplicationsToResponse>> {
     const queryBuilder = this.applicationsRepository
       .createQueryBuilder('application')
       .leftJoinAndSelect('application.currentStage', 'currentStage')
+      .leftJoinAndSelect('application.address', 'address')
       .where('application.jobId = :jobId', { jobId })
       .andWhere('application.companyId = :companyId', { companyId });
 
@@ -321,18 +332,22 @@ export class ApplicationsService {
       );
     }
 
-    return queryBuilder.orderBy('application.createdAt', 'DESC').getMany();
+    const apps = await queryBuilder
+      .orderBy('application.createdAt', 'DESC')
+      .getMany();
+    return mapApplicationsToResponse(apps);
   }
 
   async findByJobIdWithQuestionResponses(
     jobId: string,
     companyId: string,
     search?: string,
-  ): Promise<Application[]> {
+  ): Promise<ReturnType<typeof mapApplicationsToResponse>> {
     const queryBuilder = this.applicationsRepository
       .createQueryBuilder('application')
       .leftJoinAndSelect('application.job', 'job')
       .leftJoinAndSelect('application.currentStage', 'currentStage')
+      .leftJoinAndSelect('application.address', 'address')
       .leftJoinAndSelect('application.questionResponses', 'questionResponses')
       .leftJoinAndSelect('questionResponses.jobQuestion', 'jobQuestion')
       .where('application.jobId = :jobId', { jobId })
@@ -346,22 +361,24 @@ export class ApplicationsService {
       );
     }
 
-    return queryBuilder
+    const apps = await queryBuilder
       .orderBy('application.createdAt', 'DESC')
       .addOrderBy('questionResponses.createdAt', 'ASC')
       .getMany();
+    return mapApplicationsToResponse(apps);
   }
 
   async findOneByJobId(
     id: string,
     jobId: string,
     companyId: string,
-  ): Promise<Application> {
+  ): Promise<ReturnType<typeof mapApplicationToResponse>> {
     const application = await this.applicationsRepository.findOne({
       where: { id, jobId, companyId },
       relations: [
         'job',
         'currentStage',
+        'address',
         'questionResponses',
         'questionResponses.jobQuestion',
       ],
@@ -376,7 +393,7 @@ export class ApplicationsService {
       throw new NotFoundException('Inscrição não encontrada');
     }
 
-    return application;
+    return mapApplicationToResponse(application);
   }
 
   async updateByJobId(

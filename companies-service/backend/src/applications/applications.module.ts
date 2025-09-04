@@ -24,6 +24,7 @@ import { Tag } from '../tags/entities/tag.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../shared/shared.module';
+import { Adress } from './entities/adress.entity';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SharedModule } from '../shared/shared.module';
       ApplicationStageHistory,
       ApplicationQuestionResponse,
       ApplicationTag,
+      Adress,
       Job,
       JobStage,
       JobQuestion,

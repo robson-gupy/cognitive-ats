@@ -19,10 +19,16 @@ import { AuthLoggingInterceptor } from './auth.interceptor';
     CompaniesModule,
     RolesModule,
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-secret-key',
-      signOptions: { expiresIn: '24h' },
-    }),
+    (() => {
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        throw new Error('JWT_SECRET is not defined in environment variables');
+      }
+      return JwtModule.register({
+        secret: jwtSecret,
+        signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '24h' },
+      });
+    })(),
   ],
   controllers: [AuthController],
   providers: [

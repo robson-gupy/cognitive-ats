@@ -1,14 +1,32 @@
-import {
-  IsEmail,
-  IsOptional,
-  IsString,
-  IsUrl,
-  IsUUID,
-  Matches,
-  MaxLength,
-  MinLength,
-  ValidateIf,
-} from 'class-validator';
+import { IsEmail, IsObject, IsOptional, IsString, IsUrl, IsUUID, Matches, MaxLength, MinLength, ValidateIf, } from 'class-validator';
+
+class AddressDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  street?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  neighborhood?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(2)
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{5}-\d{3}$/)
+  zipCode?: string;
+}
 
 export class CreateApplicationDto {
   @IsUUID()
@@ -34,30 +52,8 @@ export class CreateApplicationDto {
   @IsUrl()
   resumeUrl?: string;
 
-  // Endereço (opcional no create)
+  // Endereço (opcional no create) como objeto
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  logradouro?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  bairro?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  cidade?: string;
-
-  @IsOptional()
-  @IsString()
-  @MinLength(2)
-  @MaxLength(2)
-  uf?: string;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^\d{5}-\d{3}$/)
-  cep?: string;
+  @IsObject()
+  address?: AddressDto;
 }

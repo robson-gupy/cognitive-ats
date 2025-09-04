@@ -120,3 +120,16 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Configuração do JWT
+
+Para configurar a autenticação JWT, utilize as variáveis de ambiente abaixo (veja também `env.example`):
+
+```bash
+# .env
+JWT_SECRET=your-jwt-secret-key # Obrigatória
+# Tempo de expiração do token. Ex.: 15m, 24h, 7d, ou segundos (ex.: 3600)
+JWT_EXPIRES_IN=24h
+```
+
+O módulo de autenticação exige que `JWT_SECRET` esteja definido. Se ausente, a aplicação irá lançar erro ao inicializar. Já `JWT_EXPIRES_IN` é opcional; caso não definida, o valor padrão de expiração será **24h**.

@@ -11,6 +11,7 @@ import { Application } from './src/applications/entities/application.entity';
 import { ApplicationQuestionResponse } from './src/applications/entities/application-question-response.entity';
 import { ApplicationStageHistory } from './src/applications/entities/application-stage-history.entity';
 import { ApplicationTag } from './src/applications/entities/application-tag.entity';
+import { Adress } from './src/applications/entities/adress.entity';
 import { Resume } from './src/resumes/entities/resume.entity';
 import { Tag } from './src/tags/entities/tag.entity';
 import { ResumeProfessionalExperience } from './src/resumes/entities/resume-professional-experience.entity';
@@ -38,6 +39,7 @@ export const AppDataSource = new DataSource({
     ApplicationQuestionResponse,
     ApplicationStageHistory,
     ApplicationTag,
+    Adress,
     Resume,
     ResumeProfessionalExperience,
     ResumeAcademicFormation,
