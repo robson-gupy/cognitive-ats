@@ -23,6 +23,7 @@ interface JobQueryResult {
   departmentId: string | null;
   slug: string;
   publishedAt: Date | null;
+  requiresAddress: boolean;
   departmentName: string | null;
   departmentDescription: string | null;
 }
@@ -38,6 +39,7 @@ export interface PublishedJob {
   departmentId: string | null;
   slug: string;
   publishedAt: Date | null;
+  requiresAddress: boolean;
   department: {
     id: string;
     name: string;
@@ -803,6 +805,7 @@ export class JobsService {
                  j.department_id   as "departmentId",
                  j.slug,
                  j.published_at    as "publishedAt",
+                 j.requires_address as "requiresAddress",
                  d.name            as "departmentName",
                  d.description     as "departmentDescription"
           FROM jobs j
@@ -825,6 +828,7 @@ export class JobsService {
         departmentId: job.departmentId,
         slug: job.slug,
         publishedAt: job.publishedAt,
+        requiresAddress: job.requiresAddress,
         department: job.departmentId
           ? {
               id: job.departmentId,
@@ -851,6 +855,7 @@ export class JobsService {
                  j.department_id   as "departmentId",
                  j.slug,
                  j.published_at    as "publishedAt",
+                 j.requires_address as "requiresAddress",
                  d.name            as "departmentName",
                  d.description     as "departmentDescription"
           FROM jobs j
@@ -878,6 +883,7 @@ export class JobsService {
       departmentId: jobData.departmentId,
       slug: jobData.slug,
       publishedAt: jobData.publishedAt,
+      requiresAddress: jobData.requiresAddress,
       department: jobData.departmentId
         ? {
             id: jobData.departmentId,
@@ -903,6 +909,7 @@ export class JobsService {
                  j.department_id   as "departmentId",
                  j.slug,
                  j.published_at    as "publishedAt",
+                 j.requires_address as "requiresAddress",
                  d.name            as "departmentName",
                  d.description     as "departmentDescription"
           FROM jobs j
@@ -930,6 +937,7 @@ export class JobsService {
       departmentId: jobData.departmentId,
       slug: jobData.slug,
       publishedAt: jobData.publishedAt,
+      requiresAddress: jobData.requiresAddress,
       department: jobData.departmentId
         ? {
             id: jobData.departmentId,
