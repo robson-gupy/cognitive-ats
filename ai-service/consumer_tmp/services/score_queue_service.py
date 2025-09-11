@@ -5,12 +5,22 @@ Serviço para enviar mensagens para a fila de scores de candidatos
 import json
 from typing import Dict, Any, Optional
 from consumer.config.settings import settings
+from consumer.services.sqs_service import SQSService
 from consumer.utils.logger import logger
 
 
 class ScoreQueueService:
     """Serviço para enviar mensagens para a fila de scores"""
-
+    
+    def __init__(self):
+        if getattr(settings, 'queue_provider', 'SQS') == 'REDIS':
+            from consumer.services.streams_redis_service import StreamsRedisService
+            self.queue = StreamsRedisService(settings.get_ai_score_redis_config())
+        else:
+            self.queue = SQSService(
+                settings.get_ai_score_sqs_config(), 
+                settings.ai_score_sqs.queue_name
+            )
     
     async def send_score_request(
         self,

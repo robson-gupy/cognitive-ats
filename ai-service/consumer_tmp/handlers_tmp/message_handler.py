@@ -9,7 +9,7 @@ from datetime import datetime
 from consumer.config.settings import settings
 from consumer.utils.logger import logger
 from consumer.utils.validators import validate_json_message, validate_resume_message, is_retry_limit_reached
-from consumer.models.message import SQSMessage, ResumeMessage
+from consumer.models.message import QueueMessage, ResumeMessage
 from consumer.models.result import ProcessingResult
 from consumer.services.sqs_service import SQSService
 from consumer.services.resume_orchestrator import ResumeOrchestrator
@@ -21,7 +21,11 @@ class MessageHandler:
     """Handler principal para processamento de mensagens"""
     
     def __init__(self):
-        self.sqs_service = SQSService()
+        if getattr(settings, 'queue_provider', 'SQS') == 'REDIS':
+            from consumer.services.streams_redis_service import StreamsRedisService
+            self.sqs_service = StreamsRedisService(settings.get_redis_config())
+        else:
+            self.sqs_service = SQSService()
         self.resume_orchestrator = ResumeOrchestrator()
     
     async def process_messages(self):
@@ -53,7 +57,7 @@ class MessageHandler:
         except Exception as e:
             logger.error(f"❌ Erro durante processamento de mensagens: {e}")
     
-    async def _process_single_message(self, message: SQSMessage):
+    async def _process_single_message(self, message: QueueMessage):
         """
         Processa uma única mensagem
         
@@ -74,7 +78,7 @@ class MessageHandler:
                     "⚠️ Mensagem com JSON inválido - deletando",
                     message_id=message.message_id
                 )
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 return
             
             # Verifica se deve ser processada
@@ -84,7 +88,7 @@ class MessageHandler:
                     message_id=message.message_id,
                     data=message_data
                 )
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 return
             
             # Valida dados da mensagem
@@ -95,7 +99,7 @@ class MessageHandler:
                     message_id=message.message_id,
                     data=message_data
                 )
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 return
             
             # Verifica limite de tentativas
@@ -106,7 +110,7 @@ class MessageHandler:
                     receive_count=message.receive_count,
                     max_retries=settings.sqs.max_retries
                 )
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 return
             
             # Processa o currículo
@@ -139,7 +143,7 @@ class MessageHandler:
                     )
                 
                 # Deleta mensagem após processamento bem-sucedido
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 
             else:
                 logger.error(
@@ -163,7 +167,7 @@ class MessageHandler:
                         receive_count=message.receive_count,
                         max_retries=settings.sqs.max_retries
                     )
-                    self.sqs_service.delete_message(message.receipt_handle)
+                    self.sqs_service.delete_message(message.ack_token)
                     
         except Exception as e:
             logger.error(
@@ -173,7 +177,7 @@ class MessageHandler:
             )
             
             # Em caso de erro inesperado, deleta a mensagem para evitar loop
-            self.sqs_service.delete_message(message.receipt_handle)
+            self.sqs_service.delete_message(message.ack_token)
     
     def _should_process_message(self, message_data: dict) -> bool:
         """

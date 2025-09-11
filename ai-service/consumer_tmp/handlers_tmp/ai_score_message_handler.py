@@ -10,7 +10,7 @@ from datetime import datetime
 from consumer.config.settings import settings
 from consumer.utils.logger import logger
 from consumer.utils.validators import validate_json_message, is_retry_limit_reached
-from consumer.models.message import SQSMessage, AIScoreMessage
+from consumer.models.message import QueueMessage, AIScoreMessage
 from consumer.models.result import ProcessingResult
 from consumer.services.sqs_service import SQSService
 from consumer.services.applications_service import applications_service
@@ -21,10 +21,14 @@ class AIScoreMessageHandler:
     """Handler para processamento de mensagens de score de candidatos"""
     
     def __init__(self):
-        self.sqs_service = SQSService(
-            sqs_config=settings.get_ai_score_sqs_config(),
-            queue_name=settings.ai_score_sqs.queue_name
-        )
+        if getattr(settings, 'queue_provider', 'SQS') == 'REDIS':
+            from consumer.services.streams_redis_service import StreamsRedisService
+            self.sqs_service = StreamsRedisService(settings.get_ai_score_redis_config())
+        else:
+            self.sqs_service = SQSService(
+                sqs_config=settings.get_ai_score_sqs_config(),
+                queue_name=settings.ai_score_sqs.queue_name
+            )
         try:
             from shared.config import AIProvider
             self.ai_service = AIService(provider=AIProvider.OPENAI)
@@ -61,7 +65,7 @@ class AIScoreMessageHandler:
         except Exception as e:
             logger.error(f"❌ Erro durante processamento de mensagens de score: {e}")
     
-    async def _process_single_score_message(self, message: SQSMessage):
+    async def _process_single_score_message(self, message: QueueMessage):
         """
         Processa uma única mensagem de score
         
@@ -82,7 +86,7 @@ class AIScoreMessageHandler:
                     "⚠️ Mensagem com JSON inválido - deletando",
                     message_id=message.message_id
                 )
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 return
             
             # Verifica se deve ser processada
@@ -92,7 +96,7 @@ class AIScoreMessageHandler:
                     message_id=message.message_id,
                     data=message_data
                 )
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 return
             
             # Valida dados da mensagem
@@ -103,7 +107,7 @@ class AIScoreMessageHandler:
                     message_id=message.message_id,
                     data=message_data
                 )
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 return
             
             # Verifica limite de tentativas
@@ -114,7 +118,7 @@ class AIScoreMessageHandler:
                     receive_count=message.receive_count,
                     max_retries=settings.ai_score_sqs.max_retries
                 )
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 return
             
             # Processa o score
@@ -132,7 +136,7 @@ class AIScoreMessageHandler:
                 )
                 
                 # Deleta mensagem após processamento bem-sucedido
-                self.sqs_service.delete_message(message.receipt_handle)
+                self.sqs_service.delete_message(message.ack_token)
                 
             else:
                 logger.error(
@@ -156,7 +160,7 @@ class AIScoreMessageHandler:
                         receive_count=message.receive_count,
                         max_retries=settings.ai_score_sqs.max_retries
                     )
-                    self.sqs_service.delete_message(message.receipt_handle)
+                    self.sqs_service.delete_message(message.ack_token)
                     
         except Exception as e:
             logger.error(
@@ -166,7 +170,7 @@ class AIScoreMessageHandler:
             )
             
             # Em caso de erro inesperado, deleta a mensagem para evitar loop
-            self.sqs_service.delete_message(message.receipt_handle)
+            self.sqs_service.delete_message(message.ack_token)
     
     def _should_process_score_message(self, message_data: dict) -> bool:
         """

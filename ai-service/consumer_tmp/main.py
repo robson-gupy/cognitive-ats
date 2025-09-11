@@ -19,8 +19,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from consumer.config.settings import settings
 from consumer.utils.logger import logger
-from consumer.handlers.message_handler import MessageHandler
-from consumer.handlers.ai_score_message_handler import AIScoreMessageHandler
+from consumer.handlers_tmp.message_handler import MessageHandler
+from consumer.handlers_tmp.ai_score_message_handler import AIScoreMessageHandler
 
 
 async def main():
@@ -47,7 +47,7 @@ async def main():
     print()
     
     try:
-        # Cria os handlers de mensagens
+        # Cria os handlers_tmp de mensagens
         resume_handler = MessageHandler()
         score_handler = AIScoreMessageHandler()
         

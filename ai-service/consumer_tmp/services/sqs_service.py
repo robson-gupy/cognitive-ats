@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError, NoCredentialsError
 
 from consumer.config.settings import settings
 from consumer.utils.logger import logger
-from consumer.models.message import SQSMessage
+from consumer.models.message import QueueMessage
 
 
 class SQSService:
@@ -71,7 +71,7 @@ class SQSService:
             logger.error(f"❌ Erro ao listar filas: {e}")
             return None
     
-    def receive_messages(self) -> List[SQSMessage]:
+    def receive_messages(self) -> List[QueueMessage]:
         """
         Recebe mensagens da fila SQS
         
@@ -103,9 +103,9 @@ class SQSService:
                 # Converte para objetos SQSMessage
                 sqs_messages = []
                 for msg in messages:
-                    sqs_message = SQSMessage(
+                    sqs_message = QueueMessage(
                         message_id=msg.get('MessageId', ''),
-                        receipt_handle=msg.get('ReceiptHandle', ''),
+                        ack_token=msg.get('ReceiptHandle', ''),
                         body=msg.get('Body', ''),
                         attributes=msg.get('Attributes', {}),
                         message_attributes=msg.get('MessageAttributes', {})
@@ -121,7 +121,7 @@ class SQSService:
             logger.error(f"❌ Erro ao receber mensagens: {e}")
             return []
     
-    def delete_message(self, receipt_handle: str) -> bool:
+    def delete_message(self, ack_token: str) -> bool:
         """
         Deleta uma mensagem da fila
         
@@ -136,10 +136,7 @@ class SQSService:
             return False
         
         try:
-            self.client.delete_message(
-                QueueUrl=self.queue_url,
-                ReceiptHandle=receipt_handle
-            )
+            self.client.delete_message(QueueUrl=self.queue_url, ReceiptHandle=ack_token)
             logger.info("🗑️ Mensagem deletada da fila com sucesso")
             return True
             
