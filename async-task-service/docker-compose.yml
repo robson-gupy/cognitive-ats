@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - QUEUES_NAMES=send-email-queue,close-job-queue
+      - LOG_LEVEL=INFO
+      - BLPOP_TIMEOUT_SECONDS=5
+    depends_on:
+      - redis
+    # Desenvolvimento: monta código local para hot-reload manual
+    volumes:
+      - ./src:/app/src
+
+volumes:
+  redis-data:
