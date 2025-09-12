@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
+import { AsyncTaskQueue } from '../interfaces/async-task-queue.interface';
 
 // Interface genérica para o corpo da mensagem
 interface MessageBody {
@@ -7,7 +8,7 @@ interface MessageBody {
 }
 
 @Injectable()
-export class SqsClientService {
+export class SqsClientService implements AsyncTaskQueue {
   private readonly logger = new Logger(SqsClientService.name);
   private sqs: AWS.SQS;
 
@@ -25,7 +26,7 @@ export class SqsClientService {
 
   async sendMessage(
     queueName: string,
-    messageBody: MessageBody,
+    messageBody: Record<string, unknown>,
   ): Promise<void> {
     try {
       // Determinar a URL da fila baseada no ambiente
@@ -67,6 +68,25 @@ export class SqsClientService {
       applicationId,
       resumeUrl,
       eventType: 'APPLICATION_CREATED',
+      timestamp: new Date().toISOString(),
+    };
+
+    await this.sendMessage(queueName, messageBody);
+  }
+
+  async sendQuestionResponseMessage(
+    applicationId: string,
+    questionId: string,
+    response: string,
+  ): Promise<void> {
+    const queueName =
+      process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME || 'question-responses-queue';
+
+    const messageBody = {
+      applicationId,
+      questionId,
+      response,
+      eventType: 'QUESTION_RESPONSE_CREATED',
       timestamp: new Date().toISOString(),
     };
 

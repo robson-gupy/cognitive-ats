@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Inject,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,7 +16,7 @@ import { CreateApplicationDto } from '../dto/create-application.dto';
 import { UpdateApplicationDto } from '../dto/update-application.dto';
 import { UpdateApplicationScoreDto } from '../dto/update-application-score.dto';
 import { S3ClientService } from '../../shared/services/s3-client.service';
-import { SqsClientService } from '../../shared/services/sqs-client.service';
+import { AsyncTaskQueue } from '../../shared/interfaces/async-task-queue.interface';
 import { CandidateEvaluationService } from './candidate-evaluation.service';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
@@ -35,7 +36,8 @@ export class ApplicationsService {
     @InjectRepository(Job)
     private jobsRepository: Repository<Job>,
     private s3ClientService: S3ClientService,
-    private sqsClientService: SqsClientService,
+    @Inject('AsyncTaskQueue')
+    private asyncTaskQueue: AsyncTaskQueue,
     private candidateEvaluationService: CandidateEvaluationService,
   ) {}
 
@@ -117,7 +119,7 @@ export class ApplicationsService {
     const savedApplication =
       await this.applicationsRepository.save(application);
 
-    return savedApplication;
+    return savedApplication as unknown as Application;
   }
 
   async createWithResume(
@@ -226,9 +228,9 @@ export class ApplicationsService {
 
       // Enviar mensagem para SQS após criar a application
       try {
-        await this.sqsClientService.sendApplicationCreatedMessage(
-          savedApplication.id,
-          savedApplication.resumeUrl,
+        await this.asyncTaskQueue.sendApplicationCreatedMessage(
+          (savedApplication as unknown as Application).id,
+          (savedApplication as unknown as Application).resumeUrl,
         );
       } catch (error) {
         // Log do erro mas não falhar a criação da application
@@ -238,14 +240,14 @@ export class ApplicationsService {
       // Avaliar automaticamente o candidato usando IA
       try {
         await this.candidateEvaluationService.evaluateApplication(
-          savedApplication.id,
+          (savedApplication as unknown as Application).id,
         );
       } catch (error) {
         // Log do erro mas não falhar a criação da application
         console.error('Erro ao avaliar candidato com IA:', error);
       }
 
-      return savedApplication;
+      return savedApplication as unknown as Application;
     } catch (error) {
       // Remover arquivo temporário em caso de erro
       if (fs.existsSync(tempFilePath)) {
@@ -402,10 +404,16 @@ export class ApplicationsService {
     updateApplicationDto: UpdateApplicationDto,
     companyId: string,
   ): Promise<Application> {
-    const application = await this.findOneByJobId(id, jobId, companyId);
+    const application = await this.applicationsRepository.findOne({
+      where: { id, jobId, companyId },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
 
     Object.assign(application, updateApplicationDto);
-    return this.applicationsRepository.save(application);
+    return this.applicationsRepository.save(application) as unknown as Application;
   }
 
   async removeByJobId(
@@ -413,7 +421,14 @@ export class ApplicationsService {
     jobId: string,
     companyId: string,
   ): Promise<void> {
-    const application = await this.findOneByJobId(id, jobId, companyId);
+    const application = await this.applicationsRepository.findOne({
+      where: { id, jobId, companyId },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
     await this.applicationsRepository.remove(application);
   }
 
@@ -423,10 +438,16 @@ export class ApplicationsService {
     updateScoreDto: UpdateApplicationScoreDto,
     companyId: string,
   ): Promise<Application> {
-    const application = await this.findOneByJobId(id, jobId, companyId);
+    const application = await this.applicationsRepository.findOne({
+      where: { id, jobId, companyId },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
 
     Object.assign(application, updateScoreDto);
-    return this.applicationsRepository.save(application);
+    return this.applicationsRepository.save(application) as unknown as Application;
   }
 
   async updateAiScore(
@@ -437,7 +458,7 @@ export class ApplicationsService {
     const application = await this.findOne(id, companyId);
 
     Object.assign(application, updateScoreDto);
-    return this.applicationsRepository.save(application);
+    return this.applicationsRepository.save(application) as unknown as Application;
   }
 
   /**

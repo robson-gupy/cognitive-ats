@@ -32,6 +32,15 @@ describe('CORS Configuration', () => {
         'http://127.0.0.1:5173',
         'http://localhost:8080',
         'http://127.0.0.1:8080',
+        'https://localhost:5173',
+        'https://localhost:3000',
+        'https://127.0.0.1:5173',
+        'https://localhost:8080',
+        'https://127.0.0.1:8080',
+        'https://gupy.localhost',
+        'https://empresa1.localhost',
+        'https://teste.localhost',
+        'https://ai.localhost',
       ]);
       expect(freshConfig.methods).toEqual([
         'GET',
@@ -128,6 +137,15 @@ describe('CORS Configuration', () => {
         'http://127.0.0.1:5173',
         'http://localhost:8080',
         'http://127.0.0.1:8080',
+        'https://localhost:5173',
+        'https://localhost:3000',
+        'https://127.0.0.1:5173',
+        'https://localhost:8080',
+        'https://127.0.0.1:8080',
+        'https://gupy.localhost',
+        'https://empresa1.localhost',
+        'https://teste.localhost',
+        'https://ai.localhost',
       ]);
     });
 

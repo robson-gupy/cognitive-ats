@@ -52,6 +52,12 @@ describe('ApplicationsService', () => {
     updateEvaluation: jest.fn(),
   };
 
+  const mockAsyncTaskQueue = {
+    sendMessage: jest.fn(),
+    sendApplicationCreatedMessage: jest.fn(),
+    sendQuestionResponseMessage: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -75,6 +81,10 @@ describe('ApplicationsService', () => {
         {
           provide: CandidateEvaluationService,
           useValue: mockCandidateEvaluationService,
+        },
+        {
+          provide: 'AsyncTaskQueue',
+          useValue: mockAsyncTaskQueue,
         },
       ],
     }).compile();

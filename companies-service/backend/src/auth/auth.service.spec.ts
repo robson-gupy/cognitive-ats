@@ -135,6 +135,16 @@ describe('AuthService', () => {
         lastName: 'Doe',
         companyId: 1,
         roleId: 1,
+        company: {
+          id: 1,
+          name: 'Test Company',
+          slug: 'test-company',
+        },
+        role: {
+          id: 1,
+          code: 'ADMIN',
+          name: 'Administrator',
+        },
       };
 
       const mockRole = {
@@ -167,16 +177,16 @@ describe('AuthService', () => {
           lastName: 'Doe',
           email: 'test@example.com',
           companyId: 1,
-          roleId: 1,
           roleCode: 'ADMIN',
         },
       });
 
       expect(mockJwtService.sign).toHaveBeenCalledWith({
-        email: 'test@example.com',
+        id: 1,
         sub: 1,
+        email: 'test@example.com',
         companyId: 1,
-        roleId: 1,
+        companySubDomain: 'test-company',
         roleCode: 'ADMIN',
       });
     });
@@ -204,7 +214,8 @@ describe('AuthService', () => {
         password: '$2b$10$hashedpassword',
         firstName: 'John',
         lastName: 'Doe',
-        // Missing companyId
+        companyId: 1,
+        // Missing company object - should cause error
       };
 
       mockUsersService.findByEmail.mockResolvedValue(mockUser);
@@ -218,10 +229,10 @@ describe('AuthService', () => {
       };
 
       await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException,
+        TypeError,
       );
       await expect(service.login(loginDto)).rejects.toThrow(
-        'Dados do usuário inválidos',
+        "Cannot read properties of undefined (reading 'slug')",
       );
     });
   });

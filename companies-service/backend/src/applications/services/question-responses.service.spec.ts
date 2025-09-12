@@ -9,6 +9,7 @@ import { SqsClientService } from '../../shared/services/sqs-client.service';
 import { CreateQuestionResponseDto } from '../dto/create-question-response.dto';
 import { CreateMultipleQuestionResponsesDto } from '../dto/create-multiple-question-responses.dto';
 import { NotFoundException } from '@nestjs/common';
+import { AsyncTaskQueue } from '../../shared/interfaces/async-task-queue.interface';
 
 describe('QuestionResponsesService', () => {
   let service: QuestionResponsesService;
@@ -38,6 +39,12 @@ describe('QuestionResponsesService', () => {
     sendMessage: jest.fn(),
   };
 
+  const mockAsyncTaskQueue = {
+    sendMessage: jest.fn(),
+    sendApplicationCreatedMessage: jest.fn(),
+    sendQuestionResponseMessage: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,6 +64,10 @@ describe('QuestionResponsesService', () => {
         {
           provide: SqsClientService,
           useValue: mockSqsClientService,
+        },
+        {
+          provide: 'AsyncTaskQueue',
+          useValue: mockAsyncTaskQueue,
         },
       ],
     }).compile();
@@ -130,12 +141,12 @@ describe('QuestionResponsesService', () => {
       mockQuestionResponseRepository.save.mockResolvedValue(
         mockQuestionResponse,
       );
-      mockSqsClientService.sendMessage.mockResolvedValue(undefined);
+      mockAsyncTaskQueue.sendMessage.mockResolvedValue(undefined);
 
       const result = await service.create(applicationId, createDto);
 
       expect(result).toEqual(mockQuestionResponse);
-      expect(mockSqsClientService.sendMessage).toHaveBeenCalledWith(
+      expect(mockAsyncTaskQueue.sendMessage).toHaveBeenCalledWith(
         'question-responses-queue',
         expect.objectContaining({
           eventType: 'QUESTION_RESPONSE_CREATED',
@@ -241,12 +252,12 @@ describe('QuestionResponsesService', () => {
       mockQuestionResponseRepository.save.mockResolvedValue(
         mockQuestionResponses,
       );
-      mockSqsClientService.sendMessage.mockResolvedValue(undefined);
+      mockAsyncTaskQueue.sendMessage.mockResolvedValue(undefined);
 
       const result = await service.createMultiple(applicationId, createDto);
 
       expect(result).toEqual(mockQuestionResponses);
-      expect(mockSqsClientService.sendMessage).toHaveBeenCalledWith(
+      expect(mockAsyncTaskQueue.sendMessage).toHaveBeenCalledWith(
         'question-responses-queue',
         expect.objectContaining({
           eventType: 'MULTIPLE_QUESTION_RESPONSES_CREATED',
@@ -307,12 +318,12 @@ describe('QuestionResponsesService', () => {
         mockUpdatedResponse,
       );
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
-      mockSqsClientService.sendMessage.mockResolvedValue(undefined);
+      mockAsyncTaskQueue.sendMessage.mockResolvedValue(undefined);
 
       const result = await service.update(responseId, updateDto);
 
       expect(result).toEqual(mockUpdatedResponse);
-      expect(mockSqsClientService.sendMessage).toHaveBeenCalledWith(
+      expect(mockAsyncTaskQueue.sendMessage).toHaveBeenCalledWith(
         'question-responses-queue',
         expect.objectContaining({
           eventType: 'QUESTION_RESPONSE_CREATED',

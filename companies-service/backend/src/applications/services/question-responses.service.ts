@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Inject,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,7 +12,7 @@ import { Application } from '../entities/application.entity';
 import { CreateQuestionResponseDto } from '../dto/create-question-response.dto';
 import { CreateMultipleQuestionResponsesDto } from '../dto/create-multiple-question-responses.dto';
 import { UpdateQuestionResponseDto } from '../dto/update-question-response.dto';
-import { SqsClientService } from '../../shared/services/sqs-client.service';
+import { AsyncTaskQueue } from '../../shared/interfaces/async-task-queue.interface';
 
 @Injectable()
 export class QuestionResponsesService {
@@ -22,7 +23,8 @@ export class QuestionResponsesService {
     private jobQuestionRepository: Repository<JobQuestion>,
     @InjectRepository(Application)
     private applicationRepository: Repository<Application>,
-    private sqsClientService: SqsClientService,
+    @Inject('AsyncTaskQueue')
+    private asyncTaskQueue: AsyncTaskQueue,
   ) {}
 
   async create(
@@ -320,7 +322,7 @@ export class QuestionResponsesService {
       },
     };
 
-    await this.sqsClientService.sendMessage(queueName, messageBody);
+    await this.asyncTaskQueue.sendMessage(queueName, messageBody);
   }
 
   /**
@@ -372,6 +374,6 @@ export class QuestionResponsesService {
       },
     };
 
-    await this.sqsClientService.sendMessage(queueName, messageBody);
+    await this.asyncTaskQueue.sendMessage(queueName, messageBody);
   }
 }

@@ -80,7 +80,7 @@ describe('S3ClientService', () => {
           ContentType: 'application/pdf',
           ACL: 'public-read',
         });
-        expect(result).toBe('http://localhost:9000/test-bucket/file.pdf');
+        expect(result).toBe('/test-bucket/file.pdf');
       } finally {
         // Restaurar os mocks originais
         existsSyncSpy.mockRestore();
@@ -127,7 +127,7 @@ describe('S3ClientService', () => {
           Bucket: 'new-bucket',
         });
         expect(mockS3.upload).toHaveBeenCalled();
-        expect(result).toBe('http://localhost:9000/new-bucket/file.pdf');
+        expect(result).toBe('/new-bucket/file.pdf');
       } finally {
         // Restaurar os mocks originais
         existsSyncSpy.mockRestore();
