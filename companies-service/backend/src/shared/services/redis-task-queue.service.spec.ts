@@ -204,10 +204,10 @@ describe('RedisTaskQueueService', () => {
 
     it('should fallback to SQS queue name when Redis queue name is not set', async () => {
       const originalRedisEnv = process.env.APPLICATIONS_REDIS_QUEUE_NAME;
-      const originalSqsEnv = process.env.APPLICATIONS_SQS_QUEUE_NAME;
+      const originalSqsEnv = process.env.APPLICATIONS_QUEUE_NAME;
       
       delete process.env.APPLICATIONS_REDIS_QUEUE_NAME;
-      process.env.APPLICATIONS_SQS_QUEUE_NAME = 'sqs-applications-queue';
+      process.env.APPLICATIONS_QUEUE_NAME = 'sqs-applications-queue';
       
       const sendMessageSpy = jest
         .spyOn(service as any, 'sendMessage')
@@ -222,7 +222,7 @@ describe('RedisTaskQueueService', () => {
 
       // Restaurar valores originais
       process.env.APPLICATIONS_REDIS_QUEUE_NAME = originalRedisEnv;
-      process.env.APPLICATIONS_SQS_QUEUE_NAME = originalSqsEnv;
+      process.env.APPLICATIONS_QUEUE_NAME = originalSqsEnv;
     });
   });
 
@@ -275,10 +275,10 @@ describe('RedisTaskQueueService', () => {
 
     it('should fallback to SQS queue name when Redis queue name is not set', async () => {
       const originalRedisEnv = process.env.QUESTION_RESPONSES_REDIS_QUEUE_NAME;
-      const originalSqsEnv = process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME;
+      const originalSqsEnv = process.env.QUESTION_RESPONSES_QUEUE_NAME;
       
       delete process.env.QUESTION_RESPONSES_REDIS_QUEUE_NAME;
-      process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME = 'sqs-question-responses-queue';
+      process.env.QUESTION_RESPONSES_QUEUE_NAME = 'sqs-question-responses-queue';
       
       const sendMessageSpy = jest
         .spyOn(service as any, 'sendMessage')
@@ -293,7 +293,7 @@ describe('RedisTaskQueueService', () => {
 
       // Restaurar valores originais
       process.env.QUESTION_RESPONSES_REDIS_QUEUE_NAME = originalRedisEnv;
-      process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME = originalSqsEnv;
+      process.env.QUESTION_RESPONSES_QUEUE_NAME = originalSqsEnv;
     });
   });
 
@@ -373,13 +373,13 @@ describe('RedisTaskQueueService', () => {
     it('should fallback to SQS queue names when Redis queue names are not set', async () => {
       const originalRedisAppsEnv = process.env.APPLICATIONS_REDIS_QUEUE_NAME;
       const originalRedisQuestionsEnv = process.env.QUESTION_RESPONSES_REDIS_QUEUE_NAME;
-      const originalSqsAppsEnv = process.env.APPLICATIONS_SQS_QUEUE_NAME;
-      const originalSqsQuestionsEnv = process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME;
+      const originalSqsAppsEnv = process.env.APPLICATIONS_QUEUE_NAME;
+      const originalSqsQuestionsEnv = process.env.QUESTION_RESPONSES_QUEUE_NAME;
       
       delete process.env.APPLICATIONS_REDIS_QUEUE_NAME;
       delete process.env.QUESTION_RESPONSES_REDIS_QUEUE_NAME;
-      process.env.APPLICATIONS_SQS_QUEUE_NAME = 'sqs-apps-queue';
-      process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME = 'sqs-questions-queue';
+      process.env.APPLICATIONS_QUEUE_NAME = 'sqs-apps-queue';
+      process.env.QUESTION_RESPONSES_QUEUE_NAME = 'sqs-questions-queue';
       
       // Primeiro conectar
       await service.onModuleInit();
@@ -408,8 +408,8 @@ describe('RedisTaskQueueService', () => {
       // Restaurar valores originais
       process.env.APPLICATIONS_REDIS_QUEUE_NAME = originalRedisAppsEnv;
       process.env.QUESTION_RESPONSES_REDIS_QUEUE_NAME = originalRedisQuestionsEnv;
-      process.env.APPLICATIONS_SQS_QUEUE_NAME = originalSqsAppsEnv;
-      process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME = originalSqsQuestionsEnv;
+      process.env.APPLICATIONS_QUEUE_NAME = originalSqsAppsEnv;
+      process.env.QUESTION_RESPONSES_QUEUE_NAME = originalSqsQuestionsEnv;
     });
   });
 
@@ -446,9 +446,9 @@ describe('RedisTaskQueueService', () => {
       // Limpar variáveis de ambiente
       delete process.env.REDIS_URL;
       delete process.env.APPLICATIONS_REDIS_QUEUE_NAME;
-      delete process.env.APPLICATIONS_SQS_QUEUE_NAME;
+      delete process.env.APPLICATIONS_QUEUE_NAME;
       delete process.env.QUESTION_RESPONSES_REDIS_QUEUE_NAME;
-      delete process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME;
+      delete process.env.QUESTION_RESPONSES_QUEUE_NAME;
 
       await service.onModuleInit();
 

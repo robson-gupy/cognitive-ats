@@ -84,13 +84,13 @@ Configurações específicas do MinIO.
 |----------|-----------|--------------|-------------|
 | `RESUMES_BUCKET_NAME` | Nome do bucket | `cognitive-ats-uploads` | ✅ |
 
-### 📨 **SQS Configuration (Redis - Migração)**
+### 📨 **Queue Configuration (Redis)**
 Configurações das filas de mensagens.
 
 | Variável | Descrição | Valor Padrão | Obrigatória |
 |----------|-----------|--------------|-------------|
-| `APPLICATIONS_SQS_QUEUE_NAME` | Fila de aplicações | `applications-queue` | ✅ |
-| `QUESTION_RESPONSES_SQS_QUEUE_NAME` | Fila de respostas | `question-responses-queue` | ✅ |
+| `APPLICATIONS_QUEUE_NAME` | Fila de aplicações | `applications-queue` | ✅ |
+| `QUESTION_RESPONSES_QUEUE_NAME` | Fila de respostas | `question-responses-queue` | ✅ |
 
 ### 🔐 **JWT Configuration**
 Configurações de autenticação JWT.
@@ -105,7 +105,7 @@ Configurações do Redis para filas de mensagens.
 | Variável | Descrição | Valor Padrão | Obrigatória |
 |----------|-----------|--------------|-------------|
 | `REDIS_PORT` | Porta do Redis | `6379` | ✅ |
-| `REDIS_URL` | URL de conexão Redis | `redis://redis:6379/0` | ✅ |
+| `REDIS_URL` | URL de conexão Redis | `redis://redis:6379` | ✅ |
 | `REDIS_ADMIN_PORT` | Porta do Redis Admin | `9091` | ✅ |
 
 ### ⚡ **Async Task Service Configuration**
@@ -113,7 +113,7 @@ Configurações do serviço de tarefas assíncronas.
 
 | Variável | Descrição | Valor Padrão | Obrigatória |
 |----------|-----------|--------------|-------------|
-| `QUEUES_NAMES` | Nomes das filas | `send-email-queue,close-job-queue` | ✅ |
+| `QUEUES_NAMES` | Nomes das filas | `applications-queue,question-responses-queue` | ✅ |
 | `LOG_LEVEL` | Nível de log | `INFO` | ✅ |
 | `BLPOP_TIMEOUT_SECONDS` | Timeout BLPOP | `5` | ✅ |
 
@@ -192,6 +192,9 @@ curl http://localhost:9000/minio/health/live
 
 # Testar Redis
 docker exec cognitive-ats-redis redis-cli ping
+
+# Testar Redis Admin
+curl http://localhost:9091
 ```
 
 ## 📚 **Referências**

@@ -138,7 +138,7 @@ cognitive-ats/
 ### Async Task Service Consumer
 - Framework: Python
 - Função: Consumidor de filas Redis
-- Filas: send-email-queue, close-job-queue
+- Filas: applications-queue, question-responses-queue
 - Hot-reload: Montagem de código para desenvolvimento
 
 ### Redis Admin (phpRedisAdmin)
@@ -214,10 +214,10 @@ AWS_DEFAULT_REGION=us-east-1
 RESUMES_BUCKET_NAME=cognitive-ats-uploads
 ```
 
-#### 📨 **SQS Configuration (Redis - Migração)**
+#### 📨 **Queue Configuration (Redis)**
 ```bash
-APPLICATIONS_SQS_QUEUE_NAME=applications-queue
-QUESTION_RESPONSES_SQS_QUEUE_NAME=question-responses-queue
+APPLICATIONS_QUEUE_NAME=applications-queue
+QUESTION_RESPONSES_QUEUE_NAME=question-responses-queue
 ```
 
 #### 🔐 **JWT Configuration**
@@ -228,13 +228,13 @@ JWT_SECRET=seu_jwt_secret_super_seguro_aqui
 #### 🔴 **Redis Configuration**
 ```bash
 REDIS_PORT=6379
-REDIS_URL=redis://redis:6379/0
+REDIS_URL=redis://redis:6379
 REDIS_ADMIN_PORT=9091
 ```
 
 #### ⚡ **Async Task Service Configuration**
 ```bash
-QUEUES_NAMES=send-email-queue,close-job-queue
+QUEUES_NAMES=applications-queue,question-responses-queue
 LOG_LEVEL=INFO
 BLPOP_TIMEOUT_SECONDS=5
 ```

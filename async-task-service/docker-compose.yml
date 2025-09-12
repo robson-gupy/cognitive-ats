@@ -17,6 +17,9 @@ services:
       - QUEUES_NAMES=send-email-queue,close-job-queue
       - LOG_LEVEL=INFO
       - BLPOP_TIMEOUT_SECONDS=5
+      - NUM_WORKERS=3
+      - MAX_RETRIES=3
+      - RETRY_BASE_DELAY_SECONDS=2
     depends_on:
       - redis
     # Desenvolvimento: monta código local para hot-reload manual

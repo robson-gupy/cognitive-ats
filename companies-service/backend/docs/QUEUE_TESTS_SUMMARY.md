@@ -1,4 +1,4 @@
-# Resumo dos Testes de Unidade - RedisTaskQueueService
+# Resumo dos Testes de Unidade - TaskQueueService
 
 ## ✅ Status dos Testes
 

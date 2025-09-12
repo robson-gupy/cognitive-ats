@@ -1,4 +1,4 @@
-# Resumo da Implementação Redis Task Queue
+# Resumo da Implementação Task Queue
 
 ## ✅ Implementação Concluída
 

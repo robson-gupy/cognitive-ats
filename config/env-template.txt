@@ -22,12 +22,17 @@ DB_PASSWORD=postgres
 DB_NAME=cognitive_ats
 DB_DATABASE=cognitive_ats
 AI_SERVICE_URL=http://ai-service:8000
-ENDPOINT_URL=http://localstack:4566
+ENDPOINT_URL=http://minio:9000
 
 # =============================================================================
 # COMPANIES SERVICE - FRONTEND
 # =============================================================================
 COMPANIES_FRONTEND_PORT=8080
+
+# =============================================================================
+# CANDIDATES SERVICE
+# =============================================================================
+CANDIDATES_SERVICE_PORT=3002
 
 # =============================================================================
 # AI SERVICE
@@ -36,40 +41,53 @@ AI_SERVICE_PORT=8000
 DEFAULT_AI_PROVIDER=openai
 OPENAI_API_KEY=sua_chave_openai_aqui
 ANTHROPIC_API_KEY=sua_chave_anthropic_aqui
+DEFAULT_MODEL=gpt-4
+DEFAULT_MAX_TOKENS=1000
+DEFAULT_TEMPERATURE=0.7
+REQUEST_TIMEOUT=30
 
 # =============================================================================
-# AWS / LOCALSTACK CONFIGURATION
+# AWS / MINIO CONFIGURATION
 # =============================================================================
-AWS_ACCESS_KEY_ID=test
-AWS_SECRET_ACCESS_KEY=test
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
 AWS_REGION=us-east-1
 AWS_DEFAULT_REGION=us-east-1
-AWS_ENDPOINT_URL=http://localstack:4566
 
 # =============================================================================
-# S3 CONFIGURATION
+# S3 / MINIO CONFIGURATION
 # =============================================================================
 RESUMES_BUCKET_NAME=cognitive-ats-uploads
 
 # =============================================================================
-# SQS CONFIGURATION
+# REDIS CONFIGURATION
 # =============================================================================
-APPLICATIONS_SQS_QUEUE_NAME=applications-queue
-CV_PROCESSING_QUEUE_URL=http://localstack:4566/000000000000/cv-processing-queue
+REDIS_URL=redis://redis:6379
+REDIS_PORT=6379
+REDIS_ADMIN_PORT=9091
 
 # =============================================================================
-# BACKEND CONFIGURATION
+# QUEUE CONFIGURATION (REDIS)
 # =============================================================================
-BACKEND_URL=http://companies-backend:3000
+APPLICATIONS_QUEUE_NAME=applications-queue
+QUESTION_RESPONSES_QUEUE_NAME=question-responses-queue
 
 # =============================================================================
-# LOCALSTACK CONFIGURATION
+# JWT CONFIGURATION
 # =============================================================================
-LOCALSTACK_PORT=4566
-LOCALSTACK_SERVICES=s3,sqs
-LOCALSTACK_DEBUG=1
+JWT_SECRET=seu_jwt_secret_super_seguro_aqui
 
 # =============================================================================
-# SQS LISTENER CONFIGURATION
+# CADDY PROXY CONFIGURATION
 # =============================================================================
-SQS_MAX_RETRIES=3
+CADDY_PORT_HTTP=80
+CADDY_PORT_HTTPS=443
+
+# =============================================================================
+# ASYNC TASK SERVICE CONFIGURATION
+# =============================================================================
+LOG_LEVEL=INFO
+BLPOP_TIMEOUT_SECONDS=5
+NUM_WORKERS=3
+MAX_RETRIES=3
+RETRY_BASE_DELAY_SECONDS=2

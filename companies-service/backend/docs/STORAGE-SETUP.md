@@ -1,4 +1,4 @@
-# Configuração do MinIO para Desenvolvimento
+# Configuração do Storage para Desenvolvimento
 
 ## Visão Geral
 

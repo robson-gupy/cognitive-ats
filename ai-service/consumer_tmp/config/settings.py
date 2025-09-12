@@ -115,10 +115,10 @@ class ConsumerSettings:
             access_key_id=os.getenv('AWS_ACCESS_KEY_ID', 'test'),
             secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY', 'test'),
             region=os.getenv('AWS_REGION', 'us-east-1'),
-            queue_name=os.getenv('APPLICATIONS_SQS_QUEUE_NAME', 'applications-queue'),
-            max_retries=int(os.getenv('SQS_MAX_RETRIES', '3')),
-            wait_time_seconds=int(os.getenv('SQS_WAIT_TIME', '20')),
-            max_messages=int(os.getenv('SQS_MAX_MESSAGES', '10'))
+            queue_name=os.getenv('APPLICATIONS_QUEUE_NAME', 'applications-queue'),
+            max_retries=int(os.getenv('MAX_RETRIES', '3')),
+            wait_time_seconds=int(os.getenv('WAIT_TIME', '20')),
+            max_messages=int(os.getenv('MAX_MESSAGES', '10'))
         )
     
     def _load_ai_score_sqs_settings(self) -> AIScoreSQSSettings:
@@ -128,10 +128,10 @@ class ConsumerSettings:
             access_key_id=os.getenv('AWS_ACCESS_KEY_ID', 'test'),
             secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY', 'test'),
             region=os.getenv('AWS_REGION', 'us-east-1'),
-            queue_name=os.getenv('APPLICATIONS_AI_SCORE_SQS_QUEUE_NAME', 'applications-ai-score-queue'),
-            max_retries=int(os.getenv('SQS_MAX_RETRIES', '3')),
-            wait_time_seconds=int(os.getenv('SQS_WAIT_TIME', '20')),
-            max_messages=int(os.getenv('SQS_MAX_MESSAGES', '10'))
+            queue_name=os.getenv('APPLICATIONS_AI_SCORE_QUEUE_NAME', 'applications-ai-score-queue'),
+            max_retries=int(os.getenv('MAX_RETRIES', '3')),
+            wait_time_seconds=int(os.getenv('WAIT_TIME', '20')),
+            max_messages=int(os.getenv('MAX_MESSAGES', '10'))
         )
 
     def _load_redis_settings(self) -> RedisSettings:

@@ -15,10 +15,10 @@ async function testSQSConnection() {
     console.log('Testando conexão com SQS...');
     console.log('ENDPOINT_URL:', process.env.ENDPOINT_URL);
     console.log('AWS_DEFAULT_REGION:', process.env.AWS_DEFAULT_REGION);
-    console.log('APPLICATIONS_SQS_QUEUE_NAME:', process.env.APPLICATIONS_SQS_QUEUE_NAME);
+    console.log('APPLICATIONS_QUEUE_NAME:', process.env.APPLICATIONS_QUEUE_NAME);
 
     // Determinar a URL da fila
-    const queueName = process.env.APPLICATIONS_SQS_QUEUE_NAME || 'applications-queue';
+    const queueName = process.env.APPLICATIONS_QUEUE_NAME || 'applications-queue';
     let queueUrl;
     
     if (process.env.ENDPOINT_URL) {

@@ -1,4 +1,4 @@
-# Integração Redis para Respostas das Perguntasue seja generico
+# Integração para Respostas das Perguntas
 
 
 Este documento descreve a integração com Redis para envio de eventos quando respostas das perguntas da vaga forem criadas, atualizadas ou removidas.

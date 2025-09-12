@@ -78,7 +78,7 @@ export class RedisTaskQueueService implements AsyncTaskQueue, OnModuleInit, OnMo
   ): Promise<void> {
     const queueName =
       process.env.APPLICATIONS_REDIS_QUEUE_NAME || 
-      process.env.APPLICATIONS_SQS_QUEUE_NAME || 
+      process.env.APPLICATIONS_QUEUE_NAME ||
       'applications-queue';
 
     const messageBody = {
@@ -98,7 +98,7 @@ export class RedisTaskQueueService implements AsyncTaskQueue, OnModuleInit, OnMo
   ): Promise<void> {
     const queueName =
       process.env.QUESTION_RESPONSES_REDIS_QUEUE_NAME || 
-      process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME || 
+      process.env.QUESTION_RESPONSES_QUEUE_NAME ||
       'question-responses-queue';
 
     const messageBody = {
@@ -122,11 +122,11 @@ export class RedisTaskQueueService implements AsyncTaskQueue, OnModuleInit, OnMo
       }
 
       const applicationsQueue = process.env.APPLICATIONS_REDIS_QUEUE_NAME || 
-        process.env.APPLICATIONS_SQS_QUEUE_NAME || 
+        process.env.APPLICATIONS_QUEUE_NAME ||
         'applications-queue';
       
       const questionResponsesQueue = process.env.QUESTION_RESPONSES_REDIS_QUEUE_NAME || 
-        process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME || 
+        process.env.QUESTION_RESPONSES_QUEUE_NAME ||
         'question-responses-queue';
 
       const queueSizes = {

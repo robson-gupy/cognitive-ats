@@ -475,7 +475,7 @@ async def listen_to_queue(sqs_client, queue_url):
                             # Obtém o número de tentativas
                             attributes = message.get('Attributes', {})
                             receive_count = int(attributes.get('ApproximateReceiveCount', 1))
-                            max_retries = int(os.getenv('SQS_MAX_RETRIES', '3'))
+                            max_retries = int(os.getenv('MAX_RETRIES', '3'))
 
                             print(f"🔄 Tentativa {receive_count}/{max_retries}")
 
@@ -568,11 +568,11 @@ async def main():
     print()
 
     # Obtém o nome da fila
-    queue_name = os.getenv('APPLICATIONS_SQS_QUEUE_NAME')
+    queue_name = os.getenv('APPLICATIONS_QUEUE_NAME')
     if not queue_name:
-        print("❌ Variável APPLICATIONS_SQS_QUEUE_NAME não configurada")
+        print("❌ Variável APPLICATIONS_QUEUE_NAME não configurada")
         print("   Configure no arquivo .env:")
-        print("   APPLICATIONS_SQS_QUEUE_NAME=applications-queue")
+        print("   APPLICATIONS_QUEUE_NAME=applications-queue")
         sys.exit(1)
 
     print(f"🎯 Fila alvo: {queue_name}")

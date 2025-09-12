@@ -62,7 +62,7 @@ export class SqsClientService implements AsyncTaskQueue {
     resumeUrl: string,
   ): Promise<void> {
     const queueName =
-      process.env.APPLICATIONS_SQS_QUEUE_NAME || 'applications-queue';
+      process.env.APPLICATIONS_QUEUE_NAME || 'applications-queue';
 
     const messageBody = {
       applicationId,
@@ -80,7 +80,7 @@ export class SqsClientService implements AsyncTaskQueue {
     response: string,
   ): Promise<void> {
     const queueName =
-      process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME || 'question-responses-queue';
+      process.env.QUESTION_RESPONSES_QUEUE_NAME || 'question-responses-queue';
 
     const messageBody = {
       applicationId,

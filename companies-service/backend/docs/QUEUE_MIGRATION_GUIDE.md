@@ -1,4 +1,4 @@
-# Guia de Migração: SQS para Redis
+# Guia de Migração: Sistema de Filas
 
 ## Visão Geral
 

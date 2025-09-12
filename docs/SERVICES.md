@@ -48,11 +48,15 @@ Serviço de inteligência artificial para auxiliar na criação de conteúdo e p
 #### Estrutura:
 ```
 ai-service/
-├── main.py           # Aplicação FastAPI
-├── models.py         # Modelos de dados
-├── services/         # Serviços de IA
-│   ├── ai_service.py
-│   └── job_ai_service.py
+├── api/              # API FastAPI
+│   ├── main.py       # Aplicação principal
+│   ├── models/       # Modelos de dados
+│   └── routes/       # Rotas da API
+├── core/             # Lógica de negócio
+│   ├── ai/           # Serviços de IA
+│   ├── jobs/         # Processamento de vagas
+│   └── resume/       # Processamento de currículos
+├── consumer/         # Consumidor de filas
 └── requirements.txt  # Dependências Python
 ```
 
@@ -61,39 +65,95 @@ ai-service/
 - **Criação de Perguntas**: Geração de perguntas para candidatos
 - **Definição de Etapas**: Sugestão de etapas do processo seletivo
 - **Múltiplos Provedores**: Suporte a OpenAI e Anthropic
+- **Processamento de Currículos**: Análise e extração de dados de currículos
+
+### 3. Candidates Service
+**Localização**: `candidates-service/`
+
+Serviço dedicado aos candidatos com interface React SSR.
+
+#### Estrutura:
+```
+candidates-service/
+├── src/
+│   ├── modules/      # Módulos NestJS
+│   ├── react/        # Componentes React SSR
+│   └── main.ts       # Aplicação principal
+├── public/           # Arquivos estáticos
+└── package.json      # Dependências Node.js
+```
+
+#### Funcionalidades:
+- **Interface para Candidatos**: Portal de candidatos
+- **Aplicação em Vagas**: Sistema de candidatura
+- **Visualização de Vagas**: Listagem de vagas públicas
+- **SSR**: Server-Side Rendering com React
+
+### 4. Async Task Service
+**Localização**: `async-task-service/`
+
+Serviço de processamento assíncrono de tarefas.
+
+#### Estrutura:
+```
+async-task-service/
+├── src/
+│   ├── consumer.py   # Consumidor principal
+│   ├── handlers/     # Handlers de tarefas
+│   └── publish_test_message.py
+├── requirements.txt  # Dependências Python
+└── docker-compose.yml
+```
+
+#### Funcionalidades:
+- **Consumo de Filas Redis**: Processamento de mensagens
+- **Handlers Específicos**: Processamento por tipo de tarefa
+- **Retry Logic**: Sistema de retentativas
+- **DLQ**: Dead Letter Queue para falhas
 
 ## Arquitetura de Comunicação
 
 ### Comunicação entre Serviços:
 ```
-[Frontend] ←→ [Backend] ←→ [AI Service]
-     ↓              ↓
-[PostgreSQL]   [JWT Auth]
+[Companies Frontend] ←→ [Companies Backend] ←→ [AI Service]
+         ↓                      ↓                    ↓
+[Candidates Service] ←→ [PostgreSQL] ←→ [Redis] ←→ [Async Task Service]
+         ↓                      ↓
+    [MinIO S3]              [JWT Auth]
 ```
 
 ### Portas e Endpoints:
 - **Companies Frontend**: `http://localhost:8080`
 - **Companies Backend**: `http://localhost:3000`
 - **AI Service**: `http://localhost:8000`
+- **Candidates Service**: `http://localhost:3002`
 - **PostgreSQL**: `localhost:5432`
+- **Redis**: `localhost:6379`
+- **MinIO Console**: `http://localhost:9001`
+- **Redis Admin**: `http://localhost:9091`
+
+## Infraestrutura
+
+### Banco de Dados
+- **PostgreSQL**: Banco principal para dados das empresas, usuários e vagas
+- **Redis**: Filas de mensagens e cache para processamento assíncrono
+
+### Storage
+- **MinIO**: Compatível com S3 para armazenamento de arquivos (currículos, documentos)
+
+### Proxy e Roteamento
+- **Caddy**: Proxy reverso com suporte a subdomínios para diferentes empresas
 
 ## Próximos Serviços Planejados
 
-### 3. Applications Service
-**Responsabilidades**:
-- Gestão de candidaturas
-- Processo de aplicação
-- Tracking de candidatos
-- Comunicação com candidatos
-
-### 4. Notifications Service
+### 5. Notifications Service
 **Responsabilidades**:
 - Envio de emails
 - Notificações push
 - Templates de comunicação
 - Agendamento de notificações
 
-### 5. Analytics Service
+### 6. Analytics Service
 **Responsabilidades**:
 - Relatórios de recrutamento
 - Métricas de performance
