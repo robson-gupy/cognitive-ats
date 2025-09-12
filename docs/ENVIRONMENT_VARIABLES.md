@@ -99,6 +99,23 @@ Configurações de autenticação JWT.
 |----------|-----------|--------------|-------------|
 | `JWT_SECRET` | Chave secreta JWT | - | ✅ |
 
+### 🔴 **Redis Configuration**
+Configurações do Redis para filas de mensagens.
+
+| Variável | Descrição | Valor Padrão | Obrigatória |
+|----------|-----------|--------------|-------------|
+| `REDIS_PORT` | Porta do Redis | `6379` | ✅ |
+| `REDIS_URL` | URL de conexão Redis | `redis://redis:6379/0` | ✅ |
+
+### ⚡ **Async Task Service Configuration**
+Configurações do serviço de tarefas assíncronas.
+
+| Variável | Descrição | Valor Padrão | Obrigatória |
+|----------|-----------|--------------|-------------|
+| `QUEUES_NAMES` | Nomes das filas | `send-email-queue,close-job-queue` | ✅ |
+| `LOG_LEVEL` | Nível de log | `INFO` | ✅ |
+| `BLPOP_TIMEOUT_SECONDS` | Timeout BLPOP | `5` | ✅ |
+
 ### 🌐 **Caddy Proxy Reverse**
 Configurações do proxy reverso.
 
@@ -171,6 +188,9 @@ docker exec cognitive-ats-postgres psql -U postgres -d cognitive_ats -c "SELECT 
 
 # Testar MinIO
 curl http://localhost:9000/minio/health/live
+
+# Testar Redis
+docker exec cognitive-ats-redis redis-cli ping
 ```
 
 ## 📚 **Referências**
@@ -180,3 +200,5 @@ curl http://localhost:9000/minio/health/live
 - [Anthropic API Documentation](https://docs.anthropic.com/)
 - [MinIO Documentation](https://docs.min.io/)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Redis Documentation](https://redis.io/docs/)
+- [Redis Commands](https://redis.io/commands/)

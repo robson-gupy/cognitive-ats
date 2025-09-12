@@ -108,6 +108,19 @@ services:
       - cognitive-ats-network
     restart: unless-stopped
 
+  # Redis (Message Queue)
+  redis:
+    image: redis:7-alpine
+    container_name: cognitive-ats-redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
   # MinIO (simulador do S3)
   minio:
     image: minio/minio:latest
@@ -126,6 +139,25 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+  # Async Task Service Consumer
+  async-task-consumer:
+    build:
+      context: ./async-task-service
+      dockerfile: Dockerfile.dev
+    container_name: cognitive-ats-async-task-consumer
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - QUEUES_NAMES=${QUEUES_NAMES}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - BLPOP_TIMEOUT_SECONDS=${BLPOP_TIMEOUT_SECONDS:-5}
+    volumes:
+      - ./async-task-service/src:/app/src
+    depends_on:
+      - redis
     networks:
       - cognitive-ats-network
     restart: unless-stopped
@@ -150,6 +182,7 @@ volumes:
   caddy_data:
   caddy_config:
   minio_data:
+  redis_data:
 
 networks:
   cognitive-ats-network:

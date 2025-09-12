@@ -64,6 +64,7 @@ cognitive-ats/
 - **Candidates Service:** http://localhost:3002
 - **MinIO Console:** http://localhost:9001
 - **MinIO API:** http://localhost:9000
+- **Redis:** localhost:6379
 
 ### Desenvolvimento com Caddy (Proxy Reverso)
 - **Frontend:** http://gupy.localhost (ou slug-da-empresa.localhost)
@@ -80,6 +81,7 @@ cognitive-ats/
 - **MinIO Console:** 9001 (interno)
 - **MinIO API:** 9000 (interno)
 - **PostgreSQL:** 5432 (interno)
+- **Redis:** 6379 (interno)
 
 ## Configurações
 
@@ -125,6 +127,17 @@ cognitive-ats/
 - Usuário: postgres
 - Senha: postgres
 - Database: cognitive_ats
+
+### Redis (Message Queue)
+- Porta: 6379
+- Persistência: AOF (Append Only File)
+- Uso: Filas de mensagens para tarefas assíncronas
+
+### Async Task Service Consumer
+- Framework: Python
+- Função: Consumidor de filas Redis
+- Filas: send-email-queue, close-job-queue
+- Hot-reload: Montagem de código para desenvolvimento
 
 ## Configuração de Variáveis de Ambiente
 
@@ -204,6 +217,19 @@ QUESTION_RESPONSES_SQS_QUEUE_NAME=question-responses-queue
 JWT_SECRET=seu_jwt_secret_super_seguro_aqui
 ```
 
+#### 🔴 **Redis Configuration**
+```bash
+REDIS_PORT=6379
+REDIS_URL=redis://redis:6379/0
+```
+
+#### ⚡ **Async Task Service Configuration**
+```bash
+QUEUES_NAMES=send-email-queue,close-job-queue
+LOG_LEVEL=INFO
+BLPOP_TIMEOUT_SECONDS=5
+```
+
 #### 🌐 **Caddy Proxy Reverse**
 ```bash
 CADDY_PORT_HTTP=80
@@ -254,6 +280,7 @@ O docker-compose.yml está configurado com volumes persistentes para os seguinte
 ### Volumes Configurados
 - **postgres_data**: Dados do PostgreSQL
 - **minio_data**: Arquivos do MinIO (S3)
+- **redis_data**: Dados do Redis (AOF)
 - **caddy_data**: Dados do Caddy
 - **caddy_config**: Configurações do Caddy
 
@@ -271,13 +298,17 @@ docker exec cognitive-ats-postgres pg_dump -U postgres cognitive_ats > backup.sq
 
 # Backup do MinIO (via mc client)
 docker run --rm -v minio_data:/data alpine tar czf - /data > minio-backup.tar.gz
+
+# Backup do Redis
+docker exec cognitive-ats-redis redis-cli BGSAVE
+docker cp cognitive-ats-redis:/data/dump.rdb ./redis-backup.rdb
 ```
 
 ## Troubleshooting
 
 1. **Porta já em uso:**
    - Altere as portas no docker-compose.yml
-   - Ou pare outros serviços que estejam usando as portas 80, 3000, 8000, 9000, 9001
+   - Ou pare outros serviços que estejam usando as portas 80, 3000, 8000, 9000, 9001, 6379
 
 2. **Erro de build:**
    - Verifique se todos os arquivos estão presentes
@@ -302,4 +333,14 @@ docker run --rm -v minio_data:/data alpine tar czf - /data > minio-backup.tar.gz
 
 7. **Caddy não roteia corretamente:**
    - Verifique o Caddyfile em `config/Caddyfile`
-   - Reinicie o container: `docker-compose restart caddy-proxy` 
+   - Reinicie o container: `docker-compose restart caddy-proxy`
+
+8. **Redis não conecta:**
+   - Verifique se o container está rodando: `docker ps`
+   - Teste a conexão: `docker exec -it cognitive-ats-redis redis-cli ping`
+   - Verifique os logs: `docker logs cognitive-ats-redis`
+
+9. **Async Task Consumer não processa filas:**
+   - Verifique se o Redis está rodando
+   - Verifique os logs: `docker logs cognitive-ats-async-task-consumer`
+   - Teste a conexão Redis: `docker exec -it cognitive-ats-redis redis-cli ping` 
