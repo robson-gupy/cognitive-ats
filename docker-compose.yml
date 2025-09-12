@@ -45,8 +45,6 @@ services:
     volumes:
       - ./companies-service/backend:/app
       - /app/node_modules
-    depends_on:
-      - postgres
     networks:
       - cognitive-ats-network
     restart: unless-stopped
@@ -62,8 +60,6 @@ services:
     volumes:
       - ./companies-service/frontend:/app
       - /app/node_modules
-    depends_on:
-      - companies-backend
     networks:
       - cognitive-ats-network
     restart: unless-stopped
@@ -112,106 +108,24 @@ services:
       - cognitive-ats-network
     restart: unless-stopped
 
-  # SQS Resume Listener Service (Parse de currículos)
-  sqs-resume-listener:
-    build:
-      context: ./ai-service
-      dockerfile: consumer/Dockerfile.resume-listener
-    container_name: cognitive-ats-sqs-resume-listener
-    environment:
-      - APPLICATIONS_SQS_QUEUE_NAME=${APPLICATIONS_SQS_QUEUE_NAME}
-      - APPLICATIONS_AI_SCORE_SQS_QUEUE_NAME=${APPLICATIONS_AI_SCORE_SQS_QUEUE_NAME}
-      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - BACKEND_URL=${BACKEND_URL:-http://companies-backend:3000}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_HOST=${DB_HOST}
-      - POSTGRES_PORT=${DB_PORT}
-    volumes:
-      - ./ai-service:/app
-    depends_on:
-      - localstack
-      - companies-backend
-      - postgres
-    networks:
-      - cognitive-ats-network
-    restart: unless-stopped
-
-  # SQS Score Listener Service (Score de candidatos)
-  sqs-score-listener:
-    build:
-      context: ./ai-service
-      dockerfile: consumer/Dockerfile.score-listener
-    container_name: cognitive-ats-sqs-score-listener
-    environment:
-      - AI_SCORE_SQS_QUEUE_NAME=${AI_SCORE_SQS_QUEUE_NAME:-ai-score-queue}
-      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - BACKEND_URL=${BACKEND_URL:-http://companies-backend:3000}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_HOST=${DB_HOST}
-      - POSTGRES_PORT=${DB_PORT}
-    volumes:
-      - ./ai-service:/app
-    depends_on:
-      - localstack
-      - companies-backend
-      - postgres
-    networks:
-      - cognitive-ats-network
-    restart: unless-stopped
-
-  # SQS Question Responses Listener Service (Respostas das perguntas)
-  sqs-question-responses-listener:
-    build:
-      context: ./ai-service
-      dockerfile: consumer/Dockerfile.question-responses-listener
-    container_name: cognitive-ats-sqs-question-responses-listener
-    environment:
-      - QUESTION_RESPONSES_SQS_QUEUE_NAME=${QUESTION_RESPONSES_SQS_QUEUE_NAME}
-      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
-      - SQS_WAIT_TIME=${SQS_WAIT_TIME:-20}
-      - SQS_MAX_MESSAGES=${SQS_MAX_MESSAGES:-10}
-    volumes:
-      - ./ai-service:/app
-    depends_on:
-      - localstack
-      - companies-backend
-    networks:
-      - cognitive-ats-network
-    restart: unless-stopped
-
-  # LocalStack (AWS Services Simulator)
-  localstack:
-    image: localstack/localstack:latest
-    container_name: cognitive-ats-localstack
+  # MinIO (simulador do S3)
+  minio:
+    image: minio/minio:latest
+    container_name: cognitive-ats-minio
     ports:
-      - "${LOCALSTACK_PORT}:4566"
+      - "9000:9000"      # API
+      - "9001:9001"      # Console Web
     environment:
-      - SERVICES=${LOCALSTACK_SERVICES}
-      - DEBUG=${LOCALSTACK_DEBUG}
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - localstack_data:/var/lib/localstack
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
     networks:
       - cognitive-ats-network
     restart: unless-stopped
@@ -227,20 +141,15 @@ services:
       - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on:
-      - companies-frontend
-      - companies-backend
-      - ai-service
-      - candidates-service
     networks:
       - cognitive-ats-network
     restart: unless-stopped
 
 volumes:
   postgres_data:
-  localstack_data:
   caddy_data:
   caddy_config:
+  minio_data:
 
 networks:
   cognitive-ats-network:

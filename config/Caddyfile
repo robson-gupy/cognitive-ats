@@ -20,13 +20,13 @@
         Access-Control-Allow-Credentials true
     }
 
-    # Matcher para *.localhost/cognitive-ats-uploads/* - redireciona para localstack
-    @localstackUploads {
+    # Matcher para *.localhost/cognitive-ats-uploads/* - redireciona para MinIO
+    @minioUploads {
         path /cognitive-ats-uploads/*
     }
     
-    handle @localstackUploads {
-        reverse_proxy localstack:4566 {
+    handle @minioUploads {
+        reverse_proxy minio:9000 {
             header_up Host {host}
             header_up X-Real-IP {remote}
         }

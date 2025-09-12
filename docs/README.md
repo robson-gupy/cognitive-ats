@@ -7,6 +7,7 @@ Bem-vindo à documentação centralizada do projeto Cognitive ATS. Aqui você en
 - [README-Docker.md](./README-Docker.md) - Guia de Docker e containers
 
 ## 🔧 **Configurações e Integrações**
+- [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) - **Variáveis de ambiente completas**
 - [CANDIDATES_SERVICE_INTEGRATION.md](./CANDIDATES_SERVICE_INTEGRATION.md) - Integração com serviço de candidatos
 - [CADDY_README.md](./CADDY_README.md) - Configuração do Caddy
 - [CADDY_USAGE.md](./CADDY_USAGE.md) - Como usar o Caddy
