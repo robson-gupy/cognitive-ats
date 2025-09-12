@@ -65,6 +65,7 @@ cognitive-ats/
 - **MinIO Console:** http://localhost:9001
 - **MinIO API:** http://localhost:9000
 - **Redis:** localhost:6379
+- **Redis Admin:** http://localhost:9091
 
 ### Desenvolvimento com Caddy (Proxy Reverso)
 - **Frontend:** http://gupy.localhost (ou slug-da-empresa.localhost)
@@ -82,6 +83,7 @@ cognitive-ats/
 - **MinIO API:** 9000 (interno)
 - **PostgreSQL:** 5432 (interno)
 - **Redis:** 6379 (interno)
+- **Redis Admin:** 80 (interno) / 9091 (host)
 
 ## Configurações
 
@@ -138,6 +140,12 @@ cognitive-ats/
 - Função: Consumidor de filas Redis
 - Filas: send-email-queue, close-job-queue
 - Hot-reload: Montagem de código para desenvolvimento
+
+### Redis Admin (phpRedisAdmin)
+- Porta: 9091 (host) / 80 (container)
+- Interface: Web para administração do Redis
+- Acesso: http://localhost:9091
+- Função: Visualizar e gerenciar dados do Redis
 
 ## Configuração de Variáveis de Ambiente
 
@@ -221,6 +229,7 @@ JWT_SECRET=seu_jwt_secret_super_seguro_aqui
 ```bash
 REDIS_PORT=6379
 REDIS_URL=redis://redis:6379/0
+REDIS_ADMIN_PORT=9091
 ```
 
 #### ⚡ **Async Task Service Configuration**
@@ -308,7 +317,7 @@ docker cp cognitive-ats-redis:/data/dump.rdb ./redis-backup.rdb
 
 1. **Porta já em uso:**
    - Altere as portas no docker-compose.yml
-   - Ou pare outros serviços que estejam usando as portas 80, 3000, 8000, 9000, 9001, 6379
+   - Ou pare outros serviços que estejam usando as portas 80, 3000, 8000, 9000, 9001, 6379, 9091
 
 2. **Erro de build:**
    - Verifique se todos os arquivos estão presentes
@@ -343,4 +352,9 @@ docker cp cognitive-ats-redis:/data/dump.rdb ./redis-backup.rdb
 9. **Async Task Consumer não processa filas:**
    - Verifique se o Redis está rodando
    - Verifique os logs: `docker logs cognitive-ats-async-task-consumer`
-   - Teste a conexão Redis: `docker exec -it cognitive-ats-redis redis-cli ping` 
+   - Teste a conexão Redis: `docker exec -it cognitive-ats-redis redis-cli ping`
+
+10. **Redis Admin não acessível:**
+    - Verifique se o container está rodando: `docker ps`
+    - Acesse http://localhost:9091
+    - Verifique os logs: `docker logs cognitive-ats-redis-admin` 

@@ -106,6 +106,7 @@ Configurações do Redis para filas de mensagens.
 |----------|-----------|--------------|-------------|
 | `REDIS_PORT` | Porta do Redis | `6379` | ✅ |
 | `REDIS_URL` | URL de conexão Redis | `redis://redis:6379/0` | ✅ |
+| `REDIS_ADMIN_PORT` | Porta do Redis Admin | `9091` | ✅ |
 
 ### ⚡ **Async Task Service Configuration**
 Configurações do serviço de tarefas assíncronas.
