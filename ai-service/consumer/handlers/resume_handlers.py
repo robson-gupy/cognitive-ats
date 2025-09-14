@@ -17,5 +17,3 @@ def handler_close_job(message: Dict[str, Any], client: redis.Redis, queue_name: 
     logger.info("[close_job] Encerrando job: %s", message)
 
 
-def resume_parser_handler(message: Dict[str, Any]):
-

@@ -111,7 +111,7 @@ class ConsumerSettings:
     def _load_sqs_settings(self) -> SQSSettings:
         """Carrega configurações SQS das variáveis de ambiente"""
         return SQSSettings(
-            endpoint_url=os.getenv('AWS_ENDPOINT_URL', 'http://localhost:4566'),
+            endpoint_url=os.getenv('STORAGE_SERVICE_ENDPOINT', 'http://localhost:4566'),
             access_key_id=os.getenv('AWS_ACCESS_KEY_ID', 'test'),
             secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY', 'test'),
             region=os.getenv('AWS_REGION', 'us-east-1'),
@@ -124,7 +124,7 @@ class ConsumerSettings:
     def _load_ai_score_sqs_settings(self) -> AIScoreSQSSettings:
         """Carrega configurações SQS para scores de candidatos das variáveis de ambiente"""
         return AIScoreSQSSettings(
-            endpoint_url=os.getenv('AWS_ENDPOINT_URL', 'http://localhost:4566'),
+            endpoint_url=os.getenv('STORAGE_SERVICE_ENDPOINT', 'http://localhost:4566'),
             access_key_id=os.getenv('AWS_ACCESS_KEY_ID', 'test'),
             secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY', 'test'),
             region=os.getenv('AWS_REGION', 'us-east-1'),

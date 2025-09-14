@@ -4,7 +4,7 @@ const path = require('path');
 
 // Configuração do S3 para MinIO
 const s3 = new AWS.S3({
-  endpoint: process.env.ENDPOINT_URL || 'http://localhost:9000',
+  endpoint: process.env.STORAGE_SERVICE_ENDPOINT || 'http://localhost:9000',
   accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'minioadmin',
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'minioadmin',
   s3ForcePathStyle: true,

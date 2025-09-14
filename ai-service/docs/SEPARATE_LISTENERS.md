@@ -107,7 +107,7 @@ Este script verifica:
 
 ### Resume Listener
 - `APPLICATIONS_SQS_QUEUE_NAME`: Nome da fila SQS para currículos
-- `AWS_ENDPOINT_URL`: Endpoint do LocalStack
+- `STORAGE_SERVICE_ENDPOINT`: Endpoint do LocalStack
 - `AWS_ACCESS_KEY_ID`: Chave de acesso AWS
 - `AWS_SECRET_ACCESS_KEY`: Chave secreta AWS
 - `AWS_REGION`: Região AWS
@@ -116,7 +116,7 @@ Este script verifica:
 
 ### Score Listener
 - `AI_SCORE_SQS_QUEUE_NAME`: Nome da fila SQS para scores (padrão: `ai-score-queue`)
-- `AWS_ENDPOINT_URL`: Endpoint do LocalStack
+- `STORAGE_SERVICE_ENDPOINT`: Endpoint do LocalStack
 - `AWS_ACCESS_KEY_ID`: Chave de acesso AWS
 - `AWS_SECRET_ACCESS_KEY`: Chave secreta AWS
 - `AWS_REGION`: Região AWS

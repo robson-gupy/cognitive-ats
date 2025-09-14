@@ -37,7 +37,7 @@ Configurações do serviço backend das empresas.
 | `DB_NAME` | Nome do banco | `cognitive_ats` | ✅ |
 | `DB_DATABASE` | Nome do banco (alias) | `cognitive_ats` | ✅ |
 | `AI_SERVICE_URL` | URL do serviço de IA | `http://ai-service:8000` | ✅ |
-| `ENDPOINT_URL` | URL do MinIO | `http://minio:9000` | ✅ |
+| `STORAGE_SERVICE_ENDPOINT` | Endpoint do serviço de storage | `http://minio:9000` | ✅ |
 
 ### 🎨 **Companies Service - Frontend**
 Configurações do frontend das empresas.

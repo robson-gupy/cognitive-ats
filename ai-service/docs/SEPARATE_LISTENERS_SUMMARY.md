@@ -38,7 +38,7 @@ sqs-resume-listener:
   container_name: cognitive-ats-sqs-resume-listener
   environment:
     - APPLICATIONS_SQS_QUEUE_NAME=${APPLICATIONS_SQS_QUEUE_NAME}
-    - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
+    - STORAGE_SERVICE_ENDPOINT=${STORAGE_SERVICE_ENDPOINT}
     - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
     - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     - AWS_REGION=${AWS_REGION}
@@ -60,7 +60,7 @@ sqs-score-listener:
   container_name: cognitive-ats-sqs-score-listener
   environment:
     - AI_SCORE_SQS_QUEUE_NAME=${AI_SCORE_SQS_QUEUE_NAME:-ai-score-queue}
-    - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
+    - STORAGE_SERVICE_ENDPOINT=${STORAGE_SERVICE_ENDPOINT}
     - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
     - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     - AWS_REGION=${AWS_REGION}
@@ -150,7 +150,7 @@ docker-compose ps sqs-resume-listener sqs-score-listener
 
 ### Resume Listener
 - `APPLICATIONS_SQS_QUEUE_NAME`: Fila para currículos
-- `AWS_ENDPOINT_URL`: Endpoint LocalStack
+- `STORAGE_SERVICE_ENDPOINT`: Endpoint LocalStack
 - `AWS_ACCESS_KEY_ID`: Chave AWS
 - `AWS_SECRET_ACCESS_KEY`: Chave secreta AWS
 - `AWS_REGION`: Região AWS
@@ -160,7 +160,7 @@ docker-compose ps sqs-resume-listener sqs-score-listener
 
 ### Score Listener
 - `AI_SCORE_SQS_QUEUE_NAME`: Fila para scores (padrão: `ai-score-queue`)
-- `AWS_ENDPOINT_URL`: Endpoint LocalStack
+- `STORAGE_SERVICE_ENDPOINT`: Endpoint LocalStack
 - `AWS_ACCESS_KEY_ID`: Chave AWS
 - `AWS_SECRET_ACCESS_KEY`: Chave secreta AWS
 - `AWS_REGION`: Região AWS

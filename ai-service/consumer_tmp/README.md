@@ -24,7 +24,7 @@ Configure as seguintes variáveis no arquivo `.env`:
 
 ```bash
 # AWS SQS
-AWS_ENDPOINT_URL=http://localhost:4566
+STORAGE_SERVICE_ENDPOINT=http://localhost:4566
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 AWS_REGION=us-east-1
@@ -81,10 +81,10 @@ As mensagens devem ter o seguinte formato JSON:
 ```
 
 **Nota sobre `resumeUrl`:**
-- **Path relativo** (ex: `/resumes/resume.pdf`): O sistema constrói automaticamente a URL completa usando a variável de ambiente `AWS_ENDPOINT_URL`
+- **Path relativo** (ex: `/resumes/resume.pdf`): O sistema constrói automaticamente a URL completa usando a variável de ambiente `STORAGE_SERVICE_ENDPOINT`
 - **URL completa** (ex: `https://s3.amazonaws.com/bucket/resume.pdf`): Usada diretamente pelo sistema
 
-Para desenvolvimento local, o `AWS_ENDPOINT_URL` deve ser configurado como `http://localhost:4566` (LocalStack).
+Para desenvolvimento local, o `STORAGE_SERVICE_ENDPOINT` deve ser configurado como `http://localhost:4566` (LocalStack).
 
 ## Fluxo de Processamento
 

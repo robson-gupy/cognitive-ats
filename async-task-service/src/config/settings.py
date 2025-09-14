@@ -1,36 +1,10 @@
 """
-Configurações centralizadas para o consumer SQS
+Configurações centralizadas para o consumer Redis
 """
 
 import os
 from typing import Optional
 from dataclasses import dataclass
-
-
-@dataclass
-class SQSSettings:
-    """Configurações para conexão SQS"""
-    endpoint_url: str
-    access_key_id: str
-    secret_access_key: str
-    region: str
-    queue_name: str
-    max_retries: int = 3
-    wait_time_seconds: int = 20
-    max_messages: int = 10
-
-
-@dataclass
-class AIScoreSQSSettings:
-    """Configurações para fila SQS de scores de candidatos"""
-    endpoint_url: str
-    access_key_id: str
-    secret_access_key: str
-    region: str
-    queue_name: str
-    max_retries: int = 3
-    wait_time_seconds: int = 20
-    max_messages: int = 10
 
 
 @dataclass
@@ -51,6 +25,13 @@ class BackendSettings:
 
 
 @dataclass
+class CompaniesBackendSettings:
+    """Configurações para comunicação com companies-backend"""
+    url: str
+    timeout: int = 30
+
+
+@dataclass
 class ProcessingSettings:
     """Configurações para processamento"""
     download_timeout: int = 30
@@ -62,6 +43,16 @@ class LoggingSettings:
     """Configurações para logging"""
     level: str = "INFO"
     format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+
+@dataclass
+class StorageSettings:
+    """Configurações para serviço de storage (MinIO/S3)"""
+    url: str
+    access_key: str
+    secret_key: str
+    bucket_name: str
+    region: str = "us-east-1"
 
 
 @dataclass
@@ -96,43 +87,16 @@ class AIScoreRedisSettings:
 
 class ConsumerSettings:
     """Configurações centralizadas do consumer"""
-    
+
     def __init__(self):
-        self.sqs = self._load_sqs_settings()
-        self.ai_score_sqs = self._load_ai_score_sqs_settings()
         self.redis = self._load_redis_settings()
         self.ai_score_redis = self._load_ai_score_redis_settings()
         self.database = self._load_database_settings()
         self.backend = self._load_backend_settings()
+        self.companies_backend = self._load_companies_backend_settings()
+        self.storage = self._load_storage_settings()
         self.processing = self._load_processing_settings()
         self.logging = self._load_logging_settings()
-        self.queue_provider = os.getenv('QUEUE_PROVIDER', 'SQS').upper()
-    
-    def _load_sqs_settings(self) -> SQSSettings:
-        """Carrega configurações SQS das variáveis de ambiente"""
-        return SQSSettings(
-            endpoint_url=os.getenv('STORAGE_SERVICE_ENDPOINT', 'http://localhost:4566'),
-            access_key_id=os.getenv('AWS_ACCESS_KEY_ID', 'test'),
-            secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY', 'test'),
-            region=os.getenv('AWS_REGION', 'us-east-1'),
-            queue_name=os.getenv('APPLICATIONS_QUEUE_NAME', 'applications-queue'),
-            max_retries=int(os.getenv('MAX_RETRIES', '3')),
-            wait_time_seconds=int(os.getenv('WAIT_TIME', '20')),
-            max_messages=int(os.getenv('MAX_MESSAGES', '10'))
-        )
-    
-    def _load_ai_score_sqs_settings(self) -> AIScoreSQSSettings:
-        """Carrega configurações SQS para scores de candidatos das variáveis de ambiente"""
-        return AIScoreSQSSettings(
-            endpoint_url=os.getenv('STORAGE_SERVICE_ENDPOINT', 'http://localhost:4566'),
-            access_key_id=os.getenv('AWS_ACCESS_KEY_ID', 'test'),
-            secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY', 'test'),
-            region=os.getenv('AWS_REGION', 'us-east-1'),
-            queue_name=os.getenv('APPLICATIONS_AI_SCORE_QUEUE_NAME', 'applications-ai-score-queue'),
-            max_retries=int(os.getenv('MAX_RETRIES', '3')),
-            wait_time_seconds=int(os.getenv('WAIT_TIME', '20')),
-            max_messages=int(os.getenv('MAX_MESSAGES', '10'))
-        )
 
     def _load_redis_settings(self) -> RedisSettings:
         """Carrega configurações Redis das variáveis de ambiente"""
@@ -163,7 +127,7 @@ class ConsumerSettings:
             block_ms=int(os.getenv('REDIS_BLOCK_MS', '20000')),
             count=int(os.getenv('REDIS_MAX_MESSAGES', '10'))
         )
-    
+
     def _load_database_settings(self) -> DatabaseSettings:
         """Carrega configurações de banco de dados das variáveis de ambiente"""
         return DatabaseSettings(
@@ -173,84 +137,72 @@ class ConsumerSettings:
             password=os.getenv('DB_PASSWORD', 'postgres'),
             name=os.getenv('DB_NAME', 'cognitive_ats')
         )
-    
+
     def _load_backend_settings(self) -> BackendSettings:
         """Carrega configurações do backend das variáveis de ambiente"""
+        # Tenta usar BACKEND_URL primeiro, depois AI_SERVICE_URL como fallback
+        backend_url = os.getenv('BACKEND_URL') or os.getenv('AI_SERVICE_URL', 'http://localhost:8000')
         return BackendSettings(
-            url=os.getenv('BACKEND_URL', 'http://localhost:3000'),
+            url=backend_url,
             timeout=int(os.getenv('BACKEND_TIMEOUT', '30'))
         )
-    
+
+    def _load_companies_backend_settings(self) -> CompaniesBackendSettings:
+        """Carrega configurações do companies-backend das variáveis de ambiente"""
+        companies_url = os.getenv('COMPANIES_API_URL', 'http://localhost:3000')
+        return CompaniesBackendSettings(
+            url=companies_url,
+            timeout=int(os.getenv('COMPANIES_BACKEND_TIMEOUT', '30'))
+        )
+
+    def _load_storage_settings(self) -> StorageSettings:
+        """Carrega configurações do storage (MinIO/S3) das variáveis de ambiente"""
+        return StorageSettings(
+            url=os.getenv('STORAGE_URL', 'http://localhost:9000'),
+            access_key=os.getenv('STORAGE_ACCESS_KEY', 'minioadmin'),
+            secret_key=os.getenv('STORAGE_SECRET_KEY', 'minioadmin'),
+            bucket_name=os.getenv('STORAGE_BUCKET_NAME', 'cognitive-ats'),
+            region=os.getenv('STORAGE_REGION', 'us-east-1')
+        )
+
     def _load_processing_settings(self) -> ProcessingSettings:
         """Carrega configurações de processamento das variáveis de ambiente"""
         return ProcessingSettings(
             download_timeout=int(os.getenv('DOWNLOAD_TIMEOUT', '30')),
             temp_file_suffix=os.getenv('TEMP_FILE_SUFFIX', '.pdf')
         )
-    
+
     def _load_logging_settings(self) -> LoggingSettings:
         """Carrega configurações de logging das variáveis de ambiente"""
         return LoggingSettings(
             level=os.getenv('LOG_LEVEL', 'INFO'),
             format=os.getenv('LOG_FORMAT', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         )
-    
+
     def validate(self) -> bool:
         """Valida se todas as configurações obrigatórias estão presentes"""
-        if getattr(self, 'queue_provider', 'SQS') == 'REDIS':
-            required_vars = [
-                self.redis.host,
-                self.redis.port,
-                self.redis.stream_name,
-                self.redis.group_name,
-                self.redis.consumer_name,
-                self.ai_score_redis.host,
-                self.ai_score_redis.port,
-                self.ai_score_redis.stream_name,
-                self.ai_score_redis.group_name,
-                self.ai_score_redis.consumer_name,
-                self.database.host,
-                self.database.username,
-                self.database.password,
-                self.database.name
-            ]
-            return all(required_vars)
-        else:
-            required_vars = [
-                self.sqs.endpoint_url,
-                self.sqs.access_key_id,
-                self.sqs.secret_access_key,
-                self.sqs.region,
-                self.sqs.queue_name,
-                self.ai_score_sqs.endpoint_url,
-                self.ai_score_sqs.access_key_id,
-                self.ai_score_sqs.secret_access_key,
-                self.ai_score_sqs.region,
-                self.ai_score_sqs.queue_name,
-                self.database.host,
-                self.database.username,
-                self.database.password,
-                self.database.name
-            ]
-            return all(required_vars)
-    
-    def get_sqs_config(self) -> dict:
-        """Retorna configuração SQS para boto3"""
-        return {
-            'endpoint_url': self.sqs.endpoint_url,
-            'aws_access_key_id': self.sqs.access_key_id,
-            'aws_secret_access_key': self.sqs.secret_access_key,
-            'region_name': self.sqs.region
-        }
-    
-    def get_ai_score_sqs_config(self) -> dict:
-        """Retorna configuração SQS para scores de candidatos para boto3"""
-        return {
-            'endpoint_url': self.ai_score_sqs.endpoint_url,
-            'aws_access_key_id': self.ai_score_sqs.access_key_id,
-            'aws_secret_access_key': self.ai_score_sqs.secret_access_key,
-            'region_name': self.ai_score_sqs.region
-        }
+        required_vars = [
+            self.redis.host,
+            self.redis.port,
+            self.redis.stream_name,
+            self.redis.group_name,
+            self.redis.consumer_name,
+            self.ai_score_redis.host,
+            self.ai_score_redis.port,
+            self.ai_score_redis.stream_name,
+            self.ai_score_redis.group_name,
+            self.ai_score_redis.consumer_name,
+            self.database.host,
+            self.database.username,
+            self.database.password,
+            self.database.name,
+            self.storage.url,
+            self.storage.access_key,
+            self.storage.secret_key,
+            self.storage.bucket_name
+        ]
+        return all(required_vars)
+
 
     def get_redis_config(self) -> dict:
         """Retorna configuração Redis"""
@@ -280,6 +232,16 @@ class ConsumerSettings:
             'block_ms': self.ai_score_redis.block_ms,
             'count': self.ai_score_redis.count,
             'max_retries': self.ai_score_redis.max_retries
+        }
+
+    def get_storage_config(self) -> dict:
+        """Retorna configuração do storage (MinIO/S3)"""
+        return {
+            'url': self.storage.url,
+            'access_key': self.storage.access_key,
+            'secret_key': self.storage.secret_key,
+            'bucket_name': self.storage.bucket_name,
+            'region': self.storage.region
         }
 
 

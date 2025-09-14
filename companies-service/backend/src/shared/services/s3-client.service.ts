@@ -110,7 +110,7 @@ export class S3ClientService {
 
   private initializeS3Client(): void {
     const config: AWS.S3.ClientConfiguration = {
-      endpoint: process.env.ENDPOINT_URL,
+      endpoint: process.env.STORAGE_SERVICE_ENDPOINT,
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       s3ForcePathStyle: true, // Necessário para compatibilidade com MinIO

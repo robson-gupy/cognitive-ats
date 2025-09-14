@@ -23,15 +23,15 @@ def get_sqs_client():
     """Cria e retorna um cliente SQS configurado"""
     try:
         # Configurações para LocalStack (desenvolvimento local)
-        if os.getenv('AWS_ENDPOINT_URL'):
+        if os.getenv('STORAGE_SERVICE_ENDPOINT'):
             sqs = boto3.client(
                 'sqs',
-                endpoint_url=os.getenv('AWS_ENDPOINT_URL'),
+                endpoint_url=os.getenv('STORAGE_SERVICE_ENDPOINT'),
                 region_name=os.getenv('AWS_REGION', 'us-east-1'),
                 aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID', 'test'),
                 aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY', 'test')
             )
-            print(f"✅ Cliente SQS configurado para LocalStack: {os.getenv('AWS_ENDPOINT_URL')}")
+            print(f"✅ Cliente SQS configurado para LocalStack: {os.getenv('STORAGE_SERVICE_ENDPOINT')}")
         else:
             # Configurações para AWS real
             sqs = boto3.client('sqs')
@@ -51,10 +51,10 @@ def get_sqs_client():
 def get_queue_url(sqs_client, queue_name: str) -> str:
     """Obtém a URL da fila SQS"""
     try:
-        if os.getenv('AWS_ENDPOINT_URL'):
+        if os.getenv('STORAGE_SERVICE_ENDPOINT'):
             # Para LocalStack, construir URL manualmente
             account_id = '000000000000'
-            queue_url = f"{os.getenv('AWS_ENDPOINT_URL')}/{account_id}/{queue_name}"
+            queue_url = f"{os.getenv('STORAGE_SERVICE_ENDPOINT')}/{account_id}/{queue_name}"
             print(f"✅ URL da fila construída: {queue_url}")
         else:
             # Para AWS real, buscar URL da fila

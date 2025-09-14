@@ -15,7 +15,7 @@ export class SqsClientService implements AsyncTaskQueue {
   constructor() {
     this.sqs = new AWS.SQS({
       region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
-      endpoint: process.env.ENDPOINT_URL || undefined,
+      endpoint: process.env.STORAGE_SERVICE_ENDPOINT || undefined,
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       // Configurações adicionais para LocalStack
@@ -31,7 +31,7 @@ export class SqsClientService implements AsyncTaskQueue {
     try {
       // Determinar a URL da fila baseada no ambiente
       let queueUrl: string;
-      if (process.env.ENDPOINT_URL) {
+      if (process.env.STORAGE_SERVICE_ENDPOINT) {
         // Ambiente local com LocalStack - usar o nome do serviço do Docker
         queueUrl = `http://localstack:4566/000000000000/${queueName}`;
       } else {

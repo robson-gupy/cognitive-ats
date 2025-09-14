@@ -6,7 +6,7 @@
 
 | Antes | Depois |
 |-------|--------|
-| `endpoint_url` | `ENDPOINT_URL` |
+| `endpoint_url` | `STORAGE_SERVICE_ENDPOINT` |
 | `aws_access_key_id` | `AWS_ACCESS_KEY_ID` |
 | `aws_secret_access_key` | `AWS_SECRET_ACCESS_KEY` |
 
@@ -50,7 +50,7 @@ npm test -- --config jest.config.js s3-client.service.spec.ts
 
 ### Para Desenvolvimento Local
 ```bash
-export ENDPOINT_URL=http://localhost:9000
+export STORAGE_SERVICE_ENDPOINT=http://localhost:9000
 export AWS_ACCESS_KEY_ID=minioadmin
 export AWS_SECRET_ACCESS_KEY=minioadmin
 ```
@@ -59,7 +59,7 @@ export AWS_SECRET_ACCESS_KEY=minioadmin
 As variáveis já estão configuradas no `docker-compose.yml`:
 ```yaml
 environment:
-  - ENDPOINT_URL=http://minio:9000
+  - STORAGE_SERVICE_ENDPOINT=http://minio:9000
   - AWS_ACCESS_KEY_ID=minioadmin
   - AWS_SECRET_ACCESS_KEY=minioadmin
 ```
@@ -67,7 +67,7 @@ environment:
 ### Para Produção
 Configure as variáveis de ambiente com os valores reais do seu S3:
 ```bash
-export ENDPOINT_URL=https://s3.amazonaws.com
+export STORAGE_SERVICE_ENDPOINT=https://s3.amazonaws.com
 export AWS_ACCESS_KEY_ID=sua_access_key
 export AWS_SECRET_ACCESS_KEY=sua_secret_key
 ```
@@ -78,10 +78,10 @@ Para verificar se as variáveis estão configuradas corretamente:
 
 ```bash
 # No Docker
-docker compose exec companies-backend env | grep -E "(ENDPOINT_URL|AWS_ACCESS_KEY)"
+docker compose exec companies-backend env | grep -E "(STORAGE_SERVICE_ENDPOINT|AWS_ACCESS_KEY)"
 
 # Localmente
-env | grep -E "(ENDPOINT_URL|AWS_ACCESS_KEY)"
+env | grep -E "(STORAGE_SERVICE_ENDPOINT|AWS_ACCESS_KEY)"
 ```
 
 ## 📊 Impacto

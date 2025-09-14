@@ -11,7 +11,7 @@ describe('S3ClientService', () => {
 
   beforeEach(async () => {
     // Configurar variáveis de ambiente para teste
-    process.env.ENDPOINT_URL = 'http://localhost:9000';
+    process.env.STORAGE_SERVICE_ENDPOINT = 'http://localhost:9000';
     process.env.AWS_ACCESS_KEY_ID = 'test-key';
     process.env.AWS_SECRET_ACCESS_KEY = 'test-secret';
 

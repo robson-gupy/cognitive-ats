@@ -10,10 +10,9 @@ from typing import Optional, Dict, Any, Set
 import redis.asyncio as redis
 from dotenv import load_dotenv
 
+from config.handler_settings import QUEUES_NAMES
 from handlers.base import get_dlq_name
-from handlers.config import register_handlers
-from handlers.registry import registry
-
+from handlers.registry import registry, register_handlers
 
 shutdown_requested = False
 
@@ -21,7 +20,7 @@ shutdown_requested = False
 def _request_shutdown(signum, frame):  # type: ignore[no-untyped-def]
     global shutdown_requested
     shutdown_requested = True
-    logging.getLogger(__name__).info("Sinal %s recebido. Encerrando...", signum)
+    logging.getLogger(__name__).info(f"Sinal {signum} recebido. Encerrando...")
 
 
 def _get_env(name: str, default: Optional[str] = None) -> str:
@@ -61,7 +60,7 @@ async def handle_with_retry(client: redis.Redis, queue_name: str, raw_value: str
 
     handler = registry.get(queue_name)
     if handler is None:
-        logger.error("Nenhum handler registrado para a fila '%s'. Enviando para DLQ.", queue_name)
+        logger.error(f"Nenhum handler registrado para a fila '{queue_name}'. Enviando para DLQ.")
         await client.rpush(get_dlq_name(queue_name), raw_value)
         return
 
@@ -72,7 +71,7 @@ async def handle_with_retry(client: redis.Redis, queue_name: str, raw_value: str
     try:
         message: Dict[str, Any] = json.loads(raw_value)
     except json.JSONDecodeError:
-        logger.error("Mensagem inválida (não-JSON) para fila '%s'. Enviando para DLQ.", queue_name)
+        logger.error(f"Mensagem inválida (não-JSON) para fila '{queue_name}'. Enviando para DLQ.")
         await client.rpush(get_dlq_name(queue_name), raw_value)
         return
 
@@ -81,20 +80,18 @@ async def handle_with_retry(client: redis.Redis, queue_name: str, raw_value: str
         retry_count = int(message["_meta"].get("retry_count", 0))
 
     try:
-        await handler(message)
+        # Extrai o payload da mensagem se existir, senão usa a mensagem completa
+        payload = message.get("payload", message)
+        await handler(payload)
         return
     except Exception as exc:  # noqa: BLE001
         logger.warning(
-            "Handler falhou para fila '%s' (tentativa %s/%s): %s",
-            queue_name,
-            retry_count + 1,
-            max_retries,
-            exc,
+            f"Handler falhou para fila '{queue_name}' (tentativa {retry_count + 1}/{max_retries}): {exc}"
         )
 
         retry_count += 1
         if retry_count > max_retries:
-            logger.error("Excedeu tentativas para fila '%s'. Enviando para DLQ.", queue_name)
+            logger.error(f"Excedeu tentativas para fila '{queue_name}'. Enviando para DLQ.")
             await client.rpush(get_dlq_name(queue_name), raw_value)
             return
 
@@ -109,7 +106,7 @@ async def handle_with_retry(client: redis.Redis, queue_name: str, raw_value: str
         next_available_at = time.time() + delay_seconds
         retry_key = get_retry_key(queue_name)
         await client.zadd(retry_key, {next_payload: next_available_at})
-        logger.info("Reagendado para retry em %.2f s (fila=%s)", delay_seconds, queue_name)
+        logger.info(f"Reagendado para retry em {delay_seconds:.2f} s (fila={queue_name})")
 
 
 async def drain_due_retries(client: redis.Redis, queue_name: str) -> None:
@@ -133,16 +130,16 @@ async def process_message(client: redis.Redis, queue_name: str, value: str) -> N
         await handle_with_retry(client, queue_name, value)
     except Exception as exc:  # noqa: BLE001
         logger = logging.getLogger("consumer")
-        logger.exception("Erro inesperado ao processar mensagem: %s", exc)
+        logger.exception(f"Erro inesperado ao processar mensagem: {exc}")
 
 
 async def consumer_worker(client: redis.Redis, queues: list[str], worker_id: int) -> None:
     """Worker que consome mensagens de uma ou mais filas."""
     logger = logging.getLogger(f"consumer.worker-{worker_id}")
     blpop_timeout = int(_get_env("BLPOP_TIMEOUT_SECONDS", "5"))
-    
-    logger.info("Worker %d iniciado. Consumindo das filas: %s", worker_id, queues)
-    
+
+    logger.info(f"Worker {worker_id} iniciado. Consumindo das filas: {queues}")
+
     while not shutdown_requested:
         try:
             # Antes de bloquear, drenamos eventuais retries prontos
@@ -153,21 +150,21 @@ async def consumer_worker(client: redis.Redis, queues: list[str], worker_id: int
             if item is None:
                 continue
             queue_name, value = item
-            
+
             # Processa a mensagem de forma assíncrona
             await process_message(client, queue_name, value)
-            
+
         except redis.ConnectionError as exc:
-            logger.error("Erro de conexão com Redis no worker %d: %s", worker_id, exc)
+            logger.error(f"Erro de conexão com Redis no worker {worker_id}: {exc}")
             timeout_reconnect_seconds = 2
-            logger.info("Worker %d tentando reconectar em %s s...", worker_id, timeout_reconnect_seconds)
+            logger.info(f"Worker {worker_id} tentando reconectar em {timeout_reconnect_seconds} s...")
             try:
                 await asyncio.sleep(timeout_reconnect_seconds)
             except asyncio.CancelledError:
                 break
         except Exception as exc:  # noqa: BLE001
-            logger.exception("Erro inesperado no worker %d: %s", worker_id, exc)
-    
+            logger.exception(f"Erro inesperado no worker {worker_id}: {exc}")
+
     logger.info("Worker %d encerrado.", worker_id)
 
 
@@ -182,14 +179,13 @@ async def main_async() -> int:
     # Registrar handlers
     register_handlers()
 
-    # Filas que vamos consumir: obrigatória via env var lista separada por vírgula
-    queues_csv = _get_env("QUEUES_NAMES")
-    queues = [q.strip() for q in queues_csv.split(",") if q.strip()]
-    
+    # Filas que vamos consumir: configuradas no arquivo handlers/config.py
+    queues = QUEUES_NAMES
+
     # Número de workers concorrentes
     num_workers = int(_get_env("NUM_WORKERS", "3"))
-    
-    logger.info("Conectado ao Redis. Iniciando %d workers para as filas: %s", num_workers, queues)
+
+    logger.info(f"Conectado ao Redis. Iniciando {num_workers} workers para as filas: {queues}")
 
     # Registrar sinais de encerramento
     signal.signal(signal.SIGINT, _request_shutdown)

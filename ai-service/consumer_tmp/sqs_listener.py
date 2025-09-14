@@ -139,7 +139,7 @@ def get_sqs_client():
     """Cria e retorna o cliente SQS configurado"""
     try:
         # Obtém as variáveis de ambiente
-        endpoint_url = os.getenv('AWS_ENDPOINT_URL')
+        endpoint_url = os.getenv('STORAGE_SERVICE_ENDPOINT')
         access_key = os.getenv('AWS_ACCESS_KEY_ID')
         secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         region = os.getenv('AWS_REGION')
@@ -147,7 +147,7 @@ def get_sqs_client():
         # Valida se as variáveis estão configuradas
         if not all([endpoint_url, access_key, secret_key, region]):
             print("❌ Variáveis de ambiente AWS não configuradas:")
-            print(f"   AWS_ENDPOINT_URL: {endpoint_url}")
+            print(f"   STORAGE_SERVICE_ENDPOINT: {endpoint_url}")
             print(f"   AWS_ACCESS_KEY_ID: {access_key}")
             print(f"   AWS_SECRET_ACCESS_KEY: {'***' if secret_key else 'NÃO CONFIGURADA'}")
             print(f"   AWS_REGION: {region}")
@@ -344,7 +344,7 @@ async def process_resume_message(message_data: dict, ai_service: AIService, retr
             raise Exception("applicationId não encontrado na mensagem")
 
         # Constrói a URL completa do S3 usando a variável de ambiente
-        s3_endpoint = os.getenv('AWS_ENDPOINT_URL', 'http://localhost:4566')
+        s3_endpoint = os.getenv('STORAGE_SERVICE_ENDPOINT', 'http://localhost:4566')
 
         # Se o resume_url já é uma URL completa, usa como está
         if resume_url.startswith('http'):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Dict
 
+from config.handler_settings import QUEUE_HANDLERS, QUEUES_NAMES
 from .base import Handler
 
 
@@ -17,3 +18,13 @@ class HandlerRegistry:
 
 
 registry = HandlerRegistry()
+
+
+def register_handlers() -> None:
+    # Registra handlers para todas as filas configuradas
+    for queue_name in QUEUES_NAMES:
+        handler = QUEUE_HANDLERS.get(queue_name)
+        if handler:
+            registry.register(queue_name, handler)
+        else:
+            raise ValueError(f"Nenhum handler configurado para a fila: {queue_name}")

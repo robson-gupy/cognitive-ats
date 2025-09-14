@@ -176,7 +176,7 @@ DB_PASSWORD=postgres
 DB_NAME=cognitive_ats
 DB_DATABASE=cognitive_ats
 AI_SERVICE_URL=http://ai-service:8000
-ENDPOINT_URL=http://minio:9000
+STORAGE_SERVICE_ENDPOINT=http://minio:9000
 ```
 
 #### 🎨 **Companies Service - Frontend**

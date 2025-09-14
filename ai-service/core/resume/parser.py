@@ -135,7 +135,7 @@ class ResumeParser:
         resume_data = extract_json_from_text(response)
         
         if not resume_data:
-            raise ResumeParsingError("Não foi possível extrair JSON válido da resposta da IA")
+            raise ResumeParsingError(f"Não foi possível extrair JSON válido da resposta da IA. AI Response: {response}")
         
         return resume_data
     

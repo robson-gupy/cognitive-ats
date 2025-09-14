@@ -40,7 +40,7 @@ minio:
 As seguintes variáveis estão configuradas no serviço `companies-backend`:
 
 ```bash
-ENDPOINT_URL=http://minio:9000
+STORAGE_SERVICE_ENDPOINT=http://minio:9000
 AWS_ACCESS_KEY_ID=minioadmin
 AWS_SECRET_ACCESS_KEY=minioadmin
 ```
@@ -101,7 +101,7 @@ docker-compose restart minio
 ### Erro de conexão
 Verifique se as variáveis de ambiente estão corretas:
 ```bash
-docker-compose exec companies-backend env | grep -E "(ENDPOINT_URL|AWS_ACCESS_KEY|AWS_SECRET_ACCESS)"
+docker-compose exec companies-backend env | grep -E "(STORAGE_SERVICE_ENDPOINT|AWS_ACCESS_KEY|AWS_SECRET_ACCESS)"
 ```
 
 ### Bucket não encontrado
@@ -115,7 +115,7 @@ O `S3ClientService` cria buckets automaticamente, mas se houver problemas:
 Se você estiver rodando o backend localmente (fora do Docker), configure as variáveis de ambiente:
 
 ```bash
-export ENDPOINT_URL=http://localhost:9000
+export STORAGE_SERVICE_ENDPOINT=http://localhost:9000
 export AWS_ACCESS_KEY_ID=minioadmin
 export AWS_SECRET_ACCESS_KEY=minioadmin
 ```

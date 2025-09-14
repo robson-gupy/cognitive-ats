@@ -28,18 +28,18 @@ def create_redis_client() -> redis.Redis:
 def main() -> None:
     load_dotenv()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s - %(message)s")
-    queue_name = _get_env("QUEUES_NAMES", "close-job-queue")
+    queue_name = "applications-queue"
     client = create_redis_client()
 
     message = {
         "id": str(uuid4()),
         "event": "test",
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "payload": {"hello": "world"},
+        "payload": {"applicationId": "38ad549d-e595-4513-892f-bc41fedc7b9c", "resumeUrl": "/cognitive-ats-uploads/resume_1757714230692_c3a658edaadd559b206d1bcb0a4b2011d4b07d5f31d71f76fae9a26c091a25f0.pdf", "eventType": "APPLICATION_CREATED", "timestamp": "2025-09-12T21:57:11.056Z"},
     }
     payload = json.dumps(message, ensure_ascii=False)
     client.rpush(queue_name, payload)
-    logging.info("Mensagem publicada na fila '%s': %s", queue_name, payload)
+    logging.info(f"Mensagem publicada na fila '{queue_name}': {payload}")
 
 
 if __name__ == "__main__":
