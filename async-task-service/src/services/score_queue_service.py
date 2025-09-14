@@ -3,6 +3,7 @@ Serviço para enviar mensagens para a fila de scores de candidatos
 """
 
 import json
+import redis.asyncio as redis
 from typing import Dict, Any, Optional
 
 from config.settings import settings
@@ -11,6 +12,39 @@ from utils.logger import logger
 
 class ScoreQueueService:
     """Serviço para enviar mensagens para a fila de scores"""
+
+    def __init__(self):
+        """Inicializa o serviço com conexão Redis"""
+        self.redis_client = None
+        self._initialize_redis()
+
+    def _initialize_redis(self):
+        """Inicializa a conexão Redis"""
+        try:
+            redis_url = settings.ai_score_redis.url
+            if redis_url:
+                self.redis_client = redis.from_url(redis_url, decode_responses=True)
+            else:
+                self.redis_client = redis.Redis(
+                    host=settings.ai_score_redis.host,
+                    port=settings.ai_score_redis.port,
+                    db=settings.ai_score_redis.db,
+                    decode_responses=True
+                )
+            logger.info(f"✅ Redis client inicializado para fila de scores: {settings.ai_score_redis.stream_name}")
+        except Exception as e:
+            logger.error(f"❌ Erro ao inicializar Redis client: {str(e)}")
+            self.redis_client = None
+
+    async def is_connected(self) -> bool:
+        """Verifica se o Redis está conectado"""
+        if not self.redis_client:
+            return False
+        try:
+            await self.redis_client.ping()
+            return True
+        except Exception:
+            return False
 
 
     async def send_score_request(
@@ -33,7 +67,7 @@ class ScoreQueueService:
             Dict com o resultado do envio
         """
         try:
-            if not self.queue.is_connected():
+            if not await self.is_connected():
                 return {
                     'success': False,
                     'error': 'Serviço de fila não conectado'
@@ -47,38 +81,38 @@ class ScoreQueueService:
                 question_responses
             )
 
-            # Envia a mensagem para a fila
-            response = self.queue.send_message(message_body)
+            # Envia a mensagem para a fila Redis usando lpush
+            queue_name = settings.ai_score_redis.stream_name
+            message_json = json.dumps(message_body)
+            
+            # Gera um ID único para a mensagem
+            import uuid
+            message_id = str(uuid.uuid4())
+            
+            # Adiciona o message_id ao corpo da mensagem
+            message_body['messageId'] = message_id
+            message_json = json.dumps(message_body)
+            
+            # Envia para a fila Redis
+            await self.redis_client.lpush(queue_name, message_json)
 
-            if response:
-                logger.info(
-                    "✅ Mensagem de score enviada para a fila",
-                    application_id=application_id,
-                    message_id=response.get('MessageId'),
-                    queue_name=settings.ai_score_redis.stream_name
-                )
+            logger.info(
+                "✅ Mensagem de score enviada para a fila",
+                application_id=application_id,
+                message_id=message_id,
+                queue_name=queue_name
+            )
 
-                return {
-                    'success': True,
-                    'message_id': response.get('MessageId'),
-                    'application_id': application_id,
-                    'queue_name': settings.ai_score_redis.stream_name
-                }
-            else:
-                logger.error(
-                    "❌ Falha ao enviar mensagem de score para a fila",
-                    application_id=application_id,
-                    queue_name=settings.ai_score_redis.stream_name
-                )
-
-                return {
-                    'success': False,
-                    'error': 'Falha ao enviar mensagem para a fila'
-                }
+            return {
+                'success': True,
+                'message_id': message_id,
+                'application_id': application_id,
+                'queue_name': queue_name
+            }
 
         except Exception as e:
             logger.error(
-                "❌ Erro ao enviar mensagem de score para a fila",
+                f"❌ Erro ao enviar mensagem de score para a fila - Error: {str(e)}",
                 application_id=application_id,
                 error=str(e)
             )
@@ -261,9 +295,31 @@ class ScoreQueueService:
         except Exception:
             return "N/A"
 
-    def get_queue_status(self) -> Dict[str, Any]:
+    async def get_queue_status(self) -> Dict[str, Any]:
         """Retorna o status da fila de scores"""
-        return self.queue.get_queue_info()
+        try:
+            if not await self.is_connected():
+                return {
+                    'connected': False,
+                    'error': 'Redis não conectado'
+                }
+            
+            queue_name = settings.ai_score_redis.stream_name
+            queue_length = await self.redis_client.llen(queue_name)
+            
+            return {
+                'connected': True,
+                'queue_name': queue_name,
+                'queue_length': queue_length,
+                'redis_host': settings.ai_score_redis.host,
+                'redis_port': settings.ai_score_redis.port,
+                'redis_db': settings.ai_score_redis.db
+            }
+        except Exception as e:
+            return {
+                'connected': False,
+                'error': str(e)
+            }
 
 
 # Instância global do serviço

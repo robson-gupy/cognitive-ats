@@ -87,6 +87,23 @@ class ResumeOrchestrator:
                     else:
                         logger.warning(f"⚠️ Falha ao enviar dados para o backend: {send_result.error}")
 
+                    # ENVIO AUTOMÁTICO PARA FILA DE SCORES
+                    logger.info("🚀 Enviando dados processados para fila de scores")
+                    
+                    from services.score_queue_service import score_queue_service
+                    score_queue_result = await score_queue_service.send_score_request(
+                        application_id=application_id,
+                        resume_data=resume_data
+                    )
+
+                    if score_queue_result['success']:
+                        logger.info("✅ Dados enviados para fila de scores com sucesso")
+                    else:
+                        logger.warning(
+                            "⚠️ Falha ao enviar para fila de scores",
+                            error=score_queue_result.get('error')
+                        )
+
                     return ProcessingResult(
                         success=True,
                         application_id=application_id,
@@ -95,7 +112,9 @@ class ResumeOrchestrator:
                         resume_data=resume_data,
                         processing_time=processing_time,
                         backend_success=send_result.success,
-                        backend_error=send_result.error if not send_result.success else None
+                        backend_error=send_result.error if not send_result.success else None,
+                        score_queue_success=score_queue_result['success'],
+                        score_queue_error=score_queue_result.get('error') if not score_queue_result['success'] else None
                     )
                 else:
                     logger.warning("⚠️ Resposta do backend não contém dados estruturados")
@@ -106,7 +125,9 @@ class ResumeOrchestrator:
                         timestamp=datetime.now(),
                         error="Resposta do backend não contém dados estruturados",
                         processing_time=processing_time,
-                        backend_success=False
+                        backend_success=False,
+                        score_queue_success=False,
+                        score_queue_error="Não foi possível enviar para fila de scores - dados não estruturados"
                     )
             else:
                 logger.error(f"❌ Falha no processamento via backend - Application ID: {application_id}, Erro: {backend_result.error}")
@@ -119,7 +140,9 @@ class ResumeOrchestrator:
                     error=f"Falha no backend: {backend_result.error}",
                     processing_time=processing_time,
                     backend_success=False,
-                    backend_error=backend_result.error
+                    backend_error=backend_result.error,
+                    score_queue_success=False,
+                    score_queue_error="Não foi possível enviar para fila de scores - falha no backend"
                 )
 
         except Exception as e:
@@ -136,7 +159,9 @@ class ResumeOrchestrator:
                 message_id="url_backend_parse",
                 timestamp=datetime.now(),
                 error=str(e),
-                processing_time=processing_time
+                processing_time=processing_time,
+                score_queue_success=False,
+                score_queue_error="Não foi possível enviar para fila de scores - erro no processamento"
             )
 
     def _map_resume_to_backend_format(self, resume_data: dict) -> dict:

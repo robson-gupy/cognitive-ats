@@ -32,6 +32,13 @@ class CompaniesBackendSettings:
 
 
 @dataclass
+class AIServiceSettings:
+    """Configurações para comunicação com AI Service"""
+    url: str
+    timeout: int = 120  # Timeout maior para processamento de IA
+
+
+@dataclass
 class ProcessingSettings:
     """Configurações para processamento"""
     download_timeout: int = 30
@@ -94,6 +101,7 @@ class ConsumerSettings:
         self.database = self._load_database_settings()
         self.backend = self._load_backend_settings()
         self.companies_backend = self._load_companies_backend_settings()
+        self.ai_service = self._load_ai_service_settings()
         self.storage = self._load_storage_settings()
         self.processing = self._load_processing_settings()
         self.logging = self._load_logging_settings()
@@ -120,7 +128,7 @@ class ConsumerSettings:
             host=os.getenv('REDIS_HOST', 'redis'),
             port=int(os.getenv('REDIS_PORT', '6379')),
             db=int(os.getenv('REDIS_DB', '0')),
-            stream_name=os.getenv('APPLICATIONS_AI_SCORE_REDIS_STREAM', 'applications-ai-score-stream'),
+            stream_name=os.getenv('AI_SCORE_QUEUE_NAME', 'ai-score-queue'),
             group_name=os.getenv('APPLICATIONS_AI_SCORE_REDIS_GROUP', 'applications-ai-score-group'),
             consumer_name=os.getenv('APPLICATIONS_AI_SCORE_REDIS_CONSUMER', 'consumer-1'),
             max_retries=int(os.getenv('REDIS_MAX_RETRIES', '3')),
@@ -140,8 +148,8 @@ class ConsumerSettings:
 
     def _load_backend_settings(self) -> BackendSettings:
         """Carrega configurações do backend das variáveis de ambiente"""
-        # Tenta usar BACKEND_URL primeiro, depois AI_SERVICE_URL como fallback
-        backend_url = os.getenv('BACKEND_URL') or os.getenv('AI_SERVICE_URL', 'http://localhost:8000')
+        # Usa apenas BACKEND_URL, sem fallback para AI_SERVICE_URL
+        backend_url = os.getenv('BACKEND_URL', 'http://localhost:8000')
         return BackendSettings(
             url=backend_url,
             timeout=int(os.getenv('BACKEND_TIMEOUT', '30'))
@@ -153,6 +161,14 @@ class ConsumerSettings:
         return CompaniesBackendSettings(
             url=companies_url,
             timeout=int(os.getenv('COMPANIES_BACKEND_TIMEOUT', '30'))
+        )
+
+    def _load_ai_service_settings(self) -> AIServiceSettings:
+        """Carrega configurações do AI Service das variáveis de ambiente"""
+        ai_service_url = os.getenv('AI_SERVICE_URL', 'http://localhost:8000')
+        return AIServiceSettings(
+            url=ai_service_url,
+            timeout=int(os.getenv('AI_SERVICE_TIMEOUT', '120'))
         )
 
     def _load_storage_settings(self) -> StorageSettings:
