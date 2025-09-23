@@ -21,11 +21,11 @@ async def create_job_from_prompt(request: JobCreationRequest):
     """Cria um job a partir de um prompt usando IA"""
     try:
         print(f"Received request: {request}")
-        provider_name = request.provider or Config.DEFAULT_AI_PROVIDER
+        provider_name = Config.DEFAULT_AI_PROVIDER
         provider = AIProvider(provider_name)
         
         # Cria o serviço de IA
-        ai_service = AIService(provider, api_key=request.api_key)
+        ai_service = AIService(provider)
         
         # Cria o serviço de jobs
         job_creator = JobCreator(ai_service)

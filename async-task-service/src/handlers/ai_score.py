@@ -9,8 +9,9 @@ from datetime import datetime
 from models.message import AIScoreMessage
 from models.result import ProcessingResult
 from services.backend_service import BackendService
-from utils.logger import logger
+from utils.logger import ConsumerLogger
 
+logger = ConsumerLogger()
 
 async def handler_ai_score(payload: Dict[str, Any]) -> None:
     """
@@ -128,6 +129,10 @@ async def _process_candidate_score(
         overall_score = _convert_score_to_float(evaluation_result.get('overall_score'))
         education_score = _convert_score_to_float(evaluation_result.get('education_score'))
         experience_score = _convert_score_to_float(evaluation_result.get('experience_score'))
+        
+        # Extrai provider e model da resposta do AI service
+        evaluation_provider = evaluation_result.get('provider')
+        evaluation_model = evaluation_result.get('model')
 
         logger.info(
             "📊 Scores calculados",
@@ -136,6 +141,13 @@ async def _process_candidate_score(
             education_score=education_score,
             experience_score=experience_score
         )
+        
+        logger.info(
+            "🔧 Configuração de IA usada",
+            application_id=score_message.application_id,
+            provider=evaluation_provider,
+            model=evaluation_model
+        )
 
         # Valida se pelo menos um score válido foi calculado
         if all(score is None for score in [overall_score, education_score, experience_score]):
@@ -143,17 +155,22 @@ async def _process_candidate_score(
 
         # Log antes de atualizar o banco
         logger.info(
-            "💾 Atualizando scores no banco de dados...",
-            application_id=score_message.application_id,
-            message_id=message_id
+            f"💾 Atualizando scores no banco de dados... application_id={score_message.application_id} | message_id={message_id}, | job_data={score_message.job_data}",
+        )
+        
+        logger.info(
+            f"📤 Enviando provider e model para o backend: {evaluation_provider} + {evaluation_model}",
+            application_id=score_message.application_id
         )
 
-        # Atualiza application com os scores via backend service
+        # Atualiza application com os scores via backend service usando endpoint interno
         update_result = await backend_service.update_application_scores(
             application_id=score_message.application_id,
             overall_score=overall_score,
             education_score=education_score,
-            experience_score=experience_score
+            experience_score=experience_score,
+            evaluation_provider=evaluation_provider,
+            evaluation_model=evaluation_model
         )
 
         if not update_result.get('success', False):

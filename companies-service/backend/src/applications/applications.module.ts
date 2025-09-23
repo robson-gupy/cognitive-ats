@@ -8,6 +8,7 @@ import { QuestionResponsesController } from './controllers/question-responses.co
 import { QuestionResponsesService } from './services/question-responses.service';
 import { ApplicationTagsController } from './controllers/application-tags.controller';
 import { ApplicationTagsService } from './services/application-tags.service';
+import { InternalCommunicationController } from './controllers/internal-communication.controller';
 import { Application } from './entities/application.entity';
 import { ApplicationStageHistory } from './entities/application-stage-history.entity';
 import { ApplicationQuestionResponse } from './entities/application-question-response.entity';
@@ -52,6 +53,7 @@ import { Adress } from './entities/adress.entity';
     ApplicationsController,
     QuestionResponsesController,
     ApplicationTagsController,
+    InternalCommunicationController,
   ],
   providers: [
     ApplicationsService,

@@ -22,11 +22,10 @@ router = APIRouter(prefix="/ai", tags=["AI"])
 async def generate_text(request: TextGenerationRequest):
     """Gera texto usando o provider configurado"""
     try:
-        provider_name = request.provider or Config.DEFAULT_AI_PROVIDER
-        provider = AIProvider(provider_name)
+        provider = AIProvider(Config.DEFAULT_AI_PROVIDER)
         
         # Cria o serviço com API key opcional
-        ai_service = AIService(provider, api_key=request.api_key)
+        ai_service = AIService(provider)
         
         # Gera o texto
         text = await ai_service.generate_text(
@@ -35,9 +34,7 @@ async def generate_text(request: TextGenerationRequest):
         )
         
         return AIResponse(
-            text=text,
-            provider=provider_name,
-            model=request.model
+            text=text
         )
         
     except (ProviderNotSupportedError, ProviderNotConfiguredError) as e:
@@ -50,11 +47,11 @@ async def generate_text(request: TextGenerationRequest):
 async def generate_embedding(request: EmbeddingRequest):
     """Gera embedding usando o provider configurado"""
     try:
-        provider_name = request.provider or Config.DEFAULT_AI_PROVIDER
+        provider_name = Config.DEFAULT_AI_PROVIDER
         provider = AIProvider(provider_name)
         
         # Cria o serviço com API key opcional
-        ai_service = AIService(provider, api_key=request.api_key)
+        ai_service = AIService(provider)
         
         # Gera o embedding
         embedding = await ai_service.generate_embedding(request.text)

@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Param,
   Patch,
   Post,
@@ -40,6 +41,8 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('jobs/:jobId/applications')
 export class ApplicationsController {
+  private readonly logger = new Logger(ApplicationsController.name);
+
   constructor(
     private readonly applicationsService: ApplicationsService,
     private readonly applicationStageService: ApplicationStageService,
@@ -206,7 +209,6 @@ export class ApplicationsController {
   }
 
   @Post(':id/evaluate')
-  @UseGuards(JwtAuthGuard, AdminAuthGuard)
   async evaluateApplication(
     @Param('jobId') jobId: string,
     @Param('id') id: string,

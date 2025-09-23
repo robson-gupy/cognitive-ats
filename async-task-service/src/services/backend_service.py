@@ -174,10 +174,10 @@ class BackendService:
             )
 
     async def evaluate_candidate(
-        self, 
-        application_id: str, 
-        resume_data: Dict[str, Any], 
-        job_data: Dict[str, Any], 
+        self,
+        application_id: str,
+        resume_data: Dict[str, Any],
+        job_data: Dict[str, Any],
         question_responses: Optional[list] = None
     ) -> Optional[Dict[str, Any]]:
         """
@@ -201,10 +201,39 @@ class BackendService:
                 f"Application ID: {application_id}"
             )
 
+            # Log dos dados que estão sendo enviados para debug
+            logger.info(f"📋 Resume data keys: {list(resume_data.keys()) if resume_data else 'None'}")
+            logger.info(f"💼 Job data keys: {list(job_data.keys()) if job_data else 'None'}")
+            logger.info(f"❓ Question responses: {len(question_responses) if question_responses else 0}")
+
+            # Log detalhado dos dados para debug do erro 422
+            logger.info(f"🔍 Resume data completo: {resume_data}")
+            logger.info(f"🔍 Job data completo: {job_data}")
+            if question_responses:
+                logger.info(f"🔍 Question responses: {question_responses}")
+
+            # Valida se os dados obrigatórios estão presentes
+            if not resume_data:
+                logger.error("❌ Resume data está vazio")
+                return None
+
+            if not job_data:
+                logger.error("❌ Job data está vazio")
+                return None
+
+            # Valida campos obrigatórios do job_data
+            if not job_data.get('id'):
+                logger.error("❌ Job data não possui 'id' obrigatório")
+                return None
+
+            # Converte os dados para o formato esperado pelo AI service
+            converted_resume_data = self._convert_resume_for_ai_service(resume_data)
+            converted_job_data = self._convert_job_for_ai_service(job_data)
+
             # Prepara os dados da requisição no formato esperado pelo ai-service
             request_data = {
-                'resume': resume_data,
-                'job': job_data
+                'resume': converted_resume_data,
+                'job': converted_job_data
             }
 
             # Adiciona respostas das perguntas se existirem
@@ -226,12 +255,19 @@ class BackendService:
 
             if response.status_code in [200, 201]:
                 response_data = response.json() if response.content else None
+                logger.info(f"✅ Avaliação de candidato bem-sucedida - Status: {response.status_code}")
                 return response_data
             else:
                 logger.error(
                     f"❌ Falha na avaliação de candidato - Status: {response.status_code}, "
                     f"Response: {response.text}"
                 )
+                # Log adicional para debug
+                try:
+                    error_detail = response.json() if response.content else None
+                    logger.error(f"🔍 Detalhes do erro: {error_detail}")
+                except Exception:
+                    logger.error(f"🔍 Resposta não é JSON válido: {response.text}")
                 return None
 
         except requests.exceptions.RequestException as e:
@@ -249,39 +285,72 @@ class BackendService:
     async def update_application_scores(
         self,
         application_id: str,
-        overall_score: Optional[float],
-        education_score: Optional[float],
-        experience_score: Optional[float]
+        overall_score: Optional[float] = None,
+        education_score: Optional[float] = None,
+        experience_score: Optional[float] = None,
+        question_responses_score: Optional[float] = None,
+        ai_score: Optional[float] = None,
+        evaluation_provider: Optional[str] = None,
+        evaluation_model: Optional[str] = None,
+        evaluation_details: Optional[Dict[str, Any]] = None,
+        evaluated_at: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Atualiza os scores de uma aplicação usando o endpoint de avaliação
+        Atualiza os scores de uma aplicação usando o endpoint interno de comunicação
 
         Args:
             application_id: ID da aplicação
-            overall_score: Score geral
+            overall_score: Score geral da avaliação
             education_score: Score de educação
             experience_score: Score de experiência
+            question_responses_score: Score das respostas às perguntas
+            ai_score: Score geral de IA
+            evaluation_provider: Provedor da avaliação (ex: "openai")
+            evaluation_model: Modelo usado (ex: "gpt-4")
+            evaluation_details: Detalhes completos da avaliação
+            evaluated_at: Data/hora da avaliação (ISO string)
 
         Returns:
             Dict com o resultado da operação
         """
         try:
-            # URL do endpoint de atualização de avaliação no companies-backend
-            endpoint_url = f"{self.companies_backend_url}/applications/{application_id}/evaluation"
+            # URL do endpoint interno de atualização de aplicação
+            endpoint_url = f"{self.companies_backend_url}/internal/applications/{application_id}"
 
             logger.info(
-                f"📤 Enviando requisição para atualização de scores - URL: {endpoint_url}, "
+                f"📤 Enviando requisição para atualização de scores via endpoint interno - URL: {endpoint_url}, "
                 f"Application ID: {application_id}"
             )
 
-            # Prepara os dados da requisição no formato esperado pelo companies-backend
+            # Prepara os dados da requisição no formato esperado pelo endpoint interno
             request_data = {}
+            if ai_score is not None:
+                request_data['aiScore'] = ai_score
             if overall_score is not None:
-                request_data['aiScore'] = overall_score
+                request_data['overallScore'] = overall_score
             if education_score is not None:
                 request_data['educationScore'] = education_score
             if experience_score is not None:
                 request_data['experienceScore'] = experience_score
+            if question_responses_score is not None:
+                request_data['questionResponsesScore'] = question_responses_score
+
+            # Usa configurações padrão se não fornecidas explicitamente
+            provider = evaluation_provider if evaluation_provider is not None else settings.evaluation.provider
+            model = evaluation_model if evaluation_model is not None else settings.evaluation.model
+
+            if provider is not None:
+                request_data['evaluationProvider'] = provider
+            if model is not None:
+                request_data['evaluationModel'] = model
+            if evaluation_details is not None:
+                request_data['evaluationDetails'] = evaluation_details
+            if evaluated_at is not None:
+                request_data['evaluatedAt'] = evaluated_at
+
+            # Log dos dados que estão sendo enviados
+            logger.info(f"📊 Scores a serem atualizados: {request_data}")
+            logger.info(f"🔧 Configurações de avaliação - Provider: {provider}, Model: {model}")
 
             # Faz a requisição PATCH
             response = requests.patch(
@@ -290,19 +359,24 @@ class BackendService:
                 headers={
                     'Content-Type': 'application/json',
                 },
-                timeout=self.timeout
+                timeout=self.companies_backend_timeout
             )
 
             # Log do resultado
             logger.log_backend_communication(endpoint_url, response.status_code)
 
             if response.status_code in [200, 201]:
+                logger.info(f"✅ Scores atualizados com sucesso para application {application_id}")
                 return {
                     'success': True,
                     'status_code': response.status_code,
                     'response': response.json() if response.content else None
                 }
             else:
+                logger.error(
+                    f"❌ Falha na atualização de scores - Status: {response.status_code}, "
+                    f"Response: {response.text}"
+                )
                 return {
                     'success': False,
                     'status_code': response.status_code,
@@ -338,4 +412,48 @@ class BackendService:
             'companies_backend_url': self.companies_backend_url,
             'companies_backend_timeout': self.companies_backend_timeout
         }
+
+    def _convert_resume_for_ai_service(self, resume_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Converte dados do currículo para o formato esperado pelo AI service
+
+        Args:
+            resume_data: Dados do currículo no formato do score_queue_service
+
+        Returns:
+            Dados convertidos para o formato do AI service
+        """
+        converted = {
+            "personal_info": resume_data.get("personal_info", {}),
+            "education": resume_data.get("education", []),
+            "experience": resume_data.get("experience", []),
+            "skills": resume_data.get("skills", []),
+            "languages": resume_data.get("languages", []),
+            "achievements": resume_data.get("achievements", [])
+        }
+
+        return converted
+
+    def _convert_job_for_ai_service(self, job_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Converte dados da vaga para o formato esperado pelo AI service
+
+        Args:
+            job_data: Dados da vaga
+
+        Returns:
+            Dados convertidos para o formato do AI service
+        """
+        converted = {
+            "id": job_data.get("id", ""),
+            "title": job_data.get("title", ""),
+            "description": job_data.get("description", ""),
+            "requirements": job_data.get("requirements", []),
+            "responsibilities": job_data.get("responsibilities", []),
+            "education_required": job_data.get("education_required", ""),
+            "experience_required": job_data.get("experience_required", ""),
+            "skills_required": job_data.get("skills_required", [])
+        }
+
+        return converted
 

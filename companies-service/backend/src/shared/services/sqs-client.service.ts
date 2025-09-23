@@ -60,6 +60,8 @@ export class SqsClientService implements AsyncTaskQueue {
   async sendApplicationCreatedMessage(
     applicationId: string,
     resumeUrl: string,
+    jobId: string,
+    jobData: Record<string, unknown>,
   ): Promise<void> {
     const queueName =
       process.env.APPLICATIONS_QUEUE_NAME || 'applications-queue';
@@ -67,6 +69,8 @@ export class SqsClientService implements AsyncTaskQueue {
     const messageBody = {
       applicationId,
       resumeUrl,
+      jobId,
+      jobData,
       eventType: 'APPLICATION_CREATED',
       timestamp: new Date().toISOString(),
     };

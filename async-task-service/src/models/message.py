@@ -36,6 +36,21 @@ class AIScoreMessage:
 
 
 @dataclass
+class QuestionResponsesMessage:
+    """Mensagem para avaliação de question responses"""
+    application_id: str
+    job_id: str
+    company_id: str
+    question_responses: List[Dict[str, Any]]
+    job_data: Dict[str, Any]
+    company_data: Dict[str, Any]
+    application_data: Dict[str, Any]
+    event_type: str = "MULTIPLE_QUESTION_RESPONSES_CREATED"
+    timestamp: Optional[str] = None
+    total_responses: Optional[int] = None
+
+
+@dataclass
 class QueueMessage:
     """Mensagem genérica de fila Redis Streams"""
     message_id: str

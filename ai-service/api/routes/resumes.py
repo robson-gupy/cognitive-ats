@@ -28,8 +28,6 @@ class ResumeParseRequest(BaseModel):
     """Modelo para requisição de parsing de currículo"""
     url: HttpUrl
     application_id: str = "api_request"
-    provider: str = None
-    api_key: str = None
 
 
 class ResumeParseResponse(BaseModel):
@@ -132,7 +130,6 @@ async def parse_resume_from_url(request: ResumeParseRequest):
         logger.info(f"🎯 Recebida requisição para parsing de currículo")
         logger.info(f"📄 URL: {request.url}")
         logger.info(f"🆔 Application ID: {request.application_id}")
-        logger.info(f"🤖 Provider: {request.provider or 'padrão'}")
         
         # Faz download do PDF
         temp_file_path = download_pdf_from_url(str(request.url))
@@ -142,13 +139,13 @@ async def parse_resume_from_url(request: ResumeParseRequest):
             raise HTTPException(status_code=400, detail="Arquivo não é um PDF válido")
         
         # Configura o provider de IA
-        provider_name = request.provider or Config.DEFAULT_AI_PROVIDER
+        provider_name = Config.DEFAULT_AI_PROVIDER
         provider = AIProvider(provider_name)
         
         logger.info(f"🔧 Usando provider: {provider_name}")
         
         # Inicializa o serviço de IA
-        ai_service = AIService(provider, api_key=request.api_key)
+        ai_service = AIService(provider)
         resume_parser = ResumeParser(ai_service)
         
         logger.info("🚀 Iniciando parsing com IA...")

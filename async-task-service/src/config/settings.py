@@ -39,6 +39,13 @@ class AIServiceSettings:
 
 
 @dataclass
+class EvaluationSettings:
+    """Configurações para avaliação de candidatos"""
+    provider: str
+    model: str
+
+
+@dataclass
 class ProcessingSettings:
     """Configurações para processamento"""
     download_timeout: int = 30
@@ -102,6 +109,7 @@ class ConsumerSettings:
         self.backend = self._load_backend_settings()
         self.companies_backend = self._load_companies_backend_settings()
         self.ai_service = self._load_ai_service_settings()
+        self.evaluation = self._load_evaluation_settings()
         self.storage = self._load_storage_settings()
         self.processing = self._load_processing_settings()
         self.logging = self._load_logging_settings()
@@ -169,6 +177,13 @@ class ConsumerSettings:
         return AIServiceSettings(
             url=ai_service_url,
             timeout=int(os.getenv('AI_SERVICE_TIMEOUT', '120'))
+        )
+
+    def _load_evaluation_settings(self) -> EvaluationSettings:
+        """Carrega configurações de avaliação das variáveis de ambiente"""
+        return EvaluationSettings(
+            provider=os.getenv('EVALUATION_PROVIDER', 'openai'),
+            model=os.getenv('EVALUATION_MODEL', 'gpt-4')
         )
 
     def _load_storage_settings(self) -> StorageSettings:

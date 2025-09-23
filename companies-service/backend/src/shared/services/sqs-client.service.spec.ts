@@ -20,19 +20,21 @@ describe('SqsClientService', () => {
     it('should send application created message to SQS', async () => {
       const applicationId = 'test-application-id';
       const resumeUrl = '/resumes/resume.pdf';
+      const jobId = 'test-job-id';
 
       // Mock do método sendMessage
       const sendMessageSpy = jest
         .spyOn(service as any, 'sendMessage')
         .mockResolvedValue(undefined);
 
-      await service.sendApplicationCreatedMessage(applicationId, resumeUrl);
+      await service.sendApplicationCreatedMessage(applicationId, resumeUrl, jobId);
 
       expect(sendMessageSpy).toHaveBeenCalledWith(
         'applications-queue', // valor padrão
         {
           applicationId,
           resumeUrl,
+          jobId,
           eventType: 'APPLICATION_CREATED',
           timestamp: expect.any(String),
         },

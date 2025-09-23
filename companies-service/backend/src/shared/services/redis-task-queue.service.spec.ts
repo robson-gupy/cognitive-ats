@@ -164,19 +164,21 @@ describe('RedisTaskQueueService', () => {
     it('should send application created message with default queue name', async () => {
       const applicationId = 'test-app-123';
       const resumeUrl = 'https://example.com/resume.pdf';
+      const jobId = 'test-job-123';
       
       // Mock do método sendMessage
       const sendMessageSpy = jest
         .spyOn(service as any, 'sendMessage')
         .mockResolvedValue(undefined);
 
-      await service.sendApplicationCreatedMessage(applicationId, resumeUrl);
+      await service.sendApplicationCreatedMessage(applicationId, resumeUrl, jobId);
 
       expect(sendMessageSpy).toHaveBeenCalledWith(
         'applications-queue',
         {
           applicationId,
           resumeUrl,
+          jobId,
           eventType: 'APPLICATION_CREATED',
           timestamp: expect.any(String),
         },
@@ -191,7 +193,7 @@ describe('RedisTaskQueueService', () => {
         .spyOn(service as any, 'sendMessage')
         .mockResolvedValue(undefined);
 
-      await service.sendApplicationCreatedMessage('app-123', 'resume.pdf');
+      await service.sendApplicationCreatedMessage('app-123', 'resume.pdf', 'job-123');
 
       expect(sendMessageSpy).toHaveBeenCalledWith(
         'custom-applications-queue',
@@ -213,7 +215,7 @@ describe('RedisTaskQueueService', () => {
         .spyOn(service as any, 'sendMessage')
         .mockResolvedValue(undefined);
 
-      await service.sendApplicationCreatedMessage('app-123', 'resume.pdf');
+      await service.sendApplicationCreatedMessage('app-123', 'resume.pdf', 'job-123');
 
       expect(sendMessageSpy).toHaveBeenCalledWith(
         'sqs-applications-queue',
@@ -422,7 +424,7 @@ describe('RedisTaskQueueService', () => {
 
     it('should have correct method signatures', () => {
       expect(service.sendMessage.length).toBe(2); // queueName, messageBody
-      expect(service.sendApplicationCreatedMessage.length).toBe(2); // applicationId, resumeUrl
+      expect(service.sendApplicationCreatedMessage.length).toBe(3); // applicationId, resumeUrl, jobId
       expect(service.sendQuestionResponseMessage.length).toBe(3); // applicationId, questionId, response
     });
   });
@@ -457,7 +459,7 @@ describe('RedisTaskQueueService', () => {
         .mockResolvedValue(undefined);
 
       // Testar com valores padrão
-      await service.sendApplicationCreatedMessage('app-123', 'resume.pdf');
+      await service.sendApplicationCreatedMessage('app-123', 'resume.pdf', 'job-123');
       expect(sendMessageSpy).toHaveBeenCalledWith('applications-queue', expect.any(Object));
 
       await service.sendQuestionResponseMessage('app-123', 'q-456', 'response');

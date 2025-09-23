@@ -75,13 +75,17 @@ export class RedisTaskQueueService implements AsyncTaskQueue, OnModuleInit, OnMo
   async sendApplicationCreatedMessage(
     applicationId: string,
     resumeUrl: string,
+    jobId: string,
   ): Promise<void> {
     const queueName =
-      process.env.APPLICATIONS_QUEUE_NAME || 'applications-queue';
+      process.env.APPLICATIONS_REDIS_QUEUE_NAME ||
+      process.env.APPLICATIONS_QUEUE_NAME ||
+      'applications-queue';
 
     const messageBody = {
       applicationId,
       resumeUrl,
+      jobId,
       eventType: 'APPLICATION_CREATED',
       timestamp: new Date().toISOString(),
     };

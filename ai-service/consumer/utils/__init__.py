@@ -1,3 +1,0 @@
-"""
-Utilitários para o consumer
-"""

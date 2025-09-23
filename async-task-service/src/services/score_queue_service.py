@@ -84,15 +84,14 @@ class ScoreQueueService:
             # Envia a mensagem para a fila Redis usando lpush
             queue_name = settings.ai_score_redis.stream_name
             message_json = json.dumps(message_body)
-            
+
             # Gera um ID único para a mensagem
             import uuid
             message_id = str(uuid.uuid4())
-            
+
             # Adiciona o message_id ao corpo da mensagem
             message_body['messageId'] = message_id
-            message_json = json.dumps(message_body)
-            
+
             # Envia para a fila Redis
             await self.redis_client.lpush(queue_name, message_json)
 
@@ -146,7 +145,8 @@ class ScoreQueueService:
 
         # Se não houver dados da vaga, cria dados padrão
         if not job_data:
-            job_data = self._create_default_job_data()
+            logger.error("❌ Job data está vazio")
+            return None
 
         message = {
             "applicationId": application_id,
@@ -235,30 +235,6 @@ class ScoreQueueService:
 
         return converted
 
-    def _create_default_job_data(self) -> Dict[str, Any]:
-        """
-        Cria dados padrão de vaga quando não fornecidos
-
-        Returns:
-            Dict com dados padrão de vaga
-        """
-        return {
-            "title": "Desenvolvedor Full Stack",
-            "description": "Desenvolvimento de aplicações web modernas e escaláveis",
-            "requirements": [
-                "Experiência com desenvolvimento web",
-                "Conhecimento de boas práticas",
-                "Capacidade de trabalhar em equipe"
-            ],
-            "responsibilities": [
-                "Desenvolver features frontend e backend",
-                "Participar de code reviews",
-                "Colaborar com a equipe de produto"
-            ],
-            "education_required": "Formação em áreas relacionadas à computação",
-            "experience_required": "Experiência em desenvolvimento",
-            "skills_required": ["Programação", "Desenvolvimento Web", "Trabalho em Equipe"]
-        }
 
     def _calculate_duration(self, start_date: Optional[str], end_date: Optional[str]) -> str:
         """
@@ -303,10 +279,10 @@ class ScoreQueueService:
                     'connected': False,
                     'error': 'Redis não conectado'
                 }
-            
+
             queue_name = settings.ai_score_redis.stream_name
             queue_length = await self.redis_client.llen(queue_name)
-            
+
             return {
                 'connected': True,
                 'queue_name': queue_name,

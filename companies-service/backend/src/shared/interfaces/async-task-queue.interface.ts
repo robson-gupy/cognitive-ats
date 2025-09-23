@@ -14,8 +14,15 @@ export interface AsyncTaskQueue {
    * Envia mensagem específica para criação de aplicação
    * @param applicationId ID da aplicação criada
    * @param resumeUrl URL do currículo
+   * @param jobId ID da vaga
+   * @param jobData Dados completos da vaga
    */
-  sendApplicationCreatedMessage(applicationId: string, resumeUrl: string): Promise<void>;
+  sendApplicationCreatedMessage(
+    applicationId: string, 
+    resumeUrl: string, 
+    jobId: string, 
+    jobData: Record<string, unknown>
+  ): Promise<void>;
 
   /**
    * Envia mensagem específica para resposta de questão

@@ -24,6 +24,7 @@ async def handler_application_created(payload: Dict[str, Any]) -> None:
     try:
         # Extrai dados do payload
         application_id = payload.get("applicationId")
+        job_id = payload.get("jobId")
         resume_url_path = payload.get("resumeUrl")
         event_type = payload.get("eventType")
 
@@ -44,7 +45,7 @@ async def handler_application_created(payload: Dict[str, Any]) -> None:
         orchestrator = ResumeOrchestrator()
 
         # Processa o currículo usando o orquestrador
-        result = await orchestrator.process_resume_from_url(resume_url_path, application_id)
+        result = await orchestrator.process_resume_from_url(resume_url_path, application_id, job_id)
 
         if result.success:
             logger.info(f"✅ Currículo processado com sucesso para aplicação: {application_id}")

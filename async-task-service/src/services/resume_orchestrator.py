@@ -26,7 +26,7 @@ class ResumeOrchestrator:
         self.resume_processor = ResumeProcessor()
         self.backend_service = BackendService()
 
-    async def process_resume_from_url(self, url: str, application_id: str) -> ProcessingResult:
+    async def process_resume_from_url(self, url: str, application_id: str, job_id: str) -> ProcessingResult:
         """
         Processa um currículo a partir de uma URL usando o BackendService
 
@@ -59,6 +59,7 @@ class ResumeOrchestrator:
 
             if backend_result.success:
                 logger.info(f"✅ Currículo processado com sucesso via backend - Application ID: {application_id}")
+                logger.info(f"📊 Tempo de processamento: %.2f segund{processing_time}")
 
                 # Extrai os dados do currículo da resposta do backend
                 resume_data = None
@@ -89,11 +90,12 @@ class ResumeOrchestrator:
 
                     # ENVIO AUTOMÁTICO PARA FILA DE SCORES
                     logger.info("🚀 Enviando dados processados para fila de scores")
-                    
+
                     from services.score_queue_service import score_queue_service
                     score_queue_result = await score_queue_service.send_score_request(
                         application_id=application_id,
-                        resume_data=resume_data
+                        resume_data=resume_data,
+                        job_data={"id": job_id}
                     )
 
                     if score_queue_result['success']:
@@ -187,8 +189,8 @@ class ResumeOrchestrator:
                 mapped_exp = {
                     'companyName': exp.get('companyName', ''),
                     'position': exp.get('position', ''),
-                    'startDate': exp.get('startDate', ''),
-                    'endDate': exp.get('endDate'),
+                    'startDate': self._convert_to_valid_date(exp.get('startDate', '')),
+                    'endDate': self._convert_to_valid_date(exp.get('endDate')),
                     'isCurrent': exp.get('isCurrent', False),
                     'description': exp.get('description'),
                     'responsibilities': exp.get('responsibilities'),
@@ -206,8 +208,8 @@ class ResumeOrchestrator:
                     'institution': formation.get('institution', ''),
                     'course': formation.get('course', ''),
                     'degree': formation.get('degree', ''),
-                    'startDate': formation.get('startDate', ''),
-                    'endDate': formation.get('endDate'),
+                    'startDate': self._convert_to_valid_date(formation.get('startDate', '')),
+                    'endDate': self._convert_to_valid_date(formation.get('endDate')),
                     'isCurrent': formation.get('is_current', False),
                     'status': formation.get('status', 'completed'),
                     'description': formation.get('description')
@@ -241,3 +243,47 @@ class ResumeOrchestrator:
                 mapped_data['languages'].append(mapped_language)
 
         return mapped_data
+
+    def _convert_to_valid_date(self, date_value: str) -> str:
+        """
+        Converte um valor de data para um formato válido para PostgreSQL
+
+        Args:
+            date_value: Valor da data (pode ser ano, data completa, etc.)
+
+        Returns:
+            Data no formato YYYY-MM-DD ou None se inválida
+        """
+        if not date_value or date_value.strip() == '':
+            return None
+
+        date_value = str(date_value).strip()
+
+        # Se for apenas um ano (4 dígitos)
+        if date_value.isdigit() and len(date_value) == 4:
+            year = int(date_value)
+            # Valida se é um ano válido (entre 1900 e 2100)
+            if 1900 <= year <= 2100:
+                return f"{year}-01-01"  # Primeiro dia do ano
+
+        # Se já estiver no formato YYYY-MM-DD
+        if len(date_value) == 10 and date_value.count('-') == 2:
+            try:
+                from datetime import datetime
+                datetime.strptime(date_value, '%Y-%m-%d')
+                return date_value
+            except ValueError:
+                pass
+
+        # Se estiver no formato YYYY-MM
+        if len(date_value) == 7 and date_value.count('-') == 1:
+            try:
+                from datetime import datetime
+                datetime.strptime(date_value, '%Y-%m')
+                return f"{date_value}-01"  # Primeiro dia do mês
+            except ValueError:
+                pass
+
+        # Se não conseguir converter, retorna None
+        logger.warning(f"⚠️ Não foi possível converter data '{date_value}' para formato válido")
+        return None

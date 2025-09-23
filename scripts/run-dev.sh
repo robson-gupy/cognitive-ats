@@ -16,5 +16,5 @@ docker compose -f docker-compose.yml up minio -d
 ./scripts/setup-minio.sh
 
 #iniciando a aplicação
-docker compose -f docker-compose.yml up
+docker compose -f docker-compose.yml up -d
 

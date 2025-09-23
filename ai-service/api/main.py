@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 
 from shared.config import Config, AIProvider
-from api.routes import ai, jobs, candidates, resumes
+from api.routes import ai, jobs, candidates, resumes, question_responses
 
 # Configurar logging
 logging.basicConfig(
@@ -43,6 +43,7 @@ app.include_router(ai.router)
 app.include_router(jobs.router)
 app.include_router(candidates.router)
 app.include_router(resumes.router)
+app.include_router(question_responses.router)
 
 
 @app.get("/")
@@ -79,6 +80,7 @@ async def get_service_info():
             "Embeddings",
             "Job Creation",
             "Job Enhancement",
-            "Resume Parsing"
+            "Resume Parsing",
+            "Question Responses Evaluation"
         ]
     }
