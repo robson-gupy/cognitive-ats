@@ -154,7 +154,7 @@ export class AiServiceClient {
   ): Promise<CandidateEvaluationResponse> {
     try {
       const response = await axios.post(
-        `${this.aiServiceUrl}/ai/evaluate-candidate`,
+        `${this.aiServiceUrl}/candidates/evaluate`,
         request,
         {
           timeout: 60000, // 60 segundos de timeout

@@ -423,13 +423,31 @@ class BackendService:
         Returns:
             Dados convertidos para o formato do AI service
         """
+        # Converte achievements de objetos para strings
+        achievements = []
+        if resume_data.get("achievements"):
+            for achievement in resume_data["achievements"]:
+                if isinstance(achievement, dict):
+                    # Se é um objeto com title e description, converte para string
+                    title = achievement.get("title", "")
+                    description = achievement.get("description", "")
+                    if title and description:
+                        achievements.append(f"{title}: {description}")
+                    elif title:
+                        achievements.append(title)
+                    elif description:
+                        achievements.append(description)
+                elif isinstance(achievement, str):
+                    # Se já é uma string, mantém como está
+                    achievements.append(achievement)
+        
         converted = {
             "personal_info": resume_data.get("personal_info", {}),
             "education": resume_data.get("education", []),
             "experience": resume_data.get("experience", []),
             "skills": resume_data.get("skills", []),
             "languages": resume_data.get("languages", []),
-            "achievements": resume_data.get("achievements", [])
+            "achievements": achievements
         }
 
         return converted
