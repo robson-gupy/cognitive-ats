@@ -36,31 +36,25 @@ class JobCreationRequest(BaseModel):
     generate_stages: Optional[bool] = True
     max_questions: Optional[int] = 5
     max_stages: Optional[int] = 3
-    provider: Optional[str] = None
-    api_key: Optional[str] = None
+    # Indica se a vaga deve solicitar endereço na inscrição (camelCase para compatibilidade)
+    requires_address: Optional[bool] = Field(default=None, alias="requiresAddress")
 
 
 class JobEnhancementRequest(BaseModel):
     """Modelo para requisição de melhoria de job"""
     enhancement_prompt: str
-    provider: Optional[str] = None
-    api_key: Optional[str] = None
 
 
 class JobQuestionsRequest(BaseModel):
     """Modelo para requisição de geração de perguntas"""
     job: Dict[str, Any]  # Job como dict para evitar dependência circular
     num_questions: Optional[int] = 5
-    provider: Optional[str] = None
-    api_key: Optional[str] = None
 
 
 class JobStagesRequest(BaseModel):
     """Modelo para requisição de geração de estágios"""
     job: Dict[str, Any]  # Job como dict para evitar dependência circular
     num_stages: Optional[int] = 3
-    provider: Optional[str] = None
-    api_key: Optional[str] = None
 
 
 class JobResponse(BaseModel):

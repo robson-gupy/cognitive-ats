@@ -12,18 +12,6 @@ export class S3ClientService {
     this.initializeS3Client();
   }
 
-  private initializeS3Client(): void {
-    const config: AWS.S3.ClientConfiguration = {
-      endpoint: process.env.ENDPOINT_URL,
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      s3ForcePathStyle: true, // Necessário para compatibilidade com MinIO
-      signatureVersion: 'v4',
-    };
-
-    this.s3 = new AWS.S3(config);
-  }
-
   /**
    * Faz upload de um arquivo para o S3
    * @param filePath - Caminho local do arquivo
@@ -74,6 +62,62 @@ export class S3ClientService {
       this.logger.error(`Erro ao fazer upload do arquivo ${filePath}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Gera uma URL pré-assinada para acesso temporário ao arquivo
+   * @param bucketName - Nome do bucket
+   * @param key - Chave do arquivo no S3
+   * @param expires - Tempo de expiração em segundos (padrão: 3600 = 1 hora)
+   * @returns URL pré-assinada
+   */
+  async getPresignedUrl(
+    bucketName: string,
+    key: string,
+    expires: number = 3600,
+  ): Promise<string> {
+    try {
+      const params = {
+        Bucket: bucketName,
+        Key: key,
+        Expires: expires,
+      };
+
+      return await this.s3.getSignedUrlPromise('getObject', params);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao gerar URL pré-assinada para ${bucketName}/${key}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Deleta um arquivo do S3
+   * @param bucketName - Nome do bucket
+   * @param key - Chave do arquivo no S3
+   */
+  async deleteFile(bucketName: string, key: string): Promise<void> {
+    try {
+      await this.s3.deleteObject({ Bucket: bucketName, Key: key }).promise();
+      this.logger.log(`Arquivo ${bucketName}/${key} deletado com sucesso`);
+    } catch (error) {
+      this.logger.error(`Erro ao deletar arquivo ${bucketName}/${key}:`, error);
+      throw error;
+    }
+  }
+
+  private initializeS3Client(): void {
+    const config: AWS.S3.ClientConfiguration = {
+      endpoint: process.env.STORAGE_SERVICE_ENDPOINT,
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      s3ForcePathStyle: true, // Necessário para compatibilidade com MinIO
+      signatureVersion: 'v4',
+    };
+
+    this.s3 = new AWS.S3(config);
   }
 
   /**
@@ -171,49 +215,5 @@ export class S3ClientService {
     };
 
     return contentTypes[ext] || 'application/octet-stream';
-  }
-
-  /**
-   * Gera uma URL pré-assinada para acesso temporário ao arquivo
-   * @param bucketName - Nome do bucket
-   * @param key - Chave do arquivo no S3
-   * @param expires - Tempo de expiração em segundos (padrão: 3600 = 1 hora)
-   * @returns URL pré-assinada
-   */
-  async getPresignedUrl(
-    bucketName: string,
-    key: string,
-    expires: number = 3600,
-  ): Promise<string> {
-    try {
-      const params = {
-        Bucket: bucketName,
-        Key: key,
-        Expires: expires,
-      };
-
-      return await this.s3.getSignedUrlPromise('getObject', params);
-    } catch (error) {
-      this.logger.error(
-        `Erro ao gerar URL pré-assinada para ${bucketName}/${key}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Deleta um arquivo do S3
-   * @param bucketName - Nome do bucket
-   * @param key - Chave do arquivo no S3
-   */
-  async deleteFile(bucketName: string, key: string): Promise<void> {
-    try {
-      await this.s3.deleteObject({ Bucket: bucketName, Key: key }).promise();
-      this.logger.log(`Arquivo ${bucketName}/${key} deletado com sucesso`);
-    } catch (error) {
-      this.logger.error(`Erro ao deletar arquivo ${bucketName}/${key}:`, error);
-      throw error;
-    }
   }
 }

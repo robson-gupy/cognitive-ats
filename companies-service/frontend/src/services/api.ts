@@ -1,10 +1,18 @@
-import type { User, CreateUserData, UpdateUserData } from '../types/User';
-import type { LoginData, RegisterData, AuthResponse, RegisterResponse } from '../types/Auth';
-import type { Company, CreateCompanyData, UpdateCompanyData } from '../types/Company';
-import type { Department, CreateDepartmentRequest, UpdateDepartmentRequest } from '../types/Department';
-import type { Role, CreateRoleRequest, UpdateRoleRequest } from '../types/Role';
-import type { Application, CreateApplicationData, UpdateApplicationData, UpdateApplicationScoreData, ChangeApplicationStageData } from '../types/Application';
-import { appConfig, getCurrentConfig } from '../config/config';
+import type {CreateUserData, UpdateUserData, User} from '../types/User';
+import type {AuthResponse, LoginData, RegisterData, RegisterResponse} from '../types/Auth';
+import type {Company, CreateCompanyData, UpdateCompanyData} from '../types/Company';
+import type {CreateDepartmentRequest, Department, UpdateDepartmentRequest} from '../types/Department';
+import type {CreateRoleRequest, Role, UpdateRoleRequest} from '../types/Role';
+import type {
+  Application,
+  ChangeApplicationStageData,
+  CreateApplicationData,
+  UpdateApplicationData,
+  UpdateApplicationScoreData
+} from '../types/Application';
+import type {ApplicationTag, CreateApplicationTagData} from '../types/ApplicationTag';
+import type {CreateTagData, Tag, UpdateTagData} from '../types/Tag';
+import {getCurrentConfig} from '../config/config';
 
 // URL base da API - agora é dinâmica baseada no subdomínio
 const getApiBaseUrl = (): string => {
@@ -13,53 +21,6 @@ const getApiBaseUrl = (): string => {
 };
 
 export class ApiService {
-  private getAuthHeaders(): HeadersInit {
-    const token = this.getToken();
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
-  }
-
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const headers = this.getAuthHeaders();
-    
-    const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
-      headers,
-      ...options,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      
-      // Tratar diferentes formatos de erro
-      let errorMessage = `HTTP error! status: ${response.status}`;
-      
-      if (errorData.message) {
-        if (Array.isArray(errorData.message)) {
-          // Se é um array de mensagens (validação), juntar todas
-          errorMessage = errorData.message.join(', ');
-        } else {
-          // Se é uma string única
-          errorMessage = errorData.message;
-        }
-      } else if (errorData.error) {
-        errorMessage = errorData.error;
-      }
-      
-      throw new Error(errorMessage);
-    }
-
-    // Verificar se a resposta tem conteúdo antes de tentar fazer JSON
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return response.json();
-    } else {
-      // Para respostas vazias ou não-JSON, retornar undefined
-      return undefined as T;
-    }
-  }
-
   // Autenticação
   async login(loginData: LoginData): Promise<AuthResponse> {
     return this.request<AuthResponse>('/auth/login', {
@@ -69,9 +30,26 @@ export class ApiService {
   }
 
   async register(registerData: RegisterData): Promise<RegisterResponse> {
+    const payload = {
+      company: {
+        name: registerData.companyName,
+        corporateName: registerData.corporateName,
+        cnpj: registerData.cnpj,
+        businessArea: registerData.businessArea,
+        description: registerData.companyDescription,
+        slug: registerData.companySlug,
+      },
+      user: {
+        firstName: registerData.firstName,
+        lastName: registerData.lastName,
+        email: registerData.email,
+        password: registerData.password,
+      },
+    };
+
     return this.request<RegisterResponse>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(registerData),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -96,7 +74,7 @@ export class ApiService {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         return data.available;
@@ -257,18 +235,18 @@ export class ApiService {
     if (!authData) {
       return null;
     }
-    
+
     try {
       const parsed = JSON.parse(authData);
       // Verificar se o token não expirou (24 horas)
       const tokenAge = Date.now() - parsed.timestamp;
       const maxAge = 24 * 60 * 60 * 1000; // 24 horas em millisegundos
-      
+
       if (tokenAge > maxAge) {
         this.removeToken();
         return null;
       }
-      
+
       return parsed.token;
     } catch (error) {
       this.removeToken();
@@ -279,7 +257,7 @@ export class ApiService {
   getUserData(): any {
     const authData = localStorage.getItem('authData');
     if (!authData) return null;
-    
+
     try {
       const parsed = JSON.parse(authData);
       return parsed.userData;
@@ -296,7 +274,7 @@ export class ApiService {
   isAuthenticated(): boolean {
     const token = this.getToken();
     if (!token) return false;
-    
+
     // Verificar se o token é válido fazendo uma chamada de teste
     return true; // A validação real será feita pelo backend
   }
@@ -355,13 +333,14 @@ export class ApiService {
     });
   }
 
-  async createJobWithAi(prompt: string, maxQuestions?: number, maxStages?: number): Promise<any> {
+  async createJobWithAi(prompt: string, maxQuestions?: number, maxStages?: number, requiresAddress?: boolean): Promise<any> {
     return this.request<any>('/jobs/with-ai', {
       method: 'POST',
       body: JSON.stringify({
         prompt,
         maxQuestions: maxQuestions || 5,
         maxStages: maxStages || 3,
+        ...(requiresAddress !== undefined && { requiresAddress }),
       }),
     });
   }
@@ -399,7 +378,7 @@ export class ApiService {
   isAuthDataConsistent(): boolean {
     const authData = localStorage.getItem('authData');
     if (!authData) return false;
-    
+
     try {
       JSON.parse(authData);
       return true;
@@ -414,23 +393,23 @@ export class ApiService {
     if (!this.isAuthDataConsistent()) {
       this.removeToken();
     }
-    
+
     // Verificar se há dados antigos no localStorage
     const oldToken = localStorage.getItem('token');
     if (oldToken) {
       localStorage.removeItem('token');
     }
-    
+
     // Verificar se há múltiplos dados de autenticação (exceto nossa chave principal)
     const sessionKeys = Object.keys(sessionStorage);
     const localKeys = Object.keys(localStorage);
     const allKeys = [...sessionKeys, ...localKeys];
-    
-    const authKeys = allKeys.filter(key => 
-      (key.includes('auth') || key.includes('token')) && 
+
+    const authKeys = allKeys.filter(key =>
+      (key.includes('auth') || key.includes('token')) &&
       key !== 'authData' // Não remover nossa chave principal
     );
-    
+
     if (authKeys.length > 0) {
       authKeys.forEach(key => {
         sessionStorage.removeItem(key);
@@ -446,8 +425,14 @@ export class ApiService {
     return this.request<Application[]>(`/jobs/${jobId}/applications`);
   }
 
-  async getApplicationsWithQuestionResponses(jobId: string): Promise<Application[]> {
-    return this.request<Application[]>(`/jobs/${jobId}/applications/with-question-responses`);
+  async getApplicationsWithQuestionResponses(jobId: string, search?: string): Promise<Application[]> {
+    const params = new URLSearchParams();
+    if (search && search.trim()) {
+      params.append('search', search.trim());
+    }
+    const queryString = params.toString();
+    const url = `/jobs/${jobId}/applications/with-question-responses${queryString ? `?${queryString}` : ''}`;
+    return this.request<Application[]>(url);
   }
 
   async getApplicationResume(applicationId: string): Promise<any> {
@@ -498,6 +483,100 @@ export class ApiService {
 
   async getApplicationsByStage(jobId: string, stageId: string): Promise<Application[]> {
     return this.request<Application[]>(`/jobs/${jobId}/applications/by-stage/${stageId}`);
+  }
+
+  // Application Tags
+  async getApplicationTags(applicationId: string): Promise<ApplicationTag[]> {
+    return this.request<ApplicationTag[]>(`/application-tags/application/${applicationId}`);
+  }
+
+  async createApplicationTag(applicationTagData: CreateApplicationTagData): Promise<ApplicationTag> {
+    return this.request<ApplicationTag>('/application-tags', {
+      method: 'POST',
+      body: JSON.stringify(applicationTagData),
+    });
+  }
+
+  async removeApplicationTag(applicationId: string, tagId: string): Promise<void> {
+    return this.request<void>(`/application-tags/application/${applicationId}/tag/${tagId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Tags
+  async getTags(): Promise<Tag[]> {
+    return this.request<Tag[]>('/tags');
+  }
+
+  async getTag(id: string): Promise<Tag> {
+    return this.request<Tag>(`/tags/${id}`);
+  }
+
+  async createTag(tagData: CreateTagData): Promise<Tag> {
+    return this.request<Tag>('/tags', {
+      method: 'POST',
+      body: JSON.stringify(tagData),
+    });
+  }
+
+  async updateTag(id: string, tagData: UpdateTagData): Promise<Tag> {
+    return this.request<Tag>(`/tags/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(tagData),
+    });
+  }
+
+  async deleteTag(id: string): Promise<void> {
+    return this.request<void>(`/tags/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  private getAuthHeaders(): HeadersInit {
+    const token = this.getToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token && {Authorization: `Bearer ${token}`}),
+    };
+  }
+
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const headers = this.getAuthHeaders();
+
+    const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+      headers,
+      ...options,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+
+      // Tratar diferentes formatos de erro
+      let errorMessage = `HTTP error! status: ${response.status}`;
+
+      if (errorData.message) {
+        if (Array.isArray(errorData.message)) {
+          // Se é um array de mensagens (validação), juntar todas
+          errorMessage = errorData.message.join(', ');
+        } else {
+          // Se é uma string única
+          errorMessage = errorData.message;
+        }
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    // Verificar se a resposta tem conteúdo antes de tentar fazer JSON
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    } else {
+      // Para respostas vazias ou não-JSON, retornar undefined
+      return undefined as T;
+    }
   }
 }
 

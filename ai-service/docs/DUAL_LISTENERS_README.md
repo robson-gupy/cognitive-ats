@@ -130,7 +130,7 @@ APPLICATIONS_SQS_QUEUE_NAME=applications-queue
 APPLICATIONS_AI_SCORE_SQS_QUEUE_NAME=applications-ai-score-queue
 
 # Configurações AWS
-AWS_ENDPOINT_URL=http://localhost:4566
+STORAGE_SERVICE_ENDPOINT=http://localhost:4566
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 AWS_REGION=us-east-1
@@ -285,8 +285,8 @@ aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes \
 ### Status dos Serviços
 
 ```python
-from consumer.handlers.message_handler import MessageHandler
-from consumer.handlers.ai_score_message_handler import AIScoreMessageHandler
+from consumer.handlers_tmp.message_handler import MessageHandler
+from consumer.handlers_tmp.ai_score_message_handler import AIScoreMessageHandler
 
 # Status do listener de CVs
 resume_handler = MessageHandler()

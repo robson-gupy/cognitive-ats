@@ -1,10 +1,11 @@
 import {
-  IsString,
+  IsBoolean,
+  IsInt,
   IsNotEmpty,
   IsOptional,
-  IsInt,
-  Min,
+  IsString,
   Max,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -25,4 +26,8 @@ export class CreateJobWithAiDto {
   @Min(1)
   @Max(5)
   maxStages?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  requiresAddress?: boolean;
 }

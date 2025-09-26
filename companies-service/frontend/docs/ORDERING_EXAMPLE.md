@@ -2,7 +2,8 @@
 
 ## Visão Geral
 
-As applications agora são automaticamente ordenadas por `overall_score` do maior para o menor em cada etapa do processo seletivo.
+As applications agora são automaticamente ordenadas por `overall_score` do maior para o menor em cada etapa do processo
+seletivo.
 
 ## Como Testar a Ordenação
 
@@ -133,9 +134,9 @@ curl -X POST http://localhost:3000/resumes/APPLICATION_ID_3 \
 1. Acesse a lista de vagas
 2. Clique em "Candidatos" para a vaga
 3. Observe que os candidatos estão ordenados por aderência:
-   - **Primeiro**: João Silva (🔵 Muito alta - 95)
-   - **Segundo**: Maria Santos (🔷 Alta - 75)
-   - **Terceiro**: Pedro Oliveira (🔴 Baixa - 45)
+    - **Primeiro**: João Silva (🔵 Muito alta - 95)
+    - **Segundo**: Maria Santos (🔷 Alta - 75)
+    - **Terceiro**: Pedro Oliveira (🔴 Baixa - 45)
 
 ## Lógica de Ordenação
 

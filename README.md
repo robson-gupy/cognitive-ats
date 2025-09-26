@@ -34,8 +34,9 @@ Serviço dedicado à gestão de empresas, usuários, departamentos e vagas.
   - Gestão de usuários e perfis
   - Gestão de departamentos
   - Criação e gestão de vagas
-  - Upload de currículos (S3 via LocalStack)
+  - Upload de currículos (S3 via MinIO)
   - Integração com IA para criação de vagas
+  - Processamento assíncrono de tarefas via Redis
 
 ### AI Service
 Serviço de inteligência artificial para auxiliar na criação de vagas e processos de recrutamento.
@@ -45,6 +46,24 @@ Serviço de inteligência artificial para auxiliar na criação de vagas e proce
   - Geração de descrições de vagas
   - Criação de perguntas para candidatos
   - Definição de etapas do processo seletivo
+
+### Candidates Service
+Serviço dedicado aos candidatos com interface React SSR.
+
+- **Tecnologia**: NestJS + React SSR
+- **Funcionalidades**:
+  - Interface para candidatos
+  - Aplicação em vagas
+  - Visualização de vagas públicas
+
+### Async Task Service
+Serviço de processamento assíncrono de tarefas.
+
+- **Tecnologia**: Python
+- **Funcionalidades**:
+  - Consumo de filas Redis
+  - Processamento de emails
+  - Tarefas em background
 
 ## Como Executar
 
@@ -57,14 +76,13 @@ Serviço de inteligência artificial para auxiliar na criação de vagas e proce
 # Executar todos os serviços
 docker-compose up -d
 
-# Configurar LocalStack (primeira execução)
-./scripts/setup-localstack.sh
-
 # Acessar os serviços:
 # - Frontend: http://localhost:8080
 # - Backend: http://localhost:3000
 # - AI Service: http://localhost:8000
-# - LocalStack: http://localhost:4566
+# - Candidates Service: http://localhost:3002
+# - MinIO Console: http://localhost:9001
+# - Redis Admin: http://localhost:9091
 
 ### Proxy Reverso (Caddy)
 O projeto inclui um proxy reverso configurado com Caddy que permite acesso organizado através de subdomínios:
@@ -74,6 +92,7 @@ O projeto inclui um proxy reverso configurado com Caddy que permite acesso organ
 # - Frontend empresas: http://gupy.admin.localhost
 # - Backend empresas: http://gupy.api.localhost  
 # - AI Service: http://ai.localhost
+# - Candidates Service: http://candidates.localhost
 ```
 
 Para mais detalhes sobre o Caddy, consulte [docs/CADDY_README.md](./docs/CADDY_README.md).
@@ -97,16 +116,27 @@ pip install -r requirements.txt
 python main.py
 ```
 
+## Infraestrutura
+
+### Banco de Dados
+- **PostgreSQL**: Banco principal para dados das empresas e usuários
+- **Redis**: Filas de mensagens e cache
+
+### Storage
+- **MinIO**: Compatível com S3 para armazenamento de arquivos
+
+### Proxy e Roteamento
+- **Caddy**: Proxy reverso com suporte a subdomínios
+
 ## Próximos Serviços
 
 A estrutura está preparada para adicionar novos serviços como:
-- **applications-service**: Gestão de candidaturas
 - **notifications-service**: Sistema de notificações
 - **analytics-service**: Análises e relatórios
 
 ## Configuração de Ambiente
 
-Copie o arquivo `config/env.example` para `.env` na raiz do projeto e configure as variáveis necessárias:
+Copie o arquivo `env.example` para `.env` na raiz do projeto e configure as variáveis necessárias:
 
 ```bash
 # Para o AI Service

@@ -8,6 +8,7 @@ export class PublicJobDto {
   departmentId: string | null;
   slug: string;
   publishedAt: Date | null;
+  requiresAddress: boolean;
   department: {
     id: string;
     name: string;

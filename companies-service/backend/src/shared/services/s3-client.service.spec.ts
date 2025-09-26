@@ -11,7 +11,7 @@ describe('S3ClientService', () => {
 
   beforeEach(async () => {
     // Configurar variáveis de ambiente para teste
-    process.env.ENDPOINT_URL = 'http://localhost:9000';
+    process.env.STORAGE_SERVICE_ENDPOINT = 'http://localhost:9000';
     process.env.AWS_ACCESS_KEY_ID = 'test-key';
     process.env.AWS_SECRET_ACCESS_KEY = 'test-secret';
 
@@ -80,7 +80,7 @@ describe('S3ClientService', () => {
           ContentType: 'application/pdf',
           ACL: 'public-read',
         });
-        expect(result).toBe('http://localhost:9000/test-bucket/file.pdf');
+        expect(result).toBe('/test-bucket/file.pdf');
       } finally {
         // Restaurar os mocks originais
         existsSyncSpy.mockRestore();
@@ -127,7 +127,7 @@ describe('S3ClientService', () => {
           Bucket: 'new-bucket',
         });
         expect(mockS3.upload).toHaveBeenCalled();
-        expect(result).toBe('http://localhost:9000/new-bucket/file.pdf');
+        expect(result).toBe('/new-bucket/file.pdf');
       } finally {
         // Restaurar os mocks originais
         existsSyncSpy.mockRestore();

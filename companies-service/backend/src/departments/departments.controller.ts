@@ -1,11 +1,11 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -31,8 +31,6 @@ export class DepartmentsController {
     }
     return this.departmentsService.findAll();
   }
-
-
 
   @Get(':id')
   findOne(@Param('id') id: string) {

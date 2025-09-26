@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import { apiService } from '../services/api';
-import type { AuthResponse } from '../types/Auth';
+import type {ReactNode} from 'react';
+import React, {createContext, useContext, useEffect, useState} from 'react';
+import {apiService} from '../services/api';
+import type {AuthResponse} from '../types/Auth';
 
 interface AuthContextType {
   currentUser: AuthResponse['user'] | null;
@@ -31,14 +31,14 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   const [currentUser, setCurrentUser] = useState<AuthResponse['user'] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
-    
+
     // Listener para sincronizar mudanças de autenticação entre abas
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'authData') {
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('focus', handleFocus);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('focus', handleFocus);
@@ -63,23 +63,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkAuthStatus = async () => {
     // Limpar dados inconsistentes primeiro
     apiService.clearInconsistentData();
-    
+
     // Verificar se há dados de autenticação em outras abas
     if (!apiService.isAuthenticated() && apiService.hasAuthDataInOtherTabs()) {
       apiService.syncWithOtherTabs();
     }
-    
+
     // Carregar dados locais como fallback inicial
     const storedUserData = apiService.getUserData();
     if (storedUserData && apiService.isAuthenticated()) {
       setCurrentUser(storedUserData);
       setIsAuthenticated(true);
     }
-    
+
     if (apiService.isAuthenticated()) {
       try {
         const user = await apiService.getProfile();
-        
+
         // Validar se os dados do servidor são consistentes
         if (!user.id || !user.email) {
           apiService.removeToken();
@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setIsLoading(false);
           return;
         }
-        
+
         // Sempre atualizar com os dados do servidor (fonte da verdade)
         apiService.setToken(apiService.getToken()!, user);
         setCurrentUser(user);
@@ -109,17 +109,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Limpar todos os dados antigos antes do novo login
       clearAllAuthData();
-      
+
       const response = await apiService.login(loginData);
-      
+
       // Validar se o usuário logado corresponde ao email digitado
       if (response.user.email !== loginData.email) {
         throw new Error('Erro de autenticação: usuário não corresponde');
       }
-      
+
       // Armazenar token e dados do usuário
       apiService.setToken(response.access_token, response.user);
-      
+
       // Disparar evento para notificar outras abas
       window.dispatchEvent(new StorageEvent('storage', {
         key: 'authData',
@@ -129,10 +129,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           timestamp: Date.now(),
         }),
       }));
-      
+
       setCurrentUser(response.user);
       setIsAuthenticated(true);
-      
+
       return response;
     } catch (error) {
       throw error;
@@ -141,26 +141,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     apiService.removeToken();
-    
+
     // Disparar evento para notificar outras abas
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'authData',
       newValue: null,
     }));
-    
+
     setIsAuthenticated(false);
     setCurrentUser(null);
   };
 
   const clearAuthData = () => {
     apiService.removeToken();
-    
+
     // Disparar evento para notificar outras abas
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'authData',
       newValue: null,
     }));
-    
+
     setIsAuthenticated(false);
     setCurrentUser(null);
   };
@@ -180,11 +180,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const forceReauth = async () => {
     clearAuthData();
-    
+
     // Limpar todos os dados de storage
     sessionStorage.clear();
     localStorage.clear();
-    
+
     // Recarregar a página para garantir limpeza completa
     window.location.reload();
   };
@@ -192,10 +192,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const clearAllAuthData = () => {
     // Limpar sessionStorage
     sessionStorage.clear();
-    
+
     // Limpar localStorage
     localStorage.clear();
-    
+
     // Limpar estado
     setCurrentUser(null);
     setIsAuthenticated(false);

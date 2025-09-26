@@ -1,11 +1,11 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { ResumeService } from '../services/resume.service';
@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Application } from '../../applications/entities/application.entity';
-import {AdminAuthGuard} from "../../auth/guards/admin-auth.guard";
+import { AdminAuthGuard } from '../../auth/guards/admin-auth.guard';
 
 @Controller('resumes')
 export class ResumeController {

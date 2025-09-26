@@ -1,11 +1,32 @@
-import {
-  IsUUID,
-  IsString,
-  IsEmail,
-  IsOptional,
-  ValidateIf,
-  IsUrl,
-} from 'class-validator';
+import { IsEmail, IsObject, IsOptional, IsString, IsUrl, IsUUID, Matches, MaxLength, MinLength, ValidateIf, } from 'class-validator';
+
+class AddressDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  street?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  neighborhood?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(2)
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{5}-\d{3}$/)
+  zipCode?: string;
+}
 
 export class CreateApplicationDto {
   @IsUUID()
@@ -30,4 +51,9 @@ export class CreateApplicationDto {
   @IsOptional()
   @IsUrl()
   resumeUrl?: string;
+
+  // Endereço (opcional no create) como objeto
+  @IsOptional()
+  @IsObject()
+  address?: AddressDto;
 }

@@ -1,18 +1,16 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Application } from '../entities/application.entity';
-import { Job } from '../../jobs/entities/job.entity';
-import { CreateApplicationDto } from '../dto/create-application.dto';
-import { UpdateApplicationDto } from '../dto/update-application.dto';
-import { UpdateApplicationScoreDto } from '../dto/update-application-score.dto';
-import { S3ClientService } from '../../shared/services/s3-client.service';
-import { SqsClientService } from '../../shared/services/sqs-client.service';
-import { CandidateEvaluationService } from './candidate-evaluation.service';
+import {BadRequestException, Inject, Injectable, NotFoundException,} from '@nestjs/common';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
+import {Application} from '../entities/application.entity';
+import {mapApplicationsToResponse, mapApplicationToResponse,} from '../dto/application-response.dto';
+import {Job, JobStatus} from '../../jobs/entities/job.entity';
+import {CreateApplicationDto} from '../dto/create-application.dto';
+import {UpdateApplicationDto} from '../dto/update-application.dto';
+import {UpdateApplicationScoreDto} from '../dto/update-application-score.dto';
+import {InternalUpdateApplicationDto} from '../dto/internal-update-application.dto';
+import {S3ClientService} from '../../shared/services/s3-client.service';
+import {AsyncTaskQueue} from '../../shared/interfaces/async-task-queue.interface';
+import {CandidateEvaluationService} from './candidate-evaluation.service';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 
@@ -25,49 +23,32 @@ export interface ResumeFile {
 
 @Injectable()
 export class ApplicationsService {
-  /**
-   * Gera um nome de arquivo aleatório e seguro para evitar enumeração
-   * @param originalName Nome original do arquivo
-   * @returns Nome de arquivo aleatório com extensão preservada
-   */
-  private generateSecureFileName(originalName: string): string {
-    // Gerar 32 bytes aleatórios (256 bits) e converter para hex
-    const randomBytes = crypto.randomBytes(32).toString('hex');
-
-    // Extrair a extensão do arquivo original
-    const extension = originalName.includes('.')
-      ? originalName.substring(originalName.lastIndexOf('.'))
-      : '';
-
-    // Combinar timestamp, bytes aleatórios e extensão
-    const timestamp = Date.now();
-    return `resume_${timestamp}_${randomBytes}${extension}`;
-  }
-
   constructor(
     @InjectRepository(Application)
     private applicationsRepository: Repository<Application>,
     @InjectRepository(Job)
     private jobsRepository: Repository<Job>,
     private s3ClientService: S3ClientService,
-    private sqsClientService: SqsClientService,
+    @Inject('AsyncTaskQueue')
+    private asyncTaskQueue: AsyncTaskQueue,
     private candidateEvaluationService: CandidateEvaluationService,
-  ) {}
+  ) {
+  }
 
   async create(
     createApplicationDto: CreateApplicationDto,
   ): Promise<Application> {
-    // Buscar a job para obter o companyId
+    // Buscar a job para obter o companyId e dados completos
     const job = await this.jobsRepository.findOne({
       where: { id: createApplicationDto.jobId },
-      select: ['id', 'companyId', 'status'],
+      select: ['id', 'companyId', 'status', 'title', 'description', 'requirements'],
     });
 
     if (!job) {
       throw new NotFoundException('Vaga não encontrada');
     }
 
-    if (job.status !== 'PUBLISHED') {
+    if (job.status !== JobStatus.PUBLISHED) {
       throw new BadRequestException(
         'Apenas vagas publicadas podem receber inscrições',
       );
@@ -112,23 +93,27 @@ export class ApplicationsService {
     const firstStage = await this.jobsRepository
       .createQueryBuilder('job')
       .leftJoinAndSelect('job.stages', 'stages')
-      .where('job.id = :jobId', { jobId: createApplicationDto.jobId })
-      .andWhere('stages.isActive = :isActive', { isActive: true })
+      .where('job.id = :jobId', {jobId: createApplicationDto.jobId})
+      .andWhere('stages.isActive = :isActive', {isActive: true})
       .orderBy('stages.orderIndex', 'ASC')
       .getOne();
 
     const firstStageId = firstStage?.stages?.[0]?.id || undefined;
 
+    // Extrair address se enviado
+    const {address, ...restDto} = createApplicationDto as any;
+
     const application = this.applicationsRepository.create({
-      ...createApplicationDto,
+      ...restDto,
       companyId: job.companyId,
       currentStageId: firstStageId,
+      address: address ? {...address} as any : undefined,
     });
 
     const savedApplication =
       await this.applicationsRepository.save(application);
 
-    return savedApplication;
+    return savedApplication as unknown as Application;
   }
 
   async createWithResume(
@@ -137,7 +122,7 @@ export class ApplicationsService {
   ): Promise<Application> {
     // Buscar a job para obter o companyId
     const job = await this.jobsRepository.findOne({
-      where: { id: createApplicationDto.jobId },
+      where: {id: createApplicationDto.jobId},
       select: ['id', 'companyId', 'status'],
     });
 
@@ -216,18 +201,20 @@ export class ApplicationsService {
       const firstStage = await this.jobsRepository
         .createQueryBuilder('job')
         .leftJoinAndSelect('job.stages', 'stages')
-        .where('job.id = :jobId', { jobId: createApplicationDto.jobId })
-        .andWhere('stages.isActive = :isActive', { isActive: true })
+        .where('job.id = :jobId', {jobId: createApplicationDto.jobId})
+        .andWhere('stages.isActive = :isActive', {isActive: true})
         .orderBy('stages.orderIndex', 'ASC')
         .getOne();
 
       const firstStageId = firstStage?.stages?.[0]?.id || undefined;
 
+      const {address, ...restDto} = createApplicationDto as any;
       const application = this.applicationsRepository.create({
-        ...createApplicationDto,
+        ...restDto,
         companyId: job.companyId,
         resumeUrl,
         currentStageId: firstStageId,
+        address: address ? {...address} as any : undefined,
       });
 
       const savedApplication =
@@ -235,9 +222,23 @@ export class ApplicationsService {
 
       // Enviar mensagem para SQS após criar a application
       try {
-        await this.sqsClientService.sendApplicationCreatedMessage(
-          savedApplication.id,
-          savedApplication.resumeUrl,
+        // Preparar dados do job no formato esperado pelo async-task-service
+        const jobData = {
+          id: job.id,
+          title: job.title,
+          description: job.description,
+          requirements: job.requirements ? [job.requirements] : [], // Convertendo string para array
+          responsibilities: [], // Campo não disponível na entidade atual
+          education_required: '', // Campo não disponível na entidade atual
+          experience_required: '', // Campo não disponível na entidade atual
+          skills_required: [] // Campo não disponível na entidade atual
+        };
+
+        await this.asyncTaskQueue.sendApplicationCreatedMessage(
+          (savedApplication as unknown as Application).id,
+          (savedApplication as unknown as Application).resumeUrl,
+          createApplicationDto.jobId,
+          jobData,
         );
       } catch (error) {
         // Log do erro mas não falhar a criação da application
@@ -247,14 +248,14 @@ export class ApplicationsService {
       // Avaliar automaticamente o candidato usando IA
       try {
         await this.candidateEvaluationService.evaluateApplication(
-          savedApplication.id,
+          (savedApplication as unknown as Application).id,
         );
       } catch (error) {
         // Log do erro mas não falhar a criação da application
         console.error('Erro ao avaliar candidato com IA:', error);
       }
 
-      return savedApplication;
+      return savedApplication as unknown as Application;
     } catch (error) {
       // Remover arquivo temporário em caso de erro
       if (fs.existsSync(tempFilePath)) {
@@ -266,9 +267,9 @@ export class ApplicationsService {
 
   async findAll(companyId: string): Promise<Application[]> {
     return this.applicationsRepository.find({
-      where: { companyId },
+      where: {companyId},
       relations: ['job'],
-      order: { createdAt: 'DESC' },
+      order: {createdAt: 'DESC'},
     });
   }
 
@@ -276,7 +277,7 @@ export class ApplicationsService {
     companyId: string,
   ): Promise<Application[]> {
     return this.applicationsRepository.find({
-      where: { companyId },
+      where: {companyId},
       relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
       order: {
         createdAt: 'DESC',
@@ -289,7 +290,7 @@ export class ApplicationsService {
 
   async findOne(id: string, companyId: string): Promise<Application> {
     const application = await this.applicationsRepository.findOne({
-      where: { id, companyId },
+      where: {id, companyId},
       relations: ['job', 'questionResponses', 'questionResponses.jobQuestion'],
       order: {
         questionResponses: {
@@ -321,45 +322,73 @@ export class ApplicationsService {
     await this.applicationsRepository.remove(application);
   }
 
-  async findByJobId(jobId: string, companyId: string): Promise<Application[]> {
-    return this.applicationsRepository.find({
-      where: { jobId, companyId },
-      relations: ['currentStage'],
-      order: { createdAt: 'DESC' },
-    });
+  async findByJobId(
+    jobId: string,
+    companyId: string,
+    search?: string,
+  ): Promise<ReturnType<typeof mapApplicationsToResponse>> {
+    const queryBuilder = this.applicationsRepository
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.currentStage', 'currentStage')
+      .leftJoinAndSelect('application.address', 'address')
+      .where('application.jobId = :jobId', {jobId})
+      .andWhere('application.companyId = :companyId', {companyId});
+
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim().toLowerCase()}%`;
+      queryBuilder.andWhere(
+        '(LOWER(application.firstName) LIKE :search OR LOWER(application.lastName) LIKE :search OR LOWER(application.email) LIKE :search OR application.phone LIKE :search)',
+        {search: searchTerm},
+      );
+    }
+
+    const apps = await queryBuilder
+      .orderBy('application.createdAt', 'DESC')
+      .getMany();
+    return mapApplicationsToResponse(apps);
   }
 
   async findByJobIdWithQuestionResponses(
     jobId: string,
     companyId: string,
-  ): Promise<Application[]> {
-    return this.applicationsRepository.find({
-      where: { jobId, companyId },
-      relations: [
-        'job',
-        'currentStage',
-        'questionResponses',
-        'questionResponses.jobQuestion',
-      ],
-      order: {
-        createdAt: 'DESC',
-        questionResponses: {
-          createdAt: 'ASC',
-        },
-      },
-    });
+    search?: string,
+  ): Promise<ReturnType<typeof mapApplicationsToResponse>> {
+    const queryBuilder = this.applicationsRepository
+      .createQueryBuilder('application')
+      .leftJoinAndSelect('application.job', 'job')
+      .leftJoinAndSelect('application.currentStage', 'currentStage')
+      .leftJoinAndSelect('application.address', 'address')
+      .leftJoinAndSelect('application.questionResponses', 'questionResponses')
+      .leftJoinAndSelect('questionResponses.jobQuestion', 'jobQuestion')
+      .where('application.jobId = :jobId', {jobId})
+      .andWhere('application.companyId = :companyId', {companyId});
+
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim().toLowerCase()}%`;
+      queryBuilder.andWhere(
+        '(LOWER(application.firstName) LIKE :search OR LOWER(application.lastName) LIKE :search OR LOWER(application.email) LIKE :search OR application.phone LIKE :search)',
+        {search: searchTerm},
+      );
+    }
+
+    const apps = await queryBuilder
+      .orderBy('application.createdAt', 'DESC')
+      .addOrderBy('questionResponses.createdAt', 'ASC')
+      .getMany();
+    return mapApplicationsToResponse(apps);
   }
 
   async findOneByJobId(
     id: string,
     jobId: string,
     companyId: string,
-  ): Promise<Application> {
+  ): Promise<ReturnType<typeof mapApplicationToResponse>> {
     const application = await this.applicationsRepository.findOne({
-      where: { id, jobId, companyId },
+      where: {id, jobId, companyId},
       relations: [
         'job',
         'currentStage',
+        'address',
         'questionResponses',
         'questionResponses.jobQuestion',
       ],
@@ -374,7 +403,7 @@ export class ApplicationsService {
       throw new NotFoundException('Inscrição não encontrada');
     }
 
-    return application;
+    return mapApplicationToResponse(application);
   }
 
   async updateByJobId(
@@ -383,10 +412,16 @@ export class ApplicationsService {
     updateApplicationDto: UpdateApplicationDto,
     companyId: string,
   ): Promise<Application> {
-    const application = await this.findOneByJobId(id, jobId, companyId);
+    const application = await this.applicationsRepository.findOne({
+      where: {id, jobId, companyId},
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
 
     Object.assign(application, updateApplicationDto);
-    return this.applicationsRepository.save(application);
+    return this.applicationsRepository.save(application) as unknown as Application;
   }
 
   async removeByJobId(
@@ -394,7 +429,14 @@ export class ApplicationsService {
     jobId: string,
     companyId: string,
   ): Promise<void> {
-    const application = await this.findOneByJobId(id, jobId, companyId);
+    const application = await this.applicationsRepository.findOne({
+      where: {id, jobId, companyId},
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
     await this.applicationsRepository.remove(application);
   }
 
@@ -404,10 +446,16 @@ export class ApplicationsService {
     updateScoreDto: UpdateApplicationScoreDto,
     companyId: string,
   ): Promise<Application> {
-    const application = await this.findOneByJobId(id, jobId, companyId);
+    const application = await this.applicationsRepository.findOne({
+      where: {id, jobId, companyId},
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
 
     Object.assign(application, updateScoreDto);
-    return this.applicationsRepository.save(application);
+    return this.applicationsRepository.save(application) as unknown as Application;
   }
 
   async updateAiScore(
@@ -418,6 +466,46 @@ export class ApplicationsService {
     const application = await this.findOne(id, companyId);
 
     Object.assign(application, updateScoreDto);
-    return this.applicationsRepository.save(application);
+    return this.applicationsRepository.save(application) as unknown as Application;
+  }
+
+  /**
+   * Gera um nome de arquivo aleatório e seguro para evitar enumeração
+   * @param originalName Nome original do arquivo
+   * @returns Nome de arquivo aleatório com extensão preservada
+   */
+  private generateSecureFileName(originalName: string): string {
+    // Gerar 32 bytes aleatórios (256 bits) e converter para hex
+    const randomBytes = crypto.randomBytes(32).toString('hex');
+
+    // Extrair a extensão do arquivo original
+    const extension = originalName.includes('.')
+      ? originalName.substring(originalName.lastIndexOf('.'))
+      : '';
+
+    // Combinar timestamp, bytes aleatórios e extensão
+    const timestamp = Date.now();
+    return `resume_${timestamp}_${randomBytes}${extension}`;
+  }
+
+  /**
+   * Atualiza campos específicos de uma application por ID (para comunicação interna)
+   * Não requer autenticação e permite atualizar qualquer campo
+   */
+  async updateFieldById(
+    id: string,
+    updateData: InternalUpdateApplicationDto,
+  ): Promise<Application> {
+    const application = await this.applicationsRepository.findOne({
+      where: { id },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    // Atualiza apenas os campos fornecidos
+    Object.assign(application, updateData);
+    return this.applicationsRepository.save(application) as unknown as Application;
   }
 }

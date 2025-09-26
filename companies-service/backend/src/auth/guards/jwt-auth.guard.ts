@@ -1,6 +1,6 @@
 import {
-  Injectable,
   ExecutionContext,
+  Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -9,17 +9,6 @@ import { ModuleRef } from '@nestjs/core';
 @Injectable()
 export class JwtAuthGuard {
   constructor(private moduleRef: ModuleRef) {}
-
-  private extractTokenFromHeader(request: any): string | undefined {
-    const authHeader = request.headers?.authorization;
-    if (!authHeader || typeof authHeader !== 'string') return undefined;
-
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2) return undefined;
-
-    const [type, token] = parts;
-    return type === 'Bearer' ? token : undefined;
-  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -42,5 +31,16 @@ export class JwtAuthGuard {
       console.error('JWT validation error:', error);
       throw new UnauthorizedException('Token inválido');
     }
+  }
+
+  private extractTokenFromHeader(request: any): string | undefined {
+    const authHeader = request.headers?.authorization;
+    if (!authHeader || typeof authHeader !== 'string') return undefined;
+
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2) return undefined;
+
+    const [type, token] = parts;
+    return type === 'Bearer' ? token : undefined;
   }
 }

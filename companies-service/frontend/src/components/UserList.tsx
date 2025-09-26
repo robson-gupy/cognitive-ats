@@ -1,7 +1,7 @@
 import React from 'react';
-import { Table, Button, Space, Popconfirm, Tag } from 'antd';
-import { EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
-import type { User } from '../types/User';
+import {Button, Popconfirm, Space, Table, Tag} from 'antd';
+import {DeleteOutlined, EditOutlined, UserOutlined} from '@ant-design/icons';
+import type {User} from '../types/User';
 
 interface UserListProps {
   users: User[];
@@ -10,12 +10,12 @@ interface UserListProps {
   isLoading?: boolean;
 }
 
-export const UserList: React.FC<UserListProps> = ({ 
-  users, 
-  onEdit, 
-  onDelete, 
-  isLoading = false 
-}) => {
+export const UserList: React.FC<UserListProps> = ({
+                                                    users,
+                                                    onEdit,
+                                                    onDelete,
+                                                    isLoading = false
+                                                  }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -37,7 +37,7 @@ export const UserList: React.FC<UserListProps> = ({
       key: 'firstName',
       render: (firstName: string, record: User) => (
         <Space>
-          <UserOutlined style={{ color: '#1890ff' }} />
+          <UserOutlined style={{color: '#1890ff'}}/>
           <span>{firstName} {record.lastName}</span>
         </Space>
       ),
@@ -47,7 +47,7 @@ export const UserList: React.FC<UserListProps> = ({
       dataIndex: 'email',
       key: 'email',
       render: (email: string) => (
-        <span style={{ color: '#666' }}>{email}</span>
+        <span style={{color: '#666'}}>{email}</span>
       ),
     },
     {
@@ -67,14 +67,14 @@ export const UserList: React.FC<UserListProps> = ({
                 return 'default';
             }
           };
-          
+
           return (
             <Tag color={getRoleColor(record.role.code)}>
               {record.role.name}
             </Tag>
           );
         }
-        return <span style={{ color: '#999' }}>Sem role</span>;
+        return <span style={{color: '#999'}}>Sem role</span>;
       },
     },
     {
@@ -82,7 +82,7 @@ export const UserList: React.FC<UserListProps> = ({
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => (
-        <span style={{ color: '#999', fontSize: '12px' }}>
+        <span style={{color: '#999', fontSize: '12px'}}>
           {formatDate(date)}
         </span>
       ),
@@ -92,7 +92,7 @@ export const UserList: React.FC<UserListProps> = ({
       dataIndex: 'updatedAt',
       key: 'updatedAt',
       render: (date: string) => (
-        <span style={{ color: '#999', fontSize: '12px' }}>
+        <span style={{color: '#999', fontSize: '12px'}}>
           {formatDate(date)}
         </span>
       ),
@@ -104,9 +104,9 @@ export const UserList: React.FC<UserListProps> = ({
         <Space>
           <Button
             type="link"
-            icon={<EditOutlined />}
+            icon={<EditOutlined/>}
             onClick={() => onEdit(record)}
-            style={{ padding: 0 }}
+            style={{padding: 0}}
           >
             Editar
           </Button>
@@ -121,8 +121,8 @@ export const UserList: React.FC<UserListProps> = ({
             <Button
               type="link"
               danger
-              icon={<DeleteOutlined />}
-              style={{ padding: 0 }}
+              icon={<DeleteOutlined/>}
+              style={{padding: 0}}
             >
               Excluir
             </Button>
@@ -142,7 +142,7 @@ export const UserList: React.FC<UserListProps> = ({
         pageSize: 10,
         showSizeChanger: true,
         showQuickJumper: true,
-        showTotal: (total, range) => 
+        showTotal: (total, range) =>
           `${range[0]}-${range[1]} de ${total} usuários`,
         locale: {
           items_per_page: 'por página',

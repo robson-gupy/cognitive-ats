@@ -1,35 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, message, Select, Space, Switch, Divider } from 'antd';
-import { useNavigate, useParams } from 'react-router-dom';
-import { PlusOutlined, DeleteOutlined, DragOutlined } from '@ant-design/icons';
-import { apiService } from '../services/api';
-import type { Job, CreateJobData, UpdateJobData } from '../types/Job';
-import type { Department } from '../types/Department';
-import { JobStatus } from '../types/Job';
+import React, {useEffect, useState} from 'react';
+import {Button, Card, Divider, Form, Input, message, Select, Space, Switch, Typography} from 'antd';
+import {useNavigate, useParams} from 'react-router-dom';
+import {DeleteOutlined, DragOutlined, PlusOutlined} from '@ant-design/icons';
+import {apiService} from '../services/api';
+import type {CreateJobData, Job, UpdateJobData} from '../types/Job';
+import {JobStatus} from '../types/Job';
+import type {Department} from '../types/Department';
+import type {DragEndEvent} from '@dnd-kit/core';
 import {
-  DndContext,
   closestCenter,
+  DndContext,
   KeyboardSensor,
-  PointerSensor,
   MouseSensor,
+  PointerSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
+  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import {CSS} from '@dnd-kit/utilities';
 
-const { Title } = Typography;
-const { TextArea } = Input;
-const { Option } = Select;
+const {Title} = Typography;
+const {TextArea} = Input;
+const {Option} = Select;
 
 interface JobQuestion {
   id: string;
@@ -52,7 +50,7 @@ const SortableQuestionItem: React.FC<{
   index: number;
   onUpdate: (index: number, field: keyof JobQuestion, value: any) => void;
   onRemove: (index: number) => void;
-}> = ({ question, index, onUpdate, onRemove }) => {
+}> = ({question, index, onUpdate, onRemove}) => {
   const {
     attributes,
     listeners,
@@ -60,7 +58,7 @@ const SortableQuestionItem: React.FC<{
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: question.id });
+  } = useSortable({id: question.id});
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -85,30 +83,30 @@ const SortableQuestionItem: React.FC<{
       {...attributes}
       {...listeners}
     >
-      <div style={{ width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-          <DragOutlined style={{ marginRight: '8px', color: '#999' }} />
-          <span style={{ fontWeight: 'bold', color: '#1890ff' }}>
+      <div style={{width: '100%'}}>
+        <div style={{display: 'flex', alignItems: 'center', marginBottom: '12px'}}>
+          <DragOutlined style={{marginRight: '8px', color: '#999'}}/>
+          <span style={{fontWeight: 'bold', color: '#1890ff'}}>
             Pergunta {index + 1}
           </span>
           <Button
             type="text"
             danger
-            icon={<DeleteOutlined />}
+            icon={<DeleteOutlined/>}
             onClick={(e) => {
               e.stopPropagation();
               onRemove(index);
             }}
-            style={{ marginLeft: 'auto' }}
+            style={{marginLeft: 'auto'}}
           />
         </div>
-        
-        <div style={{ marginBottom: '12px' }}>
+
+        <div style={{marginBottom: '12px'}}>
           <Input
             placeholder="Digite a pergunta..."
             value={question.question}
             onChange={(e) => onUpdate(index, 'question', e.target.value)}
-            style={{ 
+            style={{
               marginBottom: '8px',
               backgroundColor: 'white',
               borderColor: '#d9d9d9'
@@ -117,15 +115,15 @@ const SortableQuestionItem: React.FC<{
             onKeyDown={(e) => e.stopPropagation()}
           />
         </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+          <div style={{display: 'flex', alignItems: 'center'}}>
             <Switch
               checked={question.isRequired}
               onChange={(checked) => onUpdate(index, 'isRequired', checked)}
-              style={{ marginRight: '8px' }}
+              style={{marginRight: '8px'}}
             />
-            <span style={{ fontSize: '14px', color: '#666' }}>
+            <span style={{fontSize: '14px', color: '#666'}}>
               {question.isRequired ? 'Obrigatória' : 'Opcional'}
             </span>
           </div>
@@ -141,7 +139,7 @@ const SortableStageItem: React.FC<{
   index: number;
   onUpdate: (index: number, field: keyof JobStage, value: any) => void;
   onRemove: (index: number) => void;
-}> = ({ stage, index, onUpdate, onRemove }) => {
+}> = ({stage, index, onUpdate, onRemove}) => {
   const {
     attributes,
     listeners,
@@ -149,7 +147,7 @@ const SortableStageItem: React.FC<{
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: stage.id });
+  } = useSortable({id: stage.id});
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -174,30 +172,30 @@ const SortableStageItem: React.FC<{
       {...attributes}
       {...listeners}
     >
-      <div style={{ width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-          <DragOutlined style={{ marginRight: '8px', color: '#999' }} />
-          <span style={{ fontWeight: 'bold', color: '#52c41a' }}>
+      <div style={{width: '100%'}}>
+        <div style={{display: 'flex', alignItems: 'center', marginBottom: '12px'}}>
+          <DragOutlined style={{marginRight: '8px', color: '#999'}}/>
+          <span style={{fontWeight: 'bold', color: '#52c41a'}}>
             Etapa {index + 1}
           </span>
           <Button
             type="text"
             danger
-            icon={<DeleteOutlined />}
+            icon={<DeleteOutlined/>}
             onClick={(e) => {
               e.stopPropagation();
               onRemove(index);
             }}
-            style={{ marginLeft: 'auto' }}
+            style={{marginLeft: 'auto'}}
           />
         </div>
-        
-        <div style={{ marginBottom: '12px' }}>
+
+        <div style={{marginBottom: '12px'}}>
           <Input
             placeholder="Nome da etapa (ex: Triagem, Entrevista, Teste Técnico)"
             value={stage.name}
             onChange={(e) => onUpdate(index, 'name', e.target.value)}
-            style={{ 
+            style={{
               marginBottom: '8px',
               backgroundColor: 'white',
               borderColor: '#d9d9d9'
@@ -206,8 +204,8 @@ const SortableStageItem: React.FC<{
             onKeyDown={(e) => e.stopPropagation()}
           />
         </div>
-        
-        <div style={{ marginBottom: '12px' }}>
+
+        <div style={{marginBottom: '12px'}}>
           <TextArea
             placeholder="Descrição da etapa (opcional)"
             value={stage.description || ''}
@@ -221,15 +219,15 @@ const SortableStageItem: React.FC<{
             onKeyDown={(e) => e.stopPropagation()}
           />
         </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+          <div style={{display: 'flex', alignItems: 'center'}}>
             <Switch
               checked={stage.isActive}
               onChange={(checked) => onUpdate(index, 'isActive', checked)}
-              style={{ marginRight: '8px' }}
+              style={{marginRight: '8px'}}
             />
-            <span style={{ fontSize: '14px', color: '#666' }}>
+            <span style={{fontSize: '14px', color: '#666'}}>
               {stage.isActive ? 'Ativa' : 'Inativa'}
             </span>
           </div>
@@ -242,7 +240,7 @@ const SortableStageItem: React.FC<{
 export const JobForm: React.FC = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const { id } = useParams();
+  const {id} = useParams();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
   const [questions, setQuestions] = useState<JobQuestion[]>([]);
@@ -327,9 +325,10 @@ export const JobForm: React.FC = () => {
         requirements: job.requirements,
         status: job.status,
         departmentId: job.departmentId,
+        requiresAddress: job.requiresAddress ?? false,
         // expirationDate: job.expirationDate ? new Date(job.expirationDate) : null,
       });
-      
+
       // Carregar perguntas existentes
       if (job.questions && job.questions.length > 0) {
         setQuestions(job.questions.map((q, index) => ({
@@ -375,7 +374,7 @@ export const JobForm: React.FC = () => {
 
   const updateQuestion = (index: number, field: keyof JobQuestion, value: any) => {
     const newQuestions = [...questions];
-    newQuestions[index] = { ...newQuestions[index], [field]: value };
+    newQuestions[index] = {...newQuestions[index], [field]: value};
     setQuestions(newQuestions);
   };
 
@@ -397,15 +396,15 @@ export const JobForm: React.FC = () => {
 
   const updateStage = (index: number, field: keyof JobStage, value: any) => {
     const newStages = [...stages];
-    newStages[index] = { ...newStages[index], [field]: value };
+    newStages[index] = {...newStages[index], [field]: value};
     setStages(newStages);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    
-    console.log('Drag end event:', { 
-      active: active.id, 
+    const {active, over} = event;
+
+    console.log('Drag end event:', {
+      active: active.id,
       over: over?.id,
       activeType: active.data.current?.type,
       overType: over?.data.current?.type
@@ -413,63 +412,63 @@ export const JobForm: React.FC = () => {
 
     if (active.id !== over?.id) {
       const activeId = active.id as string;
-      
+
       // Verificar se é uma pergunta ou etapa baseado no prefixo do ID ou se existe nos arrays
       const isQuestion = questions.some(q => q.id === activeId);
       const isStage = stages.some(s => s.id === activeId);
-      
-      console.log('Item type check:', { 
-        activeId, 
-        isQuestion, 
-        isStage, 
+
+      console.log('Item type check:', {
+        activeId,
+        isQuestion,
+        isStage,
         questionsCount: questions.length,
         stagesCount: stages.length
       });
-      
+
       if (isQuestion) {
         setQuestions((items) => {
           const oldIndex = items.findIndex((item) => item.id === active.id);
           const newIndex = items.findIndex((item) => item.id === over?.id);
-          
-          console.log('Reordering questions:', { 
-            oldIndex, 
-            newIndex, 
-            activeId: active.id, 
+
+          console.log('Reordering questions:', {
+            oldIndex,
+            newIndex,
+            activeId: active.id,
             overId: over?.id,
             itemsCount: items.length
           });
-          
+
           if (oldIndex === -1 || newIndex === -1) {
-            console.error('Invalid indices:', { oldIndex, newIndex });
+            console.error('Invalid indices:', {oldIndex, newIndex});
             return items;
           }
-          
+
           const newItems = arrayMove(items, oldIndex, newIndex);
-          console.log('New questions order:', newItems.map(q => ({ id: q.id, question: q.question })));
-          
+          console.log('New questions order:', newItems.map(q => ({id: q.id, question: q.question})));
+
           return newItems;
         });
       } else if (isStage) {
         setStages((items) => {
           const oldIndex = items.findIndex((item) => item.id === active.id);
           const newIndex = items.findIndex((item) => item.id === over?.id);
-          
-          console.log('Reordering stages:', { 
-            oldIndex, 
-            newIndex, 
-            activeId: active.id, 
+
+          console.log('Reordering stages:', {
+            oldIndex,
+            newIndex,
+            activeId: active.id,
             overId: over?.id,
             itemsCount: items.length
           });
-          
+
           if (oldIndex === -1 || newIndex === -1) {
-            console.error('Invalid indices:', { oldIndex, newIndex });
+            console.error('Invalid indices:', {oldIndex, newIndex});
             return items;
           }
-          
+
           const newItems = arrayMove(items, oldIndex, newIndex);
-          console.log('New stages order:', newItems.map(s => ({ id: s.id, name: s.name })));
-          
+          console.log('New stages order:', newItems.map(s => ({id: s.id, name: s.name})));
+
           return newItems;
         });
       }
@@ -479,22 +478,23 @@ export const JobForm: React.FC = () => {
   const onFinish = async (values: any) => {
     try {
       setLoading(true);
-      
+
       const jobData: CreateJobData | UpdateJobData = {
         title: values.title,
         description: values.description,
         requirements: values.requirements,
+        ...(values.requiresAddress !== undefined && { requiresAddress: values.requiresAddress }),
         status: isEditing ? values.status : JobStatus.DRAFT,
-        ...(values.departmentId && { departmentId: values.departmentId }),
-        ...(values.expirationDate && { expirationDate: values.expirationDate.toISOString() }),
+        ...(values.departmentId && {departmentId: values.departmentId}),
+        ...(values.expirationDate && {expirationDate: values.expirationDate.toISOString()}),
         questions: questions.filter(q => q.question.trim() !== '').map((q, index) => ({
-          ...(isEditing && q.id && { id: q.id }),
+          ...(isEditing && q.id && {id: q.id}),
           question: q.question,
           isRequired: q.isRequired,
           orderIndex: index,
         })),
         stages: stages.filter(s => s.name.trim() !== '').map((s, index) => ({
-          ...(isEditing && s.id && { id: s.id }),
+          ...(isEditing && s.id && {id: s.id}),
           name: s.name,
           description: s.description,
           isActive: s.isActive,
@@ -509,7 +509,7 @@ export const JobForm: React.FC = () => {
         await apiService.createJob(jobData as CreateJobData);
         message.success('Vaga criada com sucesso');
       }
-      
+
       navigate('/jobs');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -528,9 +528,9 @@ export const JobForm: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{padding: '24px'}}>
       <Card>
-        <Title level={2} style={{ marginBottom: '24px' }}>
+        <Title level={2} style={{marginBottom: '24px'}}>
           {isEditing ? 'Editar Vaga' : 'Nova Vaga'}
         </Title>
 
@@ -540,29 +540,33 @@ export const JobForm: React.FC = () => {
           onFinish={onFinish}
           initialValues={{
             status: JobStatus.DRAFT,
+            requiresAddress: false,
           }}
         >
           <Form.Item
             name="title"
             label="Título da Vaga"
             rules={[
-              { required: true, message: 'Por favor, insira o título da vaga' },
-              { min: 3, message: 'O título deve ter pelo menos 3 caracteres' },
-              { max: 255, message: 'O título deve ter no máximo 255 caracteres' }
+              {required: true, message: 'Por favor, insira o título da vaga'},
+              {min: 3, message: 'O título deve ter pelo menos 3 caracteres'},
+              {max: 255, message: 'O título deve ter no máximo 255 caracteres'}
             ]}
           >
-            <Input 
-              placeholder="Ex: Desenvolvedor Full Stack" 
+            <Input
+              placeholder="Ex: Desenvolvedor Full Stack"
             />
           </Form.Item>
 
           <Form.Item
             name="description"
             label="Descrição"
-            rules={[{ required: true, message: 'Por favor, insira a descrição da vaga' }, { min: 5, message: 'A descrição deve ter pelo menos 5 caracteres' }]}
+            rules={[{required: true, message: 'Por favor, insira a descrição da vaga'}, {
+              min: 5,
+              message: 'A descrição deve ter pelo menos 5 caracteres'
+            }]}
           >
-            <TextArea 
-              rows={4} 
+            <TextArea
+              rows={4}
               placeholder="Descreva as responsabilidades e atividades da vaga..."
             />
           </Form.Item>
@@ -570,12 +574,23 @@ export const JobForm: React.FC = () => {
           <Form.Item
             name="requirements"
             label="Requisitos"
-            rules={[{ required: true, message: 'Por favor, insira os requisitos da vaga' }, { min: 5, message: 'Os requisitos devem ter pelo menos 5 caracteres' }]}
+            rules={[{required: true, message: 'Por favor, insira os requisitos da vaga'}, {
+              min: 5,
+              message: 'Os requisitos devem ter pelo menos 5 caracteres'
+            }]}
           >
-            <TextArea 
-              rows={4} 
+            <TextArea
+              rows={4}
               placeholder="Liste os requisitos, habilidades e experiências necessárias..."
             />
+          </Form.Item>
+
+          <Form.Item
+            name="requiresAddress"
+            label="Solicitar endereço na inscrição?"
+            valuePropName="checked"
+          >
+            <Switch />
           </Form.Item>
 
           <Form.Item
@@ -601,7 +616,7 @@ export const JobForm: React.FC = () => {
             <Form.Item
               name="status"
               label="Status"
-              rules={[{ required: true, message: 'Por favor, selecione o status' }]}
+              rules={[{required: true, message: 'Por favor, selecione o status'}]}
             >
               <Select>
                 <Option value={JobStatus.DRAFT}>Rascunho</Option>
@@ -624,19 +639,19 @@ export const JobForm: React.FC = () => {
           </Form.Item>
           */}
 
-          <Divider />
+          <Divider/>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{marginBottom: '16px'}}>
             <Title level={4}>Perguntas do Processo Seletivo</Title>
-            <p style={{ color: '#666', marginBottom: '16px' }}>
-              Adicione perguntas que serão feitas aos candidatos durante o processo seletivo. 
+            <p style={{color: '#666', marginBottom: '16px'}}>
+              Adicione perguntas que serão feitas aos candidatos durante o processo seletivo.
               Arraste para reordenar as perguntas.
             </p>
-            <Button 
-              type="dashed" 
-              onClick={addQuestion} 
-              icon={<PlusOutlined />}
-              style={{ width: '100%' }}
+            <Button
+              type="dashed"
+              onClick={addQuestion}
+              icon={<PlusOutlined/>}
+              style={{width: '100%'}}
             >
               Adicionar Pergunta
             </Button>
@@ -652,7 +667,7 @@ export const JobForm: React.FC = () => {
                 items={questions.map(q => q.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div style={{ minHeight: '50px' }}>
+                <div style={{minHeight: '50px'}}>
                   {questions.map((question, index) => (
                     <SortableQuestionItem
                       key={question.id}
@@ -667,20 +682,20 @@ export const JobForm: React.FC = () => {
             </DndContext>
           )}
 
-          <Divider />
+          <Divider/>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{marginBottom: '16px'}}>
             <Title level={4}>Etapas do Processo Seletivo</Title>
-            <p style={{ color: '#666', marginBottom: '16px' }}>
-              Configure as etapas do processo seletivo para esta vaga. 
-              As etapas serão exibidas na ordem definida aqui. 
+            <p style={{color: '#666', marginBottom: '16px'}}>
+              Configure as etapas do processo seletivo para esta vaga.
+              As etapas serão exibidas na ordem definida aqui.
               Arraste para reordenar as etapas.
             </p>
-            <Button 
-              type="dashed" 
-              onClick={addStage} 
-              icon={<PlusOutlined />}
-              style={{ width: '100%' }}
+            <Button
+              type="dashed"
+              onClick={addStage}
+              icon={<PlusOutlined/>}
+              style={{width: '100%'}}
             >
               Adicionar Etapa
             </Button>
@@ -696,7 +711,7 @@ export const JobForm: React.FC = () => {
                 items={stages.map(s => s.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div style={{ minHeight: '50px' }}>
+                <div style={{minHeight: '50px'}}>
                   {stages.map((stage, index) => (
                     <SortableStageItem
                       key={stage.id}

@@ -33,20 +33,19 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_DATABASE=${DB_DATABASE}
       - AI_SERVICE_URL=${AI_SERVICE_URL}
-      - ENDPOINT_URL=${ENDPOINT_URL}
+      - STORAGE_SERVICE_ENDPOINT=${STORAGE_SERVICE_ENDPOINT}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_REGION=${AWS_REGION}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
       - RESUMES_BUCKET_NAME=${RESUMES_BUCKET_NAME}
-      - APPLICATIONS_SQS_QUEUE_NAME=${APPLICATIONS_SQS_QUEUE_NAME}
-      - QUESTION_RESPONSES_SQS_QUEUE_NAME=${QUESTION_RESPONSES_SQS_QUEUE_NAME}
+      - APPLICATIONS_QUEUE_NAME=${APPLICATIONS_QUEUE_NAME}
+      - QUESTION_RESPONSES_QUEUE_NAME=${QUESTION_RESPONSES_QUEUE_NAME}
+      - REDIS_URL=${REDIS_URL}
       - JWT_SECRET=${JWT_SECRET}
     volumes:
       - ./companies-service/backend:/app
       - /app/node_modules
-    depends_on:
-      - postgres
     networks:
       - cognitive-ats-network
     restart: unless-stopped
@@ -62,8 +61,6 @@ services:
     volumes:
       - ./companies-service/frontend:/app
       - /app/node_modules
-    depends_on:
-      - companies-backend
     networks:
       - cognitive-ats-network
     restart: unless-stopped
@@ -80,10 +77,14 @@ services:
       - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - JOB_CREATION_AI_MODEL=${JOB_CREATION_AI_MODEL}
       - DEFAULT_MODEL=${DEFAULT_MODEL:-gpt-4}
       - DEFAULT_MAX_TOKENS=${DEFAULT_MAX_TOKENS:-1000}
       - DEFAULT_TEMPERATURE=${DEFAULT_TEMPERATURE:-0.7}
       - REQUEST_TIMEOUT=${REQUEST_TIMEOUT:-30}
+      # Variáveis para avaliação de candidatos
+      - EVALUATION_PROVIDER=${EVALUATION_PROVIDER:-openai}
+      - EVALUATION_MODEL=${EVALUATION_MODEL:-gpt-4}
     volumes:
       - ./ai-service:/app
     networks:
@@ -112,106 +113,95 @@ services:
       - cognitive-ats-network
     restart: unless-stopped
 
-  # SQS Resume Listener Service (Parse de currículos)
-  sqs-resume-listener:
-    build:
-      context: ./ai-service
-      dockerfile: consumer/Dockerfile.resume-listener
-    container_name: cognitive-ats-sqs-resume-listener
-    environment:
-      - APPLICATIONS_SQS_QUEUE_NAME=${APPLICATIONS_SQS_QUEUE_NAME}
-      - APPLICATIONS_AI_SCORE_SQS_QUEUE_NAME=${APPLICATIONS_AI_SCORE_SQS_QUEUE_NAME}
-      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - BACKEND_URL=${BACKEND_URL:-http://companies-backend:3000}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_HOST=${DB_HOST}
-      - POSTGRES_PORT=${DB_PORT}
-    volumes:
-      - ./ai-service:/app
-    depends_on:
-      - localstack
-      - companies-backend
-      - postgres
-    networks:
-      - cognitive-ats-network
-    restart: unless-stopped
-
-  # SQS Score Listener Service (Score de candidatos)
-  sqs-score-listener:
-    build:
-      context: ./ai-service
-      dockerfile: consumer/Dockerfile.score-listener
-    container_name: cognitive-ats-sqs-score-listener
-    environment:
-      - AI_SCORE_SQS_QUEUE_NAME=${AI_SCORE_SQS_QUEUE_NAME:-ai-score-queue}
-      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - BACKEND_URL=${BACKEND_URL:-http://companies-backend:3000}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_HOST=${DB_HOST}
-      - POSTGRES_PORT=${DB_PORT}
-    volumes:
-      - ./ai-service:/app
-    depends_on:
-      - localstack
-      - companies-backend
-      - postgres
-    networks:
-      - cognitive-ats-network
-    restart: unless-stopped
-
-  # SQS Question Responses Listener Service (Respostas das perguntas)
-  sqs-question-responses-listener:
-    build:
-      context: ./ai-service
-      dockerfile: consumer/Dockerfile.question-responses-listener
-    container_name: cognitive-ats-sqs-question-responses-listener
-    environment:
-      - QUESTION_RESPONSES_SQS_QUEUE_NAME=${QUESTION_RESPONSES_SQS_QUEUE_NAME}
-      - AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - SQS_MAX_RETRIES=${SQS_MAX_RETRIES:-3}
-      - SQS_WAIT_TIME=${SQS_WAIT_TIME:-20}
-      - SQS_MAX_MESSAGES=${SQS_MAX_MESSAGES:-10}
-    volumes:
-      - ./ai-service:/app
-    depends_on:
-      - localstack
-      - companies-backend
-    networks:
-      - cognitive-ats-network
-    restart: unless-stopped
-
-  # LocalStack (AWS Services Simulator)
-  localstack:
-    image: localstack/localstack:latest
-    container_name: cognitive-ats-localstack
+  # Redis (Message Queue)
+  redis:
+    image: redis:7-alpine
+    container_name: cognitive-ats-redis
     ports:
-      - "${LOCALSTACK_PORT}:4566"
-    environment:
-      - SERVICES=${LOCALSTACK_SERVICES}
-      - DEBUG=${LOCALSTACK_DEBUG}
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - "${REDIS_PORT}:6379"
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - localstack_data:/var/lib/localstack
+      - redis_data:/data
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+  # MinIO (simulador do S3)
+  minio:
+    image: minio/minio:latest
+    container_name: cognitive-ats-minio
+    ports:
+      - "9000:9000"      # API
+      - "9001:9001"      # Console Web
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+  # Async Task Service Consumer
+  async-task-consumer:
+    build:
+      context: ./async-task-service
+      dockerfile: Dockerfile.dev
+    container_name: cognitive-ats-async-task-consumer
+    environment:
+      # Redis Configuration
+      - REDIS_URL=${REDIS_URL}
+      # Queue Configuration
+      - APPLICATIONS_QUEUE_NAME=${APPLICATIONS_QUEUE_NAME}
+      - AI_SCORE_QUEUE_NAME=${AI_SCORE_QUEUE_NAME:-ai-score-queue}
+      - QUESTION_RESPONSES_QUEUE_NAME=${QUESTION_RESPONSES_QUEUE_NAME}
+      # Storage Configuration
+      - STORAGE_SERVICE_ENDPOINT=${STORAGE_SERVICE_ENDPOINT}
+      - STORAGE_URL=${STORAGE_SERVICE_ENDPOINT}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - RESUMES_BUCKET_NAME=${RESUMES_BUCKET_NAME}
+      # Service URLs
+      - AI_SERVICE_URL=${AI_SERVICE_URL}
+      - COMPANIES_BACKEND_URL=${COMPANIES_BACKEND_URL:-http://companies-backend:3000}
+      - COMPANIES_API_URL=http://companies-backend:3000
+      # Evaluation Configuration
+      - EVALUATION_PROVIDER=${EVALUATION_PROVIDER:-openai}
+      - EVALUATION_MODEL=${EVALUATION_MODEL:-gpt-4}
+      # Consumer Configuration
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - BLPOP_TIMEOUT_SECONDS=${BLPOP_TIMEOUT_SECONDS:-5}
+      - NUM_WORKERS=${NUM_WORKERS:-3}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - RETRY_BASE_DELAY_SECONDS=${RETRY_BASE_DELAY_SECONDS:-2}
+    volumes:
+      - ./async-task-service/src:/app/src
+    depends_on:
+      - redis
+    networks:
+      - cognitive-ats-network
+    restart: unless-stopped
+
+  # Redis Admin (phpRedisAdmin)
+  redis-admin:
+    image: erikdubbelboer/phpredisadmin:latest
+    container_name: cognitive-ats-redis-admin
+    ports:
+      - "${REDIS_ADMIN_PORT:-9091}:80"
+    environment:
+      - REDIS_1_HOST=redis
+      - REDIS_1_PORT=6379
+      - REDIS_1_NAME=0
+    depends_on:
+      - redis
     networks:
       - cognitive-ats-network
     restart: unless-stopped
@@ -227,20 +217,16 @@ services:
       - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on:
-      - companies-frontend
-      - companies-backend
-      - ai-service
-      - candidates-service
     networks:
       - cognitive-ats-network
     restart: unless-stopped
 
 volumes:
   postgres_data:
-  localstack_data:
   caddy_data:
   caddy_config:
+  minio_data:
+  redis_data:
 
 networks:
   cognitive-ats-network:

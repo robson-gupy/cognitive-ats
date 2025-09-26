@@ -1,13 +1,13 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  OneToOne,
+  Entity,
+  Index,
   JoinColumn,
   OneToMany,
-  Index,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Application } from '../../applications/entities/application.entity';
 import { ResumeProfessionalExperience } from './resume-professional-experience.entity';

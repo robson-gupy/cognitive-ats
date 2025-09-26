@@ -2,8 +2,8 @@ import {
   MigrationInterface,
   QueryRunner,
   Table,
-  TableIndex,
   TableForeignKey,
+  TableIndex,
 } from 'typeorm';
 
 export class CreateApplicationQuestionResponsesTable1754406860001

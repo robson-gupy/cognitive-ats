@@ -21,11 +21,11 @@ async def create_job_from_prompt(request: JobCreationRequest):
     """Cria um job a partir de um prompt usando IA"""
     try:
         print(f"Received request: {request}")
-        provider_name = request.provider or Config.DEFAULT_AI_PROVIDER
+        provider_name = Config.DEFAULT_AI_PROVIDER
         provider = AIProvider(provider_name)
         
         # Cria o serviço de IA
-        ai_service = AIService(provider, api_key=request.api_key)
+        ai_service = AIService(provider)
         
         # Cria o serviço de jobs
         job_creator = JobCreator(ai_service)
@@ -41,8 +41,15 @@ async def create_job_from_prompt(request: JobCreationRequest):
             max_stages=request.max_stages
         )
         
+        # Propagar requiresAddress de volta no objeto job, se informado
+        if request.requires_address is not None:
+            result_job = dict(result.get("job", {}))
+            result_job["requiresAddress"] = request.requires_address
+        else:
+            result_job = result.get("job")
+
         return JobResponse(
-            job=result["job"],
+            job=result_job,
             questions=result.get("questions"),
             stages=result.get("stages"),
             provider=provider_name

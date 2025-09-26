@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
-import { useAuth } from '../useAuth'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {act, renderHook, waitFor} from '@testing-library/react'
+import {useAuth} from '../useAuth'
 
 // Mock do serviço de API
 vi.mock('../../services/api', () => ({
@@ -24,14 +24,14 @@ describe('useAuth', () => {
 
   it('deve inicializar com estado padrão', async () => {
     mockApiService.isAuthenticated.mockReturnValue(false)
-    
-    const { result } = renderHook(() => useAuth())
-    
+
+    const {result} = renderHook(() => useAuth())
+
     // Aguardar a inicialização
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
     })
-    
+
     expect(result.current.currentUser).toBeNull()
     expect(result.current.isAuthenticated).toBe(false)
   })
@@ -44,13 +44,13 @@ describe('useAuth', () => {
       name: 'Usuário Teste',
       roleCode: 'USER',
     })
-    
-    const { result } = renderHook(() => useAuth())
-    
+
+    const {result} = renderHook(() => useAuth())
+
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
     })
-    
+
     expect(result.current.isAuthenticated).toBe(true)
     expect(result.current.currentUser).toEqual({
       id: 1,
@@ -63,13 +63,13 @@ describe('useAuth', () => {
   it('deve fazer logout quando getProfile falha', async () => {
     mockApiService.isAuthenticated.mockReturnValue(true)
     mockApiService.getProfile.mockRejectedValue(new Error('Erro de autenticação'))
-    
-    const { result } = renderHook(() => useAuth())
-    
+
+    const {result} = renderHook(() => useAuth())
+
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
     })
-    
+
     expect(mockApiService.removeToken).toHaveBeenCalled()
     expect(result.current.isAuthenticated).toBe(false)
     expect(result.current.currentUser).toBeNull()
@@ -82,32 +82,32 @@ describe('useAuth', () => {
       name: 'Usuário Teste',
       roleCode: 'USER',
     }
-    
+
     const mockResponse = {
       access_token: 'token123',
       user: mockUser,
     }
-    
+
     mockApiService.login.mockResolvedValue(mockResponse)
-    
-    const { result } = renderHook(() => useAuth())
-    
+
+    const {result} = renderHook(() => useAuth())
+
     await act(async () => {
-      await result.current.login({ email: 'teste@email.com', password: 'senha123' })
+      await result.current.login({email: 'teste@email.com', password: 'senha123'})
     })
-    
+
     expect(mockApiService.setToken).toHaveBeenCalledWith('token123')
     expect(result.current.currentUser).toEqual(mockUser)
     expect(result.current.isAuthenticated).toBe(true)
   })
 
   it('deve fazer logout corretamente', () => {
-    const { result } = renderHook(() => useAuth())
-    
+    const {result} = renderHook(() => useAuth())
+
     act(() => {
       result.current.logout()
     })
-    
+
     expect(mockApiService.removeToken).toHaveBeenCalled()
     expect(result.current.isAuthenticated).toBe(false)
     expect(result.current.currentUser).toBeNull()
@@ -121,13 +121,13 @@ describe('useAuth', () => {
       name: 'Admin',
       roleCode: 'ADMIN',
     })
-    
-    const { result } = renderHook(() => useAuth())
-    
+
+    const {result} = renderHook(() => useAuth())
+
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
     })
-    
+
     expect(result.current.isAdmin()).toBe(true)
   })
 
@@ -139,13 +139,13 @@ describe('useAuth', () => {
       name: 'Usuário',
       roleCode: 'USER',
     })
-    
-    const { result } = renderHook(() => useAuth())
-    
+
+    const {result} = renderHook(() => useAuth())
+
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
     })
-    
+
     expect(result.current.hasRole('USER')).toBe(true)
     expect(result.current.hasRole('ADMIN')).toBe(false)
   })

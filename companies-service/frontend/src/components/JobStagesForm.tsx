@@ -1,32 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, message, Space, Switch, Divider } from 'antd';
-import { useNavigate, useParams } from 'react-router-dom';
-import { PlusOutlined, DeleteOutlined, DragOutlined } from '@ant-design/icons';
-import { apiService } from '../services/api';
-import type { Job } from '../types/Job';
+import React, {useEffect, useState} from 'react';
+import {Button, Card, Divider, Form, Input, message, Space, Switch, Typography} from 'antd';
+import {useNavigate, useParams} from 'react-router-dom';
+import {DeleteOutlined, DragOutlined, PlusOutlined} from '@ant-design/icons';
+import {apiService} from '../services/api';
+import type {Job} from '../types/Job';
+import type {DragEndEvent} from '@dnd-kit/core';
 import {
-  DndContext,
   closestCenter,
+  DndContext,
   KeyboardSensor,
-  PointerSensor,
   MouseSensor,
+  PointerSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
+  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import {CSS} from '@dnd-kit/utilities';
 
-const { Title } = Typography;
-const { TextArea } = Input;
+const {Title} = Typography;
+const {TextArea} = Input;
 
 interface JobStage {
   id: string;
@@ -42,7 +40,7 @@ const SortableStageItem: React.FC<{
   index: number;
   onUpdate: (index: number, field: keyof JobStage, value: any) => void;
   onRemove: (index: number) => void;
-}> = ({ stage, index, onUpdate, onRemove }) => {
+}> = ({stage, index, onUpdate, onRemove}) => {
   const {
     attributes,
     listeners,
@@ -50,7 +48,7 @@ const SortableStageItem: React.FC<{
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: stage.id });
+  } = useSortable({id: stage.id});
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -75,30 +73,30 @@ const SortableStageItem: React.FC<{
       {...attributes}
       {...listeners}
     >
-      <div style={{ width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-          <DragOutlined style={{ marginRight: '8px', color: '#999' }} />
-          <span style={{ fontWeight: 'bold', color: '#52c41a' }}>
+      <div style={{width: '100%'}}>
+        <div style={{display: 'flex', alignItems: 'center', marginBottom: '12px'}}>
+          <DragOutlined style={{marginRight: '8px', color: '#999'}}/>
+          <span style={{fontWeight: 'bold', color: '#52c41a'}}>
             Etapa {index + 1}
           </span>
           <Button
             type="text"
             danger
-            icon={<DeleteOutlined />}
+            icon={<DeleteOutlined/>}
             onClick={(e) => {
               e.stopPropagation();
               onRemove(index);
             }}
-            style={{ marginLeft: 'auto' }}
+            style={{marginLeft: 'auto'}}
           />
         </div>
-        
-        <div style={{ marginBottom: '12px' }}>
+
+        <div style={{marginBottom: '12px'}}>
           <Input
             placeholder="Nome da etapa (ex: Triagem, Entrevista, Teste Técnico)"
             value={stage.name}
             onChange={(e) => onUpdate(index, 'name', e.target.value)}
-            style={{ 
+            style={{
               marginBottom: '8px',
               backgroundColor: 'white',
               borderColor: '#d9d9d9'
@@ -107,8 +105,8 @@ const SortableStageItem: React.FC<{
             onKeyDown={(e) => e.stopPropagation()}
           />
         </div>
-        
-        <div style={{ marginBottom: '12px' }}>
+
+        <div style={{marginBottom: '12px'}}>
           <TextArea
             placeholder="Descrição da etapa (opcional)"
             value={stage.description || ''}
@@ -122,15 +120,15 @@ const SortableStageItem: React.FC<{
             onKeyDown={(e) => e.stopPropagation()}
           />
         </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+          <div style={{display: 'flex', alignItems: 'center'}}>
             <Switch
               checked={stage.isActive}
               onChange={(checked) => onUpdate(index, 'isActive', checked)}
-              style={{ marginRight: '8px' }}
+              style={{marginRight: '8px'}}
             />
-            <span style={{ fontSize: '14px', color: '#666' }}>
+            <span style={{fontSize: '14px', color: '#666'}}>
               {stage.isActive ? 'Ativa' : 'Inativa'}
             </span>
           </div>
@@ -142,7 +140,7 @@ const SortableStageItem: React.FC<{
 
 export const JobStagesForm: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const {id} = useParams();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
   const [stages, setStages] = useState<JobStage[]>([]);
@@ -175,7 +173,7 @@ export const JobStagesForm: React.FC = () => {
       setInitialLoading(true);
       const jobData: Job = await apiService.getJob(id!);
       setJob(jobData);
-      
+
       // Carregar etapas existentes
       if (jobData.stages && jobData.stages.length > 0) {
         setStages(jobData.stages.map((s, index) => ({
@@ -212,15 +210,15 @@ export const JobStagesForm: React.FC = () => {
 
   const updateStage = (index: number, field: keyof JobStage, value: any) => {
     const newStages = [...stages];
-    newStages[index] = { ...newStages[index], [field]: value };
+    newStages[index] = {...newStages[index], [field]: value};
     setStages(newStages);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    
-    console.log('Drag end event:', { 
-      active: active.id, 
+    const {active, over} = event;
+
+    console.log('Drag end event:', {
+      active: active.id,
       over: over?.id,
       activeType: active.data.current?.type,
       overType: over?.data.current?.type
@@ -229,34 +227,34 @@ export const JobStagesForm: React.FC = () => {
     if (active.id !== over?.id) {
       const activeId = active.id as string;
       const isStage = stages.some(s => s.id === activeId);
-      
-      console.log('Item type check:', { 
-        activeId, 
-        isStage, 
+
+      console.log('Item type check:', {
+        activeId,
+        isStage,
         stagesCount: stages.length
       });
-      
+
       if (isStage) {
         setStages((items) => {
           const oldIndex = items.findIndex((item) => item.id === active.id);
           const newIndex = items.findIndex((item) => item.id === over?.id);
-          
-          console.log('Reordering stages:', { 
-            oldIndex, 
-            newIndex, 
-            activeId: active.id, 
+
+          console.log('Reordering stages:', {
+            oldIndex,
+            newIndex,
+            activeId: active.id,
             overId: over?.id,
             itemsCount: items.length
           });
-          
+
           if (oldIndex === -1 || newIndex === -1) {
-            console.error('Invalid indices:', { oldIndex, newIndex });
+            console.error('Invalid indices:', {oldIndex, newIndex});
             return items;
           }
-          
+
           const newItems = arrayMove(items, oldIndex, newIndex);
-          console.log('New stages order:', newItems.map(s => ({ id: s.id, name: s.name })));
-          
+          console.log('New stages order:', newItems.map(s => ({id: s.id, name: s.name})));
+
           return newItems;
         });
       }
@@ -266,7 +264,7 @@ export const JobStagesForm: React.FC = () => {
   const onSave = async () => {
     try {
       setLoading(true);
-      
+
       const stagesData = stages.filter(s => s.name.trim() !== '').map((s, index) => ({
         name: s.name,
         description: s.description,
@@ -301,23 +299,23 @@ export const JobStagesForm: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{padding: '24px'}}>
       <Card>
-        <Title level={2} style={{ marginBottom: '24px' }}>
+        <Title level={2} style={{marginBottom: '24px'}}>
           Etapas do Processo Seletivo - {job.title}
         </Title>
 
-        <div style={{ marginBottom: '16px' }}>
-          <p style={{ color: '#666', marginBottom: '16px' }}>
-            Configure as etapas do processo seletivo para esta vaga. 
-            As etapas serão exibidas na ordem definida aqui. 
+        <div style={{marginBottom: '16px'}}>
+          <p style={{color: '#666', marginBottom: '16px'}}>
+            Configure as etapas do processo seletivo para esta vaga.
+            As etapas serão exibidas na ordem definida aqui.
             Arraste para reordenar as etapas.
           </p>
-          <Button 
-            type="dashed" 
-            onClick={addStage} 
-            icon={<PlusOutlined />}
-            style={{ width: '100%' }}
+          <Button
+            type="dashed"
+            onClick={addStage}
+            icon={<PlusOutlined/>}
+            style={{width: '100%'}}
           >
             Adicionar Etapa
           </Button>
@@ -333,7 +331,7 @@ export const JobStagesForm: React.FC = () => {
               items={stages.map(s => s.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div style={{ minHeight: '100px' }}>
+              <div style={{minHeight: '100px'}}>
                 {stages.map((stage, index) => (
                   <SortableStageItem
                     key={stage.id}
@@ -349,9 +347,9 @@ export const JobStagesForm: React.FC = () => {
         )}
 
         {stages.length === 0 && (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '40px', 
+          <div style={{
+            textAlign: 'center',
+            padding: '40px',
             color: '#999',
             border: '2px dashed #d9d9d9',
             borderRadius: '8px'
@@ -361,7 +359,7 @@ export const JobStagesForm: React.FC = () => {
           </div>
         )}
 
-        <Divider />
+        <Divider/>
 
         <Form.Item>
           <Space>

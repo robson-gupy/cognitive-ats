@@ -1,4 +1,4 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import axios from 'axios';
 
 export interface JobCreationRequest {
@@ -12,6 +12,7 @@ export interface JobCreationRequest {
   model?: string;
   max_tokens?: number;
   temperature?: number;
+  requiresAddress?: boolean;
 }
 
 export interface JobCreationResponse {
@@ -153,7 +154,7 @@ export class AiServiceClient {
   ): Promise<CandidateEvaluationResponse> {
     try {
       const response = await axios.post(
-        `${this.aiServiceUrl}/ai/evaluate-candidate`,
+        `${this.aiServiceUrl}/candidates/evaluate`,
         request,
         {
           timeout: 60000, // 60 segundos de timeout

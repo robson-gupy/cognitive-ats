@@ -1,17 +1,18 @@
 import {
-  IsString,
-  IsNotEmpty,
-  IsDateString,
-  IsOptional,
   IsArray,
-  ValidateNested,
-  MinLength,
+  IsDateString,
   IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
   IsUUID,
   MaxLength,
+  MinLength,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JobStatus } from '../entities/job.entity';
+import { IsBoolean } from 'class-validator';
 
 export class CreateJobQuestionDto {
   @IsString()
@@ -88,4 +89,8 @@ export class CreateJobDto {
   @ValidateNested({ each: true })
   @Type(() => CreateJobStageDto)
   stages?: CreateJobStageDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  requiresAddress?: boolean;
 }

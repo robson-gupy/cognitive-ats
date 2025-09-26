@@ -2,13 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Resume } from '../entities/resume.entity';
-import { Application } from '../../applications/entities/application.entity';
+import { Application, EvaluationDetails } from '../../applications/entities/application.entity';
 import { CreateResumeDto } from '../dto/create-resume.dto';
 import { UpdateResumeDto } from '../dto/update-resume.dto';
 import { AiServiceClient } from '../../shared/ai/ai-service.client';
 
 import { QuestionResponsesService } from '../../applications/services/question-responses.service';
-import { EvaluationDetails } from '../../applications/entities/application.entity';
 
 @Injectable()
 export class ResumeService {
@@ -70,6 +69,73 @@ export class ResumeService {
     }
 
     return savedResume;
+  }
+
+  async findByApplicationId(applicationId: string): Promise<Resume> {
+    const resume = await this.resumeRepository.findOne({
+      where: { applicationId },
+      relations: [
+        'professionalExperiences',
+        'academicFormations',
+        'achievements',
+        'languages',
+      ],
+    });
+
+    if (!resume) {
+      throw new NotFoundException(
+        `Resume not found for application ${applicationId}`,
+      );
+    }
+
+    return resume;
+  }
+
+  async update(
+    applicationId: string,
+    updateResumeDto: UpdateResumeDto,
+  ): Promise<Resume> {
+    const resume = await this.findByApplicationId(applicationId);
+
+    // Atualizar o currículo
+    Object.assign(resume, updateResumeDto);
+
+    return this.resumeRepository.save(resume);
+  }
+
+  async remove(applicationId: string): Promise<void> {
+    const resume = await this.findByApplicationId(applicationId);
+    await this.resumeRepository.remove(resume);
+  }
+
+  async findByJobId(jobId: string): Promise<Resume[]> {
+    return this.resumeRepository
+      .createQueryBuilder('resume')
+      .leftJoinAndSelect('resume.application', 'application')
+      .leftJoinAndSelect(
+        'resume.professionalExperiences',
+        'professionalExperiences',
+      )
+      .leftJoinAndSelect('resume.academicFormations', 'academicFormations')
+      .leftJoinAndSelect('resume.achievements', 'achievements')
+      .leftJoinAndSelect('resume.languages', 'languages')
+      .where('application.jobId = :jobId', { jobId })
+      .getMany();
+  }
+
+  async findByCompanyId(companyId: string): Promise<Resume[]> {
+    return this.resumeRepository
+      .createQueryBuilder('resume')
+      .leftJoinAndSelect('resume.application', 'application')
+      .leftJoinAndSelect(
+        'resume.professionalExperiences',
+        'professionalExperiences',
+      )
+      .leftJoinAndSelect('resume.academicFormations', 'academicFormations')
+      .leftJoinAndSelect('resume.achievements', 'achievements')
+      .leftJoinAndSelect('resume.languages', 'languages')
+      .where('application.companyId = :companyId', { companyId })
+      .getMany();
   }
 
   private async evaluateCandidateAfterResumeCreation(
@@ -223,72 +289,5 @@ export class ResumeService {
       console.error('❌ Erro ao avaliar candidato:', error);
       throw error;
     }
-  }
-
-  async findByApplicationId(applicationId: string): Promise<Resume> {
-    const resume = await this.resumeRepository.findOne({
-      where: { applicationId },
-      relations: [
-        'professionalExperiences',
-        'academicFormations',
-        'achievements',
-        'languages',
-      ],
-    });
-
-    if (!resume) {
-      throw new NotFoundException(
-        `Resume not found for application ${applicationId}`,
-      );
-    }
-
-    return resume;
-  }
-
-  async update(
-    applicationId: string,
-    updateResumeDto: UpdateResumeDto,
-  ): Promise<Resume> {
-    const resume = await this.findByApplicationId(applicationId);
-
-    // Atualizar o currículo
-    Object.assign(resume, updateResumeDto);
-
-    return this.resumeRepository.save(resume);
-  }
-
-  async remove(applicationId: string): Promise<void> {
-    const resume = await this.findByApplicationId(applicationId);
-    await this.resumeRepository.remove(resume);
-  }
-
-  async findByJobId(jobId: string): Promise<Resume[]> {
-    return this.resumeRepository
-      .createQueryBuilder('resume')
-      .leftJoinAndSelect('resume.application', 'application')
-      .leftJoinAndSelect(
-        'resume.professionalExperiences',
-        'professionalExperiences',
-      )
-      .leftJoinAndSelect('resume.academicFormations', 'academicFormations')
-      .leftJoinAndSelect('resume.achievements', 'achievements')
-      .leftJoinAndSelect('resume.languages', 'languages')
-      .where('application.jobId = :jobId', { jobId })
-      .getMany();
-  }
-
-  async findByCompanyId(companyId: string): Promise<Resume[]> {
-    return this.resumeRepository
-      .createQueryBuilder('resume')
-      .leftJoinAndSelect('resume.application', 'application')
-      .leftJoinAndSelect(
-        'resume.professionalExperiences',
-        'professionalExperiences',
-      )
-      .leftJoinAndSelect('resume.academicFormations', 'academicFormations')
-      .leftJoinAndSelect('resume.achievements', 'achievements')
-      .leftJoinAndSelect('resume.languages', 'languages')
-      .where('application.companyId = :companyId', { companyId })
-      .getMany();
   }
 }

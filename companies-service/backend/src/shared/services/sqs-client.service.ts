@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
+import { AsyncTaskQueue } from '../interfaces/async-task-queue.interface';
 
 // Interface genérica para o corpo da mensagem
 interface MessageBody {
@@ -7,14 +8,14 @@ interface MessageBody {
 }
 
 @Injectable()
-export class SqsClientService {
+export class SqsClientService implements AsyncTaskQueue {
   private readonly logger = new Logger(SqsClientService.name);
   private sqs: AWS.SQS;
 
   constructor() {
     this.sqs = new AWS.SQS({
       region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
-      endpoint: process.env.ENDPOINT_URL || undefined,
+      endpoint: process.env.STORAGE_SERVICE_ENDPOINT || undefined,
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       // Configurações adicionais para LocalStack
@@ -25,12 +26,12 @@ export class SqsClientService {
 
   async sendMessage(
     queueName: string,
-    messageBody: MessageBody,
+    messageBody: Record<string, unknown>,
   ): Promise<void> {
     try {
       // Determinar a URL da fila baseada no ambiente
       let queueUrl: string;
-      if (process.env.ENDPOINT_URL) {
+      if (process.env.STORAGE_SERVICE_ENDPOINT) {
         // Ambiente local com LocalStack - usar o nome do serviço do Docker
         queueUrl = `http://localstack:4566/000000000000/${queueName}`;
       } else {
@@ -59,14 +60,37 @@ export class SqsClientService {
   async sendApplicationCreatedMessage(
     applicationId: string,
     resumeUrl: string,
+    jobId: string,
+    jobData: Record<string, unknown>,
   ): Promise<void> {
     const queueName =
-      process.env.APPLICATIONS_SQS_QUEUE_NAME || 'applications-queue';
+      process.env.APPLICATIONS_QUEUE_NAME || 'applications-queue';
 
     const messageBody = {
       applicationId,
       resumeUrl,
+      jobId,
+      jobData,
       eventType: 'APPLICATION_CREATED',
+      timestamp: new Date().toISOString(),
+    };
+
+    await this.sendMessage(queueName, messageBody);
+  }
+
+  async sendQuestionResponseMessage(
+    applicationId: string,
+    questionId: string,
+    response: string,
+  ): Promise<void> {
+    const queueName =
+      process.env.QUESTION_RESPONSES_QUEUE_NAME || 'question-responses-queue';
+
+    const messageBody = {
+      applicationId,
+      questionId,
+      response,
+      eventType: 'QUESTION_RESPONSE_CREATED',
       timestamp: new Date().toISOString(),
     };
 

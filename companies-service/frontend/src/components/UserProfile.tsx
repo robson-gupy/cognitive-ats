@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Card, Form, Input, Button, message, Space, Divider, Typography } from 'antd';
-import { UserOutlined, LockOutlined, SaveOutlined, EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
-import { useAuthContext } from '../contexts/AuthContext';
-import { apiService } from '../services/api';
+import React, {useState} from 'react';
+import {Button, Card, Divider, Form, Input, message, Space, Typography} from 'antd';
+import {EyeInvisibleOutlined, EyeTwoTone, LockOutlined, SaveOutlined, UserOutlined} from '@ant-design/icons';
+import {useAuthContext} from '../contexts/AuthContext';
+import {apiService} from '../services/api';
 
-const { Title, Text } = Typography;
+const {Title, Text} = Typography;
 
 interface UserProfileData {
   firstName: string;
@@ -19,7 +19,7 @@ interface PasswordChangeData {
 }
 
 export const UserProfile: React.FC = () => {
-  const { currentUser, refreshAuthData } = useAuthContext();
+  const {currentUser, refreshAuthData} = useAuthContext();
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [profileForm] = Form.useForm();
@@ -41,7 +41,7 @@ export const UserProfile: React.FC = () => {
     try {
       await apiService.updateProfile(values);
       message.success('Perfil atualizado com sucesso!');
-      
+
       // Atualizar dados do usuário no contexto
       await refreshAuthData();
     } catch (error: any) {
@@ -77,14 +77,14 @@ export const UserProfile: React.FC = () => {
   }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '24px' }}>
+    <div style={{maxWidth: '800px', margin: '0 auto', padding: '24px'}}>
       <Title level={2}>
-        <UserOutlined /> Meu Perfil
+        <UserOutlined/> Meu Perfil
       </Title>
-      
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+
+      <Space direction="vertical" size="large" style={{width: '100%'}}>
         {/* Informações do Perfil */}
-        <Card title="Informações Pessoais" style={{ marginBottom: '24px' }}>
+        <Card title="Informações Pessoais" style={{marginBottom: '24px'}}>
           <Form
             form={profileForm}
             layout="vertical"
@@ -95,41 +95,41 @@ export const UserProfile: React.FC = () => {
               label="Nome"
               name="firstName"
               rules={[
-                { required: true, message: 'Por favor, insira seu nome!' },
-                { min: 2, message: 'O nome deve ter pelo menos 2 caracteres!' },
+                {required: true, message: 'Por favor, insira seu nome!'},
+                {min: 2, message: 'O nome deve ter pelo menos 2 caracteres!'},
               ]}
             >
-              <Input placeholder="Seu nome" />
+              <Input placeholder="Seu nome"/>
             </Form.Item>
 
             <Form.Item
               label="Sobrenome"
               name="lastName"
               rules={[
-                { required: true, message: 'Por favor, insira seu sobrenome!' },
-                { min: 2, message: 'O sobrenome deve ter pelo menos 2 caracteres!' },
+                {required: true, message: 'Por favor, insira seu sobrenome!'},
+                {min: 2, message: 'O sobrenome deve ter pelo menos 2 caracteres!'},
               ]}
             >
-              <Input placeholder="Seu sobrenome" />
+              <Input placeholder="Seu sobrenome"/>
             </Form.Item>
 
             <Form.Item
               label="Email"
               name="email"
               rules={[
-                { required: true, message: 'Por favor, insira seu email!' },
-                { type: 'email', message: 'Por favor, insira um email válido!' },
+                {required: true, message: 'Por favor, insira seu email!'},
+                {type: 'email', message: 'Por favor, insira um email válido!'},
               ]}
             >
-              <Input placeholder="seu@email.com" disabled />
+              <Input placeholder="seu@email.com" disabled/>
             </Form.Item>
 
             <Form.Item>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={loading}
-                icon={<SaveOutlined />}
+                icon={<SaveOutlined/>}
               >
                 Salvar Alterações
               </Button>
@@ -137,10 +137,10 @@ export const UserProfile: React.FC = () => {
           </Form>
         </Card>
 
-        <Divider />
+        <Divider/>
 
         {/* Alteração de Senha */}
-        <Card title="Alterar Senha" style={{ marginBottom: '24px' }}>
+        <Card title="Alterar Senha" style={{marginBottom: '24px'}}>
           <Form
             form={passwordForm}
             layout="vertical"
@@ -151,13 +151,13 @@ export const UserProfile: React.FC = () => {
               label="Senha Atual"
               name="currentPassword"
               rules={[
-                { required: true, message: 'Por favor, insira sua senha atual!' },
-                { min: 6, message: 'A senha deve ter pelo menos 6 caracteres!' },
+                {required: true, message: 'Por favor, insira sua senha atual!'},
+                {min: 6, message: 'A senha deve ter pelo menos 6 caracteres!'},
               ]}
             >
-              <Input.Password 
+              <Input.Password
                 placeholder="Sua senha atual"
-                iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+                iconRender={(visible) => (visible ? <EyeTwoTone/> : <EyeInvisibleOutlined/>)}
               />
             </Form.Item>
 
@@ -165,13 +165,13 @@ export const UserProfile: React.FC = () => {
               label="Nova Senha"
               name="newPassword"
               rules={[
-                { required: true, message: 'Por favor, insira a nova senha!' },
-                { min: 6, message: 'A nova senha deve ter pelo menos 6 caracteres!' },
+                {required: true, message: 'Por favor, insira a nova senha!'},
+                {min: 6, message: 'A nova senha deve ter pelo menos 6 caracteres!'},
               ]}
             >
-              <Input.Password 
+              <Input.Password
                 placeholder="Nova senha"
-                iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+                iconRender={(visible) => (visible ? <EyeTwoTone/> : <EyeInvisibleOutlined/>)}
               />
             </Form.Item>
 
@@ -179,22 +179,22 @@ export const UserProfile: React.FC = () => {
               label="Confirmar Nova Senha"
               name="confirmPassword"
               rules={[
-                { required: true, message: 'Por favor, confirme a nova senha!' },
-                { min: 6, message: 'A senha deve ter pelo menos 6 caracteres!' },
+                {required: true, message: 'Por favor, confirme a nova senha!'},
+                {min: 6, message: 'A senha deve ter pelo menos 6 caracteres!'},
               ]}
             >
-              <Input.Password 
+              <Input.Password
                 placeholder="Confirme a nova senha"
-                iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+                iconRender={(visible) => (visible ? <EyeTwoTone/> : <EyeInvisibleOutlined/>)}
               />
             </Form.Item>
 
             <Form.Item>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={passwordLoading}
-                icon={<LockOutlined />}
+                icon={<LockOutlined/>}
               >
                 Alterar Senha
               </Button>
@@ -204,20 +204,20 @@ export const UserProfile: React.FC = () => {
 
         {/* Informações da Conta */}
         <Card title="Informações da Conta">
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <div style={{ marginBottom: '16px' }}>
+          <Space direction="vertical" style={{width: '100%'}}>
+            <div style={{marginBottom: '16px'}}>
               <Text strong>Empresa ID:</Text> {currentUser.companyId || 'N/A'}
             </div>
-            
-            <div style={{ marginBottom: '16px' }}>
+
+            <div style={{marginBottom: '16px'}}>
               <Text strong>Departamento:</Text> Não atribuído
             </div>
-            
-            <div style={{ marginBottom: '16px' }}>
+
+            <div style={{marginBottom: '16px'}}>
               <Text strong>Função:</Text> {currentUser.roleCode || 'N/A'}
             </div>
-            
-            <div style={{ marginBottom: '16px' }}>
+
+            <div style={{marginBottom: '16px'}}>
               <Text strong>Membro desde:</Text> Data não disponível
             </div>
           </Space>

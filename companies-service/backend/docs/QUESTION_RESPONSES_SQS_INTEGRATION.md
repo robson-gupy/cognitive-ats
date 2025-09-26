@@ -1,6 +1,7 @@
-# Integração SQS para Respostas das Perguntas
+# Integração Redis para Respostas das Perguntasue seja generico
 
-Este documento descreve a integração com Amazon SQS (Simple Queue Service) para envio de eventos quando respostas das perguntas da vaga forem criadas, atualizadas ou removidas.
+
+Este documento descreve a integração com Redis para envio de eventos quando respostas das perguntas da vaga forem criadas, atualizadas ou removidas.
 
 ## Configuração
 
@@ -9,13 +10,14 @@ Este documento descreve a integração com Amazon SQS (Simple Queue Service) par
 Adicione a seguinte variável ao seu arquivo `.env`:
 
 ```env
-# Configurações do SQS para respostas das perguntas
-QUESTION_RESPONSES_SQS_QUEUE_NAME=question-responses-queue
+# Configurações do Redis para respostas das perguntas
+QUESTION_RESPONSES_QUEUE_NAME=question-responses-queue
+REDIS_URL=redis://redis:6379
 ```
 
-### Ambiente Local (LocalStack)
+### Ambiente Local (Redis)
 
-Para desenvolvimento local, o LocalStack já está configurado para criar automaticamente a fila `question-responses-queue` através do script `setup-localstack.sh`.
+Para desenvolvimento local, o Redis já está configurado no docker-compose.yml e a fila `question-responses-queue` é criada automaticamente quando mensagens são enviadas.
 
 ## Funcionalidade
 
@@ -154,12 +156,12 @@ export class QuestionResponsesService {
     
     const savedResponses = await this.questionResponseRepository.save(questionResponses);
 
-    // Emitir evento para a fila SQS
+    // Emitir evento para a fila Redis
     try {
       await this.emitMultipleQuestionResponsesEvent(savedResponses, application);
     } catch (error) {
       // Log do erro mas não falhar a operação principal
-      console.error('Erro ao emitir evento SQS:', error);
+      console.error('Erro ao emitir evento Redis:', error);
     }
 
     return savedResponses;
@@ -169,28 +171,21 @@ export class QuestionResponsesService {
 
 ### Tratamento de Erros
 
-- **Falha no SQS**: Não impede a operação principal (criação/atualização das respostas)
+- **Falha no Redis**: Não impede a operação principal (criação/atualização das respostas)
 - **Logs de Erro**: Todos os erros são logados para debugging
-- **Retry**: O SQS Client Service já possui mecanismos de retry
+- **Retry**: O Redis Client Service já possui mecanismos de retry
 
 ## Consumo das Mensagens
 
 ### Exemplo de Consumidor Python
 
 ```python
-import boto3
+import redis
 import json
 import os
 
-# Configurar cliente SQS
-sqs = boto3.client('sqs',
-    endpoint_url=os.getenv('ENDPOINT_URL'),  # Para LocalStack
-    region_name=os.getenv('AWS_DEFAULT_REGION', 'us-east-1'),
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
-)
-
-queue_url = f"http://localhost:4566/000000000000/{os.getenv('QUESTION_RESPONSES_SQS_QUEUE_NAME')}"
+# Configurar cliente Redis
+redis_client = redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379'))
 
 def process_question_response_message(message_body):
     """Processa mensagem de resposta de pergunta"""
@@ -210,42 +205,28 @@ def process_question_response_message(message_body):
         print(f"Resposta individual: {data['data']['answer']}")
 
 # Loop principal de consumo
+queue_name = os.getenv('QUESTION_RESPONSES_QUEUE_NAME', 'question-responses-queue')
+
 while True:
-    response = sqs.receive_message(
-        QueueUrl=queue_url,
-        MaxNumberOfMessages=10,
-        WaitTimeSeconds=20
-    )
-    
-    if 'Messages' in response:
-        for message in response['Messages']:
-            try:
-                process_question_response_message(message['Body'])
-                
-                # Deletar mensagem após processamento
-                sqs.delete_message(
-                    QueueUrl=queue_url,
-                    ReceiptHandle=message['ReceiptHandle']
-                )
-                
-            except Exception as e:
-                print(f"Erro ao processar mensagem: {e}")
-                # Implementar lógica de retry ou dead letter queue
+    try:
+        # BLPOP bloqueia até que uma mensagem esteja disponível
+        result = redis_client.blpop(queue_name, timeout=5)
+        
+        if result:
+            queue, message_body = result
+            process_question_response_message(message_body)
+            
+    except Exception as e:
+        print(f"Erro ao processar mensagem: {e}")
+        # Implementar lógica de retry ou dead letter queue
 ```
 
 ### Exemplo de Consumidor Node.js
 
 ```typescript
-import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } from '@aws-sdk/client-sqs';
+import Redis from 'ioredis';
 
-const sqsClient = new SQSClient({
-  endpoint: process.env.ENDPOINT_URL, // Para LocalStack
-  region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 async function processQuestionResponseMessage(messageBody: string) {
   const data = JSON.parse(messageBody);
@@ -263,33 +244,18 @@ async function processQuestionResponseMessage(messageBody: string) {
 }
 
 async function consumeMessages() {
-  const command = new ReceiveMessageCommand({
-    QueueUrl: `http://localhost:4566/000000000000/${process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME}`,
-    MaxNumberOfMessages: 10,
-    WaitTimeSeconds: 20,
-  });
-
+  const queueName = process.env.QUESTION_RESPONSES_QUEUE_NAME || 'question-responses-queue';
+  
   try {
-    const response = await sqsClient.send(command);
+    // BLPOP bloqueia até que uma mensagem esteja disponível
+    const result = await redis.blpop(queueName, 5);
     
-    if (response.Messages) {
-      for (const message of response.Messages) {
-        try {
-          await processQuestionResponseMessage(message.Body!);
-          
-          // Deletar mensagem após processamento
-          await sqsClient.send(new DeleteMessageCommand({
-            QueueUrl: `http://localhost:4566/000000000000/${process.env.QUESTION_RESPONSES_SQS_QUEUE_NAME}`,
-            ReceiptHandle: message.ReceiptHandle!,
-          }));
-          
-        } catch (error) {
-          console.error('Erro ao processar mensagem:', error);
-        }
-      }
+    if (result) {
+      const [queue, messageBody] = result;
+      await processQuestionResponseMessage(messageBody);
     }
   } catch (error) {
-    console.error('Erro ao receber mensagens:', error);
+    console.error('Erro ao processar mensagem:', error);
   }
 }
 
@@ -309,14 +275,14 @@ npm test src/applications/services/question-responses.service.spec.ts
 npm test
 ```
 
-### Testar Integração SQS
+### Testar Integração Redis
 
 ```bash
-# Executar script de setup do LocalStack
-./scripts/setup-localstack.sh
+# Verificar se o Redis está rodando
+docker exec cognitive-ats-redis redis-cli ping
 
 # Testar envio de mensagens
-node scripts/test-sqs.js
+node scripts/test-redis.js
 ```
 
 ## Monitoramento
@@ -325,13 +291,13 @@ node scripts/test-sqs.js
 
 As mensagens enviadas são logadas com o seguinte formato:
 ```
-Mensagem enviada para fila question-responses-queue com sucesso. MessageId: abc123
+Mensagem enviada para fila question-responses-queue com sucesso.
 ```
 
 ### Métricas
 
 - **Mensagens Enviadas**: Contador de eventos emitidos
-- **Tamanho das Mensagens**: Monitorar tamanho das mensagens SQS
+- **Tamanho das Mensagens**: Monitorar tamanho das mensagens Redis
 - **Latência**: Tempo entre criação da resposta e envio do evento
 
 ## Melhorias Futuras

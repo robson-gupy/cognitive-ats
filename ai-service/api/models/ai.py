@@ -8,23 +8,17 @@ from typing import List, Dict, Optional, Any
 class TextGenerationRequest(BaseModel):
     """Modelo para requisição de geração de texto"""
     prompt: str
-    provider: Optional[str] = None
-    api_key: Optional[str] = None
 
 
 class ChatRequest(BaseModel):
     """Modelo para requisição de chat"""
     messages: List[Dict[str, str]]
-    provider: Optional[str] = None
-    api_key: Optional[str] = None
     model: Optional[str] = None
 
 
 class EmbeddingRequest(BaseModel):
     """Modelo para requisição de embedding"""
     text: str
-    provider: Optional[str] = None
-    api_key: Optional[str] = None
 
 
 class ProviderInfoResponse(BaseModel):
@@ -92,3 +86,23 @@ class CandidateEvaluationResponse(BaseModel):
     question_responses_score: int  # 0-100
     education_score: int  # 0-100
     experience_score: int  # 0-100
+    provider: str  # Provider de IA usado para avaliação
+    model: str  # Modelo de IA usado para avaliação
+
+
+# Modelos para avaliação de question responses
+class QuestionEvaluationRequest(BaseModel):
+    """Modelo para requisição de avaliação de question responses"""
+    question_responses: List[QuestionResponse]
+    job_data: JobData
+
+
+class QuestionEvaluationResponse(BaseModel):
+    """Modelo para resposta de avaliação de question responses"""
+    score: int  # 0-100
+    details: Dict[str, Any] = {}
+    feedback: str = ""
+    improvement_areas: List[str] = []
+    evaluated_at: str = ""
+    provider: str = ""
+    model: str = ""

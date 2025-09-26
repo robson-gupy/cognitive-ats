@@ -76,6 +76,7 @@ export interface Job {
   stages: JobStage[];
   logs?: JobLog[];
   applicationCount?: number;
+  requiresAddress?: boolean;
 }
 
 export interface CreateJobData {
@@ -86,6 +87,7 @@ export interface CreateJobData {
   departmentId?: string;
   questions?: JobQuestion[];
   stages?: JobStage[];
+  requiresAddress?: boolean;
 }
 
 export interface UpdateJobData {
@@ -97,4 +99,5 @@ export interface UpdateJobData {
   departmentId?: string;
   questions?: JobQuestion[];
   stages?: JobStage[];
+  requiresAddress?: boolean;
 } 

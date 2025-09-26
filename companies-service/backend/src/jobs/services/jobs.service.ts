@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Job, JobStatus } from '../entities/job.entity';
@@ -13,10 +9,7 @@ import { CreateJobDto } from '../dto/create-job.dto';
 import { UpdateJobDto } from '../dto/update-job.dto';
 import { CreateJobWithAiDto } from '../dto/create-job-with-ai.dto';
 import { User } from '../../users/entities/user.entity';
-import {
-  AiServiceClient,
-  JobCreationRequest,
-} from '../../shared/ai/ai-service.client';
+import { AiServiceClient, JobCreationRequest, } from '../../shared/ai/ai-service.client';
 import { generateUniqueSlug } from '../../shared/utils/slug.util';
 
 // Interface para o resultado da query SQL
@@ -30,6 +23,7 @@ interface JobQueryResult {
   departmentId: string | null;
   slug: string;
   publishedAt: Date | null;
+  requiresAddress: boolean;
   departmentName: string | null;
   departmentDescription: string | null;
 }
@@ -45,6 +39,7 @@ export interface PublishedJob {
   departmentId: string | null;
   slug: string;
   publishedAt: Date | null;
+  requiresAddress: boolean;
   department: {
     id: string;
     name: string;
@@ -82,6 +77,7 @@ interface UpdateStageData {
   description?: string;
   orderIndex?: number;
   isActive?: boolean;
+  jobId?: string;
 }
 
 @Injectable()
@@ -138,8 +134,8 @@ export class JobsService {
     const result: Job[] = await this.jobsRepository.query(
       `
           INSERT INTO jobs (id, title, description, requirements, expiration_date, status, company_id, department_id,
-                            created_by, slug, created_at, updated_at)
-          VALUES (gen_random_uuid(), $1, $2, $3, ${expirationDateValue}, $4, $5, ${departmentIdValue}, $6, $7, NOW(),
+                            created_by, slug, requires_address, created_at, updated_at)
+          VALUES (gen_random_uuid(), $1, $2, $3, ${expirationDateValue}, $4, $5, ${departmentIdValue}, $6, $7, $8, NOW(),
                   NOW()) RETURNING id, status, created_at, updated_at
       `,
       [
@@ -150,6 +146,7 @@ export class JobsService {
         user.companyId,
         user.id,
         createJobDto.slug,
+        createJobDto.requiresAddress ?? false,
       ],
     );
 
@@ -260,7 +257,7 @@ export class JobsService {
       description: aiResponse.description,
       requirements: aiResponse.requirements,
       status: JobStatus.DRAFT,
-      slug: generateUniqueSlug(user.company.slug, aiResponse.title, []), // Gerar slug baseado no título
+      requiresAddress: createJobWithAiDto.requiresAddress ?? false,
       questions: aiResponse.questions?.map((q: AiQuestion, index) => ({
         question: q.question,
         isRequired: q.isRequired,
@@ -285,7 +282,11 @@ export class JobsService {
     const jobs = await this.jobsRepository.find({
       where: { companyId: userCompanyId },
       relations: ['company', 'department', 'createdBy', 'questions', 'stages'],
-      order: { createdAt: 'DESC' },
+      order: {
+        createdAt: 'DESC',
+        questions: { orderIndex: 'ASC' },
+        stages: { orderIndex: 'ASC' },
+      },
     });
 
     console.log(`Found ${jobs.length} jobs for company ${userCompanyId}`);
@@ -351,6 +352,10 @@ export class JobsService {
         'logs',
         'logs.user',
       ],
+      order: {
+        questions: { orderIndex: 'ASC' },
+        stages: { orderIndex: 'ASC' },
+      },
     });
 
     if (!job) {
@@ -635,6 +640,7 @@ export class JobsService {
           description: stageData.description,
           orderIndex: stageData.orderIndex ?? index,
           isActive: stageData.isActive ?? true,
+          jobId: jobId,
         });
       }
     });
@@ -696,48 +702,6 @@ export class JobsService {
         'stages',
       );
     }
-  }
-
-  private hasStageChanges(
-    existingStages: JobStage[],
-    newStages: UpdateStageData[],
-  ): boolean {
-    // Se o número de stages mudou, há mudanças
-    if (existingStages.length !== newStages.length) {
-      return true;
-    }
-
-    // Criar map dos stages existentes por ID
-    const existingStagesMap = new Map(
-      existingStages.map((stage) => [stage.id, stage]),
-    );
-
-    // Verificar se cada stage novo corresponde ao existente
-    for (const newStage of newStages) {
-      if (!newStage.id) {
-        // Stage sem ID é considerado novo
-        return true;
-      }
-
-      const existingStage = existingStagesMap.get(newStage.id);
-      if (!existingStage) {
-        // Stage com ID não encontrado é considerado novo
-        return true;
-      }
-
-      // Verificar se os campos principais mudaram
-      if (
-        existingStage.name !== newStage.name ||
-        existingStage.description !== newStage.description ||
-        existingStage.orderIndex !==
-          (newStage.orderIndex ?? existingStage.orderIndex) ||
-        existingStage.isActive !== (newStage.isActive ?? existingStage.isActive)
-      ) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   async remove(id: string, userCompanyId: string): Promise<void> {
@@ -841,6 +805,7 @@ export class JobsService {
                  j.department_id   as "departmentId",
                  j.slug,
                  j.published_at    as "publishedAt",
+                 j.requires_address as "requiresAddress",
                  d.name            as "departmentName",
                  d.description     as "departmentDescription"
           FROM jobs j
@@ -863,6 +828,7 @@ export class JobsService {
         departmentId: job.departmentId,
         slug: job.slug,
         publishedAt: job.publishedAt,
+        requiresAddress: job.requiresAddress,
         department: job.departmentId
           ? {
               id: job.departmentId,
@@ -889,6 +855,7 @@ export class JobsService {
                  j.department_id   as "departmentId",
                  j.slug,
                  j.published_at    as "publishedAt",
+                 j.requires_address as "requiresAddress",
                  d.name            as "departmentName",
                  d.description     as "departmentDescription"
           FROM jobs j
@@ -916,6 +883,7 @@ export class JobsService {
       departmentId: jobData.departmentId,
       slug: jobData.slug,
       publishedAt: jobData.publishedAt,
+      requiresAddress: jobData.requiresAddress,
       department: jobData.departmentId
         ? {
             id: jobData.departmentId,
@@ -941,6 +909,7 @@ export class JobsService {
                  j.department_id   as "departmentId",
                  j.slug,
                  j.published_at    as "publishedAt",
+                 j.requires_address as "requiresAddress",
                  d.name            as "departmentName",
                  d.description     as "departmentDescription"
           FROM jobs j
@@ -968,6 +937,7 @@ export class JobsService {
       departmentId: jobData.departmentId,
       slug: jobData.slug,
       publishedAt: jobData.publishedAt,
+      requiresAddress: jobData.requiresAddress,
       department: jobData.departmentId
         ? {
             id: jobData.departmentId,
@@ -981,15 +951,17 @@ export class JobsService {
   async findPublicJobQuestionsBySlug(
     companySlug: string,
     jobSlug: string,
-  ): Promise<{
-    id: string;
-    question: string;
-    orderIndex: number;
-    isRequired: boolean;
-  }[]> {
+  ): Promise<
+    {
+      id: string;
+      question: string;
+      orderIndex: number;
+      isRequired: boolean;
+    }[]
+  > {
     // Primeiro verificar se a job existe e está publicada
     const job = await this.findPublicJobBySlug(companySlug, jobSlug);
-    
+
     // Buscar as questions da job
     const questions = await this.jobQuestionsRepository.find({
       where: { jobId: job.id },
@@ -998,5 +970,47 @@ export class JobsService {
     });
 
     return questions;
+  }
+
+  private hasStageChanges(
+    existingStages: JobStage[],
+    newStages: UpdateStageData[],
+  ): boolean {
+    // Se o número de stages mudou, há mudanças
+    if (existingStages.length !== newStages.length) {
+      return true;
+    }
+
+    // Criar map dos stages existentes por ID
+    const existingStagesMap = new Map(
+      existingStages.map((stage) => [stage.id, stage]),
+    );
+
+    // Verificar se cada stage novo corresponde ao existente
+    for (const newStage of newStages) {
+      if (!newStage.id) {
+        // Stage sem ID é considerado novo
+        return true;
+      }
+
+      const existingStage = existingStagesMap.get(newStage.id);
+      if (!existingStage) {
+        // Stage com ID não encontrado é considerado novo
+        return true;
+      }
+
+      // Verificar se os campos principais mudaram
+      if (
+        existingStage.name !== newStage.name ||
+        existingStage.description !== newStage.description ||
+        existingStage.orderIndex !==
+          (newStage.orderIndex ?? existingStage.orderIndex) ||
+        existingStage.isActive !== (newStage.isActive ?? existingStage.isActive)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

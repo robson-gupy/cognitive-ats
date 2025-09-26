@@ -42,7 +42,7 @@ DB_PASSWORD=postgres
 DB_NAME=cognitive_ats
 
 # Configurações SQS
-AWS_ENDPOINT_URL=http://localhost:4566  # Para LocalStack
+STORAGE_SERVICE_ENDPOINT=http://localhost:4566  # Para LocalStack
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 AWS_REGION=us-east-1

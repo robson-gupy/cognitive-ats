@@ -8,7 +8,8 @@ import { Application } from '../entities/application.entity';
 import { SqsClientService } from '../../shared/services/sqs-client.service';
 import { CreateQuestionResponseDto } from '../dto/create-question-response.dto';
 import { CreateMultipleQuestionResponsesDto } from '../dto/create-multiple-question-responses.dto';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
+import { AsyncTaskQueue } from '../../shared/interfaces/async-task-queue.interface';
 
 describe('QuestionResponsesService', () => {
   let service: QuestionResponsesService;
@@ -38,6 +39,12 @@ describe('QuestionResponsesService', () => {
     sendMessage: jest.fn(),
   };
 
+  const mockAsyncTaskQueue = {
+    sendMessage: jest.fn(),
+    sendApplicationCreatedMessage: jest.fn(),
+    sendQuestionResponseMessage: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -58,13 +65,17 @@ describe('QuestionResponsesService', () => {
           provide: SqsClientService,
           useValue: mockSqsClientService,
         },
+        {
+          provide: 'AsyncTaskQueue',
+          useValue: mockAsyncTaskQueue,
+        },
       ],
     }).compile();
 
     service = module.get<QuestionResponsesService>(QuestionResponsesService);
-    questionResponseRepository = module.get<Repository<ApplicationQuestionResponse>>(
-      getRepositoryToken(ApplicationQuestionResponse),
-    );
+    questionResponseRepository = module.get<
+      Repository<ApplicationQuestionResponse>
+    >(getRepositoryToken(ApplicationQuestionResponse));
     jobQuestionRepository = module.get<Repository<JobQuestion>>(
       getRepositoryToken(JobQuestion),
     );
@@ -124,14 +135,18 @@ describe('QuestionResponsesService', () => {
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
       mockJobQuestionRepository.findOne.mockResolvedValue(mockJobQuestion);
       mockQuestionResponseRepository.findOne.mockResolvedValue(null);
-      mockQuestionResponseRepository.create.mockReturnValue(mockQuestionResponse);
-      mockQuestionResponseRepository.save.mockResolvedValue(mockQuestionResponse);
-      mockSqsClientService.sendMessage.mockResolvedValue(undefined);
+      mockQuestionResponseRepository.create.mockReturnValue(
+        mockQuestionResponse,
+      );
+      mockQuestionResponseRepository.save.mockResolvedValue(
+        mockQuestionResponse,
+      );
+      mockAsyncTaskQueue.sendMessage.mockResolvedValue(undefined);
 
       const result = await service.create(applicationId, createDto);
 
       expect(result).toEqual(mockQuestionResponse);
-      expect(mockSqsClientService.sendMessage).toHaveBeenCalledWith(
+      expect(mockAsyncTaskQueue.sendMessage).toHaveBeenCalledWith(
         'question-responses-queue',
         expect.objectContaining({
           eventType: 'QUESTION_RESPONSE_CREATED',
@@ -231,14 +246,18 @@ describe('QuestionResponsesService', () => {
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
       mockJobQuestionRepository.find.mockResolvedValue(mockJobQuestions);
       mockQuestionResponseRepository.find.mockResolvedValue([]);
-      mockQuestionResponseRepository.create.mockReturnValue(mockQuestionResponses[0]);
-      mockQuestionResponseRepository.save.mockResolvedValue(mockQuestionResponses);
-      mockSqsClientService.sendMessage.mockResolvedValue(undefined);
+      mockQuestionResponseRepository.create.mockReturnValue(
+        mockQuestionResponses[0],
+      );
+      mockQuestionResponseRepository.save.mockResolvedValue(
+        mockQuestionResponses,
+      );
+      mockAsyncTaskQueue.sendMessage.mockResolvedValue(undefined);
 
       const result = await service.createMultiple(applicationId, createDto);
 
       expect(result).toEqual(mockQuestionResponses);
-      expect(mockSqsClientService.sendMessage).toHaveBeenCalledWith(
+      expect(mockAsyncTaskQueue.sendMessage).toHaveBeenCalledWith(
         'question-responses-queue',
         expect.objectContaining({
           eventType: 'MULTIPLE_QUESTION_RESPONSES_CREATED',
@@ -292,15 +311,19 @@ describe('QuestionResponsesService', () => {
         },
       };
 
-      mockQuestionResponseRepository.findOne.mockResolvedValue(mockExistingResponse);
-      mockQuestionResponseRepository.save.mockResolvedValue(mockUpdatedResponse);
+      mockQuestionResponseRepository.findOne.mockResolvedValue(
+        mockExistingResponse,
+      );
+      mockQuestionResponseRepository.save.mockResolvedValue(
+        mockUpdatedResponse,
+      );
       mockApplicationRepository.findOne.mockResolvedValue(mockApplication);
-      mockSqsClientService.sendMessage.mockResolvedValue(undefined);
+      mockAsyncTaskQueue.sendMessage.mockResolvedValue(undefined);
 
       const result = await service.update(responseId, updateDto);
 
       expect(result).toEqual(mockUpdatedResponse);
-      expect(mockSqsClientService.sendMessage).toHaveBeenCalledWith(
+      expect(mockAsyncTaskQueue.sendMessage).toHaveBeenCalledWith(
         'question-responses-queue',
         expect.objectContaining({
           eventType: 'QUESTION_RESPONSE_CREATED',

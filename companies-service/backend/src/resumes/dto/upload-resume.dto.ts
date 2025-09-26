@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, ValidateIf } from 'class-validator';
+import { IsEmail, IsOptional, IsString, ValidateIf } from 'class-validator';
 
 export class UploadResumeDto {
   @IsString()

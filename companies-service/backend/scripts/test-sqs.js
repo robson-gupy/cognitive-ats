@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 // Configurar AWS SDK
 const sqs = new AWS.SQS({
   region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
-  endpoint: process.env.ENDPOINT_URL || undefined,
+  endpoint: process.env.STORAGE_SERVICE_ENDPOINT || undefined,
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   s3ForcePathStyle: true,
@@ -13,15 +13,15 @@ const sqs = new AWS.SQS({
 async function testSQSConnection() {
   try {
     console.log('Testando conexão com SQS...');
-    console.log('ENDPOINT_URL:', process.env.ENDPOINT_URL);
+    console.log('STORAGE_SERVICE_ENDPOINT:', process.env.STORAGE_SERVICE_ENDPOINT);
     console.log('AWS_DEFAULT_REGION:', process.env.AWS_DEFAULT_REGION);
-    console.log('APPLICATIONS_SQS_QUEUE_NAME:', process.env.APPLICATIONS_SQS_QUEUE_NAME);
+    console.log('APPLICATIONS_QUEUE_NAME:', process.env.APPLICATIONS_QUEUE_NAME);
 
     // Determinar a URL da fila
-    const queueName = process.env.APPLICATIONS_SQS_QUEUE_NAME || 'applications-queue';
+    const queueName = process.env.APPLICATIONS_QUEUE_NAME || 'applications-queue';
     let queueUrl;
     
-    if (process.env.ENDPOINT_URL) {
+    if (process.env.STORAGE_SERVICE_ENDPOINT) {
       queueUrl = `http://localstack:4566/000000000000/${queueName}`;
     } else {
       queueUrl = `https://sqs.${process.env.AWS_DEFAULT_REGION || 'us-east-1'}.amazonaws.com/${process.env.AWS_ACCOUNT_ID || '000000000000'}/${queueName}`;

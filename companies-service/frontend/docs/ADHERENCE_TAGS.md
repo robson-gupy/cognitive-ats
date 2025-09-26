@@ -2,16 +2,17 @@
 
 ## Visão Geral
 
-Implementamos etiquetas coloridas nos cards de applications que indicam o nível de aderência do candidato à vaga baseado no `overall_score`.
+Implementamos etiquetas coloridas nos cards de applications que indicam o nível de aderência do candidato à vaga baseado
+no `overall_score`.
 
 ## Regras de Aderência
 
-| Score | Nível | Cor | Descrição |
-|-------|-------|-----|-----------|
-| >= 90 | Muito alta | Azul escuro | Candidato com excelente aderência à vaga |
-| >= 70 < 90 | Alta | Azul claro | Candidato com boa aderência à vaga |
-| >= 50 < 70 | Média | Amarela | Candidato com aderência moderada à vaga |
-| < 50 | Baixa | Vermelha | Candidato com baixa aderência à vaga |
+| Score      | Nível      | Cor         | Descrição                                |
+|------------|------------|-------------|------------------------------------------|
+| >= 90      | Muito alta | Azul escuro | Candidato com excelente aderência à vaga |
+| >= 70 < 90 | Alta       | Azul claro  | Candidato com boa aderência à vaga       |
+| >= 50 < 70 | Média      | Amarela     | Candidato com aderência moderada à vaga  |
+| < 50       | Baixa      | Vermelha    | Candidato com baixa aderência à vaga     |
 
 ## Implementação
 

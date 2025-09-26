@@ -1,27 +1,25 @@
-import React, { useState } from 'react';
-import { Card, Typography } from 'antd';
+import React, {useState} from 'react';
+import {Card, Typography} from 'antd';
+import type {DragEndEvent} from '@dnd-kit/core';
 import {
-  DndContext,
   closestCenter,
+  DndContext,
   KeyboardSensor,
-  PointerSensor,
   MouseSensor,
+  PointerSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
+  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import {CSS} from '@dnd-kit/utilities';
 
-const { Title } = Typography;
+const {Title} = Typography;
 
 interface TestItem {
   id: string;
@@ -31,7 +29,7 @@ interface TestItem {
 const SortableTestItem: React.FC<{
   item: TestItem;
   index: number;
-}> = ({ item, index }) => {
+}> = ({item, index}) => {
   const {
     attributes,
     listeners,
@@ -39,7 +37,7 @@ const SortableTestItem: React.FC<{
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.id });
+  } = useSortable({id: item.id});
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -63,7 +61,7 @@ const SortableTestItem: React.FC<{
       {...attributes}
       {...listeners}
     >
-      <div style={{ fontWeight: 'bold' }}>
+      <div style={{fontWeight: 'bold'}}>
         Item {index + 1}: {item.name}
       </div>
     </div>
@@ -72,10 +70,10 @@ const SortableTestItem: React.FC<{
 
 export const DragTest: React.FC = () => {
   const [items, setItems] = useState<TestItem[]>([
-    { id: '1', name: 'Primeiro Item' },
-    { id: '2', name: 'Segundo Item' },
-    { id: '3', name: 'Terceiro Item' },
-    { id: '4', name: 'Quarto Item' },
+    {id: '1', name: 'Primeiro Item'},
+    {id: '2', name: 'Segundo Item'},
+    {id: '3', name: 'Terceiro Item'},
+    {id: '4', name: 'Quarto Item'},
   ]);
 
   const sensors = useSensors(
@@ -87,28 +85,28 @@ export const DragTest: React.FC = () => {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    
-    console.log('Test drag end event:', { active: active.id, over: over?.id });
+    const {active, over} = event;
+
+    console.log('Test drag end event:', {active: active.id, over: over?.id});
 
     if (active.id !== over?.id) {
       setItems((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over?.id);
-        
-        console.log('Test reordering:', { oldIndex, newIndex });
-        
+
+        console.log('Test reordering:', {oldIndex, newIndex});
+
         return arrayMove(items, oldIndex, newIndex);
       });
     }
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{padding: '24px'}}>
       <Card>
         <Title level={2}>Teste de Drag and Drop</Title>
         <p>Arraste os itens para reordená-los:</p>
-        
+
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -118,7 +116,7 @@ export const DragTest: React.FC = () => {
             items={items.map(item => item.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div style={{ minHeight: '100px' }}>
+            <div style={{minHeight: '100px'}}>
               {items.map((item, index) => (
                 <SortableTestItem
                   key={item.id}
@@ -129,8 +127,8 @@ export const DragTest: React.FC = () => {
             </div>
           </SortableContext>
         </DndContext>
-        
-        <div style={{ marginTop: '16px' }}>
+
+        <div style={{marginTop: '16px'}}>
           <h4>Ordem atual:</h4>
           <ol>
             {items.map((item) => (

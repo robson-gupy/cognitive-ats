@@ -1,14 +1,14 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  OneToOne,
-  OneToMany,
+  Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Job } from '../../jobs/entities/job.entity';
 import { Company } from '../../companies/entities/company.entity';
@@ -16,6 +16,8 @@ import { Resume } from '../../resumes/entities/resume.entity';
 import { ApplicationQuestionResponse } from './application-question-response.entity';
 import { JobStage } from '../../jobs/entities/job-stage.entity';
 import { ApplicationStageHistory } from './application-stage-history.entity';
+import { ApplicationTag } from './application-tag.entity';
+import { Adress } from './adress.entity';
 
 // Interface para os detalhes de avaliação
 export interface EvaluationDetails {
@@ -25,6 +27,7 @@ export interface EvaluationDetails {
   experience_score?: number;
   provider?: string;
   model?: string;
+
   [key: string]: unknown;
 }
 
@@ -158,6 +161,13 @@ export class Application {
   })
   resume: Resume;
 
+  @Column({ name: 'address_id', type: 'uuid', nullable: true })
+  addressId: string;
+
+  @OneToOne(() => Adress, (address) => address.application, { cascade: true })
+  @JoinColumn({ name: 'address_id' })
+  address: Adress;
+
   @OneToMany(
     () => ApplicationQuestionResponse,
     (response) => response.application,
@@ -171,4 +181,13 @@ export class Application {
     cascade: true,
   })
   stageHistory: ApplicationStageHistory[];
+
+  @OneToMany(
+    () => ApplicationTag,
+    (applicationTag) => applicationTag.application,
+    {
+      cascade: true,
+    },
+  )
+  applicationTags: ApplicationTag[];
 }

@@ -1,19 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Typography, Tag, Space, Button, Descriptions, Divider, List, message, Spin, Popconfirm } from 'antd';
-import { useNavigate, useParams } from 'react-router-dom';
-import { EditOutlined, ArrowLeftOutlined, HistoryOutlined, GlobalOutlined, StopOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
-import { apiService } from '../services/api';
-import type { Job } from '../types/Job';
-import { JobStatus } from '../types/Job';
+import React, {useEffect, useState} from 'react';
+import {Button, Card, Descriptions, Divider, List, message, Popconfirm, Space, Spin, Tag, Typography} from 'antd';
+import {useNavigate, useParams} from 'react-router-dom';
+import {
+  ArrowLeftOutlined,
+  EditOutlined,
+  GlobalOutlined,
+  HistoryOutlined,
+  SettingOutlined,
+  StopOutlined,
+  UserOutlined
+} from '@ant-design/icons';
+import {apiService} from '../services/api';
+import type {Job} from '../types/Job';
+import {JobStatus} from '../types/Job';
 
-const { Title, Paragraph } = Typography;
+const {Title, Paragraph} = Typography;
 
 export const JobView: React.FC = () => {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const navigate = useNavigate();
-  const { id } = useParams();
+  const {id} = useParams();
 
   useEffect(() => {
     if (id) {
@@ -36,7 +44,7 @@ export const JobView: React.FC = () => {
 
   const handlePublish = async () => {
     if (!job) return;
-    
+
     try {
       setActionLoading(true);
       await apiService.publishJob(job.id);
@@ -52,7 +60,7 @@ export const JobView: React.FC = () => {
 
   const handleClose = async () => {
     if (!job) return;
-    
+
     try {
       setActionLoading(true);
       await apiService.closeJob(job.id);
@@ -102,16 +110,16 @@ export const JobView: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
-        <Spin size="large" />
-        <div style={{ marginTop: '16px' }}>Carregando vaga...</div>
+      <div style={{padding: '24px', textAlign: 'center'}}>
+        <Spin size="large"/>
+        <div style={{marginTop: '16px'}}>Carregando vaga...</div>
       </div>
     );
   }
 
   if (!job) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
+      <div style={{padding: '24px', textAlign: 'center'}}>
         <Title level={3}>Vaga não encontrada</Title>
         <Button onClick={() => navigate('/jobs')}>
           Voltar para a lista
@@ -121,17 +129,17 @@ export const JobView: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{padding: '24px'}}>
       <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px'}}>
           <Space>
-            <Button 
-              icon={<ArrowLeftOutlined />} 
+            <Button
+              icon={<ArrowLeftOutlined/>}
               onClick={() => navigate('/jobs')}
             >
               Voltar
             </Button>
-            <Title level={2} style={{ margin: 0 }}>
+            <Title level={2} style={{margin: 0}}>
               {job.title}
             </Title>
           </Space>
@@ -144,16 +152,16 @@ export const JobView: React.FC = () => {
                 okText="Sim, publicar"
                 cancelText="Cancelar"
               >
-                <Button 
-                  type="primary" 
-                  icon={<GlobalOutlined />}
+                <Button
+                  type="primary"
+                  icon={<GlobalOutlined/>}
                   loading={actionLoading}
                 >
                   Publicar Vaga
                 </Button>
               </Popconfirm>
             )}
-            
+
             {job.status === JobStatus.PUBLISHED && (
               <Popconfirm
                 title="Fechar vaga"
@@ -162,38 +170,38 @@ export const JobView: React.FC = () => {
                 okText="Sim, fechar"
                 cancelText="Cancelar"
               >
-                <Button 
+                <Button
                   danger
-                  icon={<StopOutlined />}
+                  icon={<StopOutlined/>}
                   loading={actionLoading}
                 >
                   Fechar Vaga
                 </Button>
               </Popconfirm>
             )}
-            
-            <Button 
-              icon={<SettingOutlined />}
+
+            <Button
+              icon={<SettingOutlined/>}
               onClick={() => navigate(`/jobs/${job.id}/stages`)}
             >
               Gerenciar Etapas
             </Button>
-            <Button 
-              type="primary" 
-              icon={<EditOutlined />}
+            <Button
+              type="primary"
+              icon={<EditOutlined/>}
               onClick={() => navigate(`/jobs/${job.id}/edit`)}
             >
               Editar
             </Button>
-            <Button 
-              icon={<HistoryOutlined />}
+            <Button
+              icon={<HistoryOutlined/>}
               onClick={() => navigate(`/jobs/${job.id}/logs`)}
             >
               Ver Logs
             </Button>
             {job.status === JobStatus.PUBLISHED && (
-              <Button 
-                icon={<UserOutlined />}
+              <Button
+                icon={<UserOutlined/>}
                 onClick={() => navigate(`/jobs/${job.id}/applications`)}
               >
                 Candidatos
@@ -218,7 +226,7 @@ export const JobView: React.FC = () => {
             {job.department ? (
               <Tag color="blue">{job.department.name} ({job.department.code})</Tag>
             ) : (
-              <span style={{ color: '#999' }}>Não definido</span>
+              <span style={{color: '#999'}}>Não definido</span>
             )}
           </Descriptions.Item>
           <Descriptions.Item label="Criado por">
@@ -232,33 +240,33 @@ export const JobView: React.FC = () => {
           </Descriptions.Item>
         </Descriptions>
 
-        <Divider />
+        <Divider/>
 
         <Title level={3}>Descrição</Title>
-        <Paragraph style={{ fontSize: '16px', lineHeight: '1.6' }}>
+        <Paragraph style={{fontSize: '16px', lineHeight: '1.6'}}>
           {job.description}
         </Paragraph>
 
-        <Divider />
+        <Divider/>
 
         <Title level={3}>Requisitos</Title>
-        <Paragraph style={{ fontSize: '16px', lineHeight: '1.6' }}>
+        <Paragraph style={{fontSize: '16px', lineHeight: '1.6'}}>
           {job.requirements}
         </Paragraph>
 
         {job.questions && job.questions.length > 0 && (
           <>
-            <Divider />
+            <Divider/>
             <Title level={3}>Perguntas do Processo Seletivo</Title>
             <List
               dataSource={job.questions}
               renderItem={(question, index) => (
                 <List.Item>
-                  <div style={{ width: '100%' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+                  <div style={{width: '100%'}}>
+                    <div style={{fontWeight: 'bold', marginBottom: '8px'}}>
                       {index + 1}. {question.question}
                     </div>
-                    <div style={{ color: '#666', fontSize: '14px' }}>
+                    <div style={{color: '#666', fontSize: '14px'}}>
                       {question.isRequired ? 'Obrigatória' : 'Opcional'}
                     </div>
                   </div>
@@ -270,22 +278,22 @@ export const JobView: React.FC = () => {
 
         {job.stages && job.stages.length > 0 && (
           <>
-            <Divider />
+            <Divider/>
             <Title level={3}>Etapas do Processo Seletivo</Title>
             <List
               dataSource={job.stages}
               renderItem={(stage, index) => (
                 <List.Item>
-                  <div style={{ width: '100%' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+                  <div style={{width: '100%'}}>
+                    <div style={{fontWeight: 'bold', marginBottom: '8px'}}>
                       {index + 1}. {stage.name}
                     </div>
                     {stage.description && (
-                      <div style={{ color: '#666', fontSize: '14px', marginBottom: '4px' }}>
+                      <div style={{color: '#666', fontSize: '14px', marginBottom: '4px'}}>
                         {stage.description}
                       </div>
                     )}
-                    <div style={{ color: '#999', fontSize: '12px' }}>
+                    <div style={{color: '#999', fontSize: '12px'}}>
                       {stage.isActive ? 'Ativa' : 'Inativa'}
                     </div>
                   </div>

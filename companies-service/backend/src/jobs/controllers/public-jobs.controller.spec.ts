@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PublicJobsController } from './public-jobs.controller';
 import { JobsService } from '../services/jobs.service';
 import { CompaniesService } from '../../companies/companies.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('PublicJobsController', () => {
   let controller: PublicJobsController;
@@ -211,7 +211,9 @@ describe('PublicJobsController', () => {
         name: 'Test Company',
       });
       mockJobsService.findPublicJobBySlug.mockResolvedValue(mockJob);
-      mockJobsService.findPublicJobQuestionsBySlug.mockResolvedValue(mockQuestions);
+      mockJobsService.findPublicJobQuestionsBySlug.mockResolvedValue(
+        mockQuestions,
+      );
 
       const result = await controller.findPublicJobQuestions(
         validCompanySlug,
@@ -223,7 +225,9 @@ describe('PublicJobsController', () => {
       expect(result.total).toBe(2);
       expect(result.jobId).toBe('123e4567-e89b-12d3-a456-426614174001');
       expect(result.message).toBe('Questions da vaga encontradas com sucesso');
-      expect(companiesService.findBySlug).toHaveBeenCalledWith(validCompanySlug);
+      expect(companiesService.findBySlug).toHaveBeenCalledWith(
+        validCompanySlug,
+      );
       expect(jobsService.findPublicJobBySlug).toHaveBeenCalledWith(
         validCompanySlug,
         validJobSlug,

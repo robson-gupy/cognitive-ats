@@ -1,16 +1,16 @@
 import {
+  BadRequestException,
   Controller,
   Get,
-  Param,
   NotFoundException,
-  BadRequestException,
+  Param,
 } from '@nestjs/common';
 import { JobsService } from '../services/jobs.service';
 import { CompaniesService } from '../../companies/companies.service';
 import {
-  PublicJobsResponseDto,
-  PublicJobResponseDto,
   PublicJobQuestionsResponseDto,
+  PublicJobResponseDto,
+  PublicJobsResponseDto,
 } from '../dto/public-jobs-response.dto';
 
 @Controller('public')
@@ -125,16 +125,20 @@ export class PublicJobsController {
       );
 
       // Buscar o ID da job para incluir na resposta
-      const job = await this.jobsService.findPublicJobBySlug(companySlug, jobSlug);
+      const job = await this.jobsService.findPublicJobBySlug(
+        companySlug,
+        jobSlug,
+      );
 
       return {
         success: true,
         data: questions,
         total: questions.length,
         jobId: job.id,
-        message: questions.length > 0 
-          ? 'Questions da vaga encontradas com sucesso'
-          : 'Nenhuma question encontrada para esta vaga',
+        message:
+          questions.length > 0
+            ? 'Questions da vaga encontradas com sucesso'
+            : 'Nenhuma question encontrada para esta vaga',
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -142,7 +146,9 @@ export class PublicJobsController {
           `Vaga não encontrada ou não pertence à empresa especificada`,
         );
       }
-      throw new NotFoundException(`Erro ao buscar questions da vaga: ${error.message}`);
+      throw new NotFoundException(
+        `Erro ao buscar questions da vaga: ${error.message}`,
+      );
     }
   }
 }

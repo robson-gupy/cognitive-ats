@@ -80,7 +80,7 @@ curl -X POST http://localhost:3000/applications/upload-resume \
 
 **Nota:** O campo `resumeUrl` agora retorna apenas o path relativo do arquivo (ex: `/resumes/arquivo.pdf`). 
 O Caddyfile está configurado para redirecionar automaticamente as requisições para `/cognitive-ats-uploads/*` 
-para o serviço localstack na porta 4566, mantendo o mesmo path.
+para o serviço MinIO na porta 9000, mantendo o mesmo path.
 
 ## Validações
 
@@ -91,7 +91,7 @@ para o serviço localstack na porta 4566, mantendo o mesmo path.
 
 ## Armazenamento
 
-- Os arquivos são armazenados no S3/MinIO no bucket configurado
+- Os arquivos são armazenados no MinIO no bucket configurado
 - O nome do arquivo inclui timestamp para evitar conflitos
 - A URL do arquivo é salva no campo `resumeUrl` da application
 - Arquivos temporários são automaticamente removidos após o upload
