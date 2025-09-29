@@ -4,6 +4,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Query,
 } from '@nestjs/common';
 import { JobsService } from '../services/jobs.service';
 import { CompaniesService } from '../../companies/companies.service';
@@ -23,6 +24,10 @@ export class PublicJobsController {
   @Get(':slug/jobs')
   async findPublicJobsByCompany(
     @Param('slug') slug: string,
+    @Query('q') searchQuery?: string,
+    @Query('departments') departments?: string,
+    @Query('limit') limit?: string,
+    @Query('threshold') threshold?: string,
   ): Promise<PublicJobsResponseDto> {
     // Validar se o slug é válido (apenas letras, números e hífens)
     if (!slug || !/^[a-z0-9-]+$/i.test(slug)) {
@@ -33,10 +38,29 @@ export class PublicJobsController {
       // Verificar se a empresa existe pelo slug
       const company = await this.companiesService.findBySlug(slug);
 
-      // Buscar vagas publicadas usando o ID da empresa
-      const jobs = await this.jobsService.findPublishedJobsByCompany(
-        company.id,
-      );
+      let jobs;
+      
+      // Se há parâmetro de busca, usar busca vetorial
+      if (searchQuery) {
+        // Converter string de departamentos para array
+        const departmentIds = departments ? departments.split(',').map(id => id.trim()) : undefined;
+        
+        // Converter parâmetros numéricos
+        const limitNum = limit ? parseInt(limit, 10) : 10;
+        const thresholdNum = threshold ? parseFloat(threshold) : 0.8;
+        
+        // Usar busca vetorial
+        jobs = await this.jobsService.findPublishedJobsByCompanyWithSearch(
+          company.id,
+          searchQuery,
+          departmentIds,
+          limitNum,
+          thresholdNum
+        );
+      } else {
+        // Busca normal sem filtros
+        jobs = await this.jobsService.findPublishedJobsByCompany(company.id);
+      }
 
       return {
         success: true,
@@ -45,7 +69,9 @@ export class PublicJobsController {
         companyId: company.id,
         message:
           jobs.length > 0
-            ? 'Vagas encontradas com sucesso'
+            ? searchQuery 
+              ? 'Vagas encontradas com busca vetorial'
+              : 'Vagas encontradas com sucesso'
             : 'Nenhuma vaga publicada encontrada para esta empresa',
       };
     } catch (error) {

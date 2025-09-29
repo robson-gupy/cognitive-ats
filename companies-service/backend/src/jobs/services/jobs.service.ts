@@ -840,6 +840,118 @@ export class JobsService {
     );
   }
 
+  /**
+   * Busca vagas publicadas de uma empresa com busca vetorial e filtro por departamentos
+   */
+  async findPublishedJobsByCompanyWithSearch(
+    companyId: string,
+    searchQuery: string,
+    departmentIds?: string[],
+    limit: number = 10,
+    threshold: number = 0.8
+  ): Promise<PublishedJob[]> {
+    try {
+      // Gerar embedding para o texto de busca
+      const queryEmbedding = await this.aiServiceClient.generateEmbedding({
+        text: searchQuery,
+      });
+
+      // Construir query base (usando estrutura atual com fallback para futura otimização)
+      let query = `
+        SELECT j.id,
+               j.title,
+               j.description,
+               j.requirements,
+               j.expiration_date as "expirationDate",
+               j.status,
+               j.department_id as "departmentId",
+               j.slug,
+               j.published_at as "publishedAt",
+               j.requires_address as "requiresAddress",
+               j.search_embedding,
+               d.name as "departmentName",
+               d.description as "departmentDescription"
+        FROM jobs j
+        LEFT JOIN departments d ON j.department_id = d.id
+        WHERE j.company_id = $1
+          AND j.status = $2
+          AND j.search_embedding IS NOT NULL
+      `;
+
+      const queryParams: any[] = [companyId, JobStatus.PUBLISHED];
+      let paramIndex = 3;
+
+      // Adicionar filtro por departamentos se especificado
+      if (departmentIds && departmentIds.length > 0) {
+        const placeholders = departmentIds.map((_, index) => `$${paramIndex + index}`).join(',');
+        query += ` AND j.department_id IN (${placeholders})`;
+        queryParams.push(...departmentIds);
+        paramIndex += departmentIds.length;
+      }
+
+      query += ` ORDER BY j.published_at DESC`;
+
+      // Executar query
+      const jobs: (JobQueryResult & { search_embedding: string })[] = await this.jobsRepository.query(
+        query,
+        queryParams
+      );
+
+      // Calcular similaridade para cada vaga usando JavaScript (até migration ser executada)
+      const jobsWithSimilarity = jobs.map(job => {
+        if (!job.search_embedding) {
+          return { job, similarity: 0 };
+        }
+
+        try {
+          const jobEmbedding = this.stringToArray(job.search_embedding);
+          const similarity = this.calculateCosineSimilarity(queryEmbedding.embedding, jobEmbedding);
+          return { job, similarity };
+        } catch (error) {
+          console.warn(`Erro ao calcular similaridade para vaga ${job.id}:`, error);
+          return { job, similarity: 0 };
+        }
+      });
+
+      // Aplicar filtro de relevância
+      const relevantJobs = this.applyRelevanceFilter(
+        jobsWithSimilarity,
+        threshold,
+        'Busca vetorial pública'
+      );
+
+      const filteredJobs = relevantJobs
+        .slice(0, limit)
+        .map(item => item.job);
+
+      // Converter para PublishedJob
+      return filteredJobs.map((job: JobQueryResult): PublishedJob => ({
+        id: job.id,
+        title: job.title,
+        description: job.description,
+        requirements: job.requirements,
+        expirationDate: job.expirationDate,
+        status: job.status,
+        departmentId: job.departmentId,
+        slug: job.slug,
+        publishedAt: job.publishedAt,
+        requiresAddress: job.requiresAddress,
+        department: job.departmentId
+          ? {
+              id: job.departmentId,
+              name: job.departmentName || '',
+              description: job.departmentDescription || '',
+            }
+          : null,
+      }));
+
+    } catch (error) {
+      console.error('Erro na busca vetorial pública:', error);
+      // Em caso de erro, retornar busca normal sem filtros
+      return this.findPublishedJobsByCompany(companyId);
+    }
+  }
+
   async findPublicJobById(
     companySlug: string,
     jobId: string,
@@ -1012,5 +1124,225 @@ export class JobsService {
     }
 
     return false;
+  }
+
+  /**
+   * Gera e atualiza o embedding vetorial para busca semântica de uma vaga
+   * Combina title, description e department name
+   */
+  async updateJobEmbedding(jobId: string, user: User): Promise<Job> {
+    // Buscar a vaga com o department carregado
+    const job = await this.jobsRepository.findOne({
+      where: { id: jobId, companyId: user.companyId },
+      relations: ['department'],
+    });
+
+    if (!job) {
+      throw new NotFoundException('Vaga não encontrada');
+    }
+
+    // Combinar os textos para gerar o embedding
+    const departmentName = job.department?.name || '';
+    const combinedText = `${job.title} ${job.description} ${departmentName}`.trim();
+
+    try {
+      // Gerar embedding usando o AI Service
+      const embeddingResponse = await this.aiServiceClient.generateEmbedding({
+        text: combinedText,
+      });
+
+      // Converter array de números para string para armazenar no banco
+      const embeddingString = JSON.stringify(embeddingResponse.embedding);
+      
+      // Atualizar a vaga com o novo embedding
+      await this.jobsRepository.update(jobId, {
+        searchEmbedding: embeddingString,
+      });
+
+      // Retornar a vaga atualizada
+      return this.findOne(jobId, user.companyId);
+    } catch (error) {
+      console.error('Erro ao gerar embedding para vaga:', error);
+      throw new BadRequestException('Erro ao gerar embedding para busca vetorial');
+    }
+  }
+
+  /**
+   * Atualiza o embedding de todas as vagas de uma empresa
+   * Útil para migração ou reprocessamento em lote
+   */
+  async updateAllJobEmbeddings(user: User): Promise<{ updated: number; errors: number }> {
+    const jobs = await this.jobsRepository.find({
+      where: { companyId: user.companyId },
+      relations: ['department'],
+    });
+
+    let updated = 0;
+    let errors = 0;
+
+    for (const job of jobs) {
+      try {
+        const departmentName = job.department?.name || '';
+        const combinedText = `${job.title} ${job.description} ${departmentName}`.trim();
+
+        const embeddingResponse = await this.aiServiceClient.generateEmbedding({
+          text: combinedText,
+        });
+
+        // Converter array de números para string para armazenar no banco
+        const embeddingString = JSON.stringify(embeddingResponse.embedding);
+        
+        await this.jobsRepository.update(job.id, {
+          searchEmbedding: embeddingString,
+        });
+
+        updated++;
+      } catch (error) {
+        console.error(`Erro ao gerar embedding para vaga ${job.id}:`, error);
+        errors++;
+      }
+    }
+
+    return { updated, errors };
+  }
+
+  /**
+   * Converte array de números para string JSON
+   */
+  private arrayToString(embedding: number[]): string {
+    return JSON.stringify(embedding);
+  }
+
+  /**
+   * Converte string JSON para array de números
+   */
+  private stringToArray(embeddingString: string): number[] {
+    try {
+      return JSON.parse(embeddingString);
+    } catch (error) {
+      console.error('Erro ao converter string para array:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Busca vagas usando similaridade vetorial
+   * Retorna vagas ordenadas por similaridade (mais similares primeiro)
+   */
+  async searchJobsByVector(
+    queryText: string,
+    user: User,
+    limit: number = 10,
+    threshold: number = 0.8
+  ): Promise<Job[]> {
+    try {
+      // Gerar embedding para o texto de busca
+      const queryEmbedding = await this.aiServiceClient.generateEmbedding({
+        text: queryText,
+      });
+
+      // Buscar vagas com embedding não nulo (usando estrutura atual)
+      const jobs = await this.jobsRepository
+        .createQueryBuilder('job')
+        .leftJoinAndSelect('job.department', 'department')
+        .where('job.companyId = :companyId', { companyId: user.companyId })
+        .andWhere('job.searchEmbedding IS NOT NULL')
+        .andWhere('job.status = :status', { status: JobStatus.PUBLISHED })
+        .getMany();
+
+      // Calcular similaridade para cada vaga usando JavaScript (até migration ser executada)
+      const jobsWithSimilarity = jobs.map(job => {
+        if (!job.searchEmbedding) {
+          return { job, similarity: 0 };
+        }
+
+        try {
+          const jobEmbedding = this.stringToArray(job.searchEmbedding);
+          const similarity = this.calculateCosineSimilarity(queryEmbedding.embedding, jobEmbedding);
+          return { job, similarity };
+        } catch (error) {
+          console.warn(`Erro ao calcular similaridade para vaga ${job.id}:`, error);
+          return { job, similarity: 0 };
+        }
+      });
+
+      // Aplicar filtro de relevância
+      const relevantJobs = this.applyRelevanceFilter(
+        jobsWithSimilarity,
+        threshold,
+        'Busca vetorial interna'
+      );
+
+      return relevantJobs
+        .slice(0, limit)
+        .map(item => item.job);
+
+    } catch (error) {
+      console.error('Erro na busca vetorial:', error);
+      throw new BadRequestException('Erro na busca vetorial de vagas');
+    }
+  }
+
+  /**
+   * Aplica filtros de relevância baseados em similaridade
+   */
+  private applyRelevanceFilter<T>(
+    itemsWithSimilarity: { job: T; similarity: number }[],
+    threshold: number,
+    context: string = 'busca'
+  ): { job: T; similarity: number }[] {
+    const filtered = itemsWithSimilarity
+      .filter(item => item.similarity >= threshold)
+      .sort((a, b) => b.similarity - a.similarity);
+
+    // Log detalhado para monitoramento
+    const totalItems = itemsWithSimilarity.length;
+    const relevantItems = filtered.length;
+    const relevanceRate = totalItems > 0 ? (relevantItems / totalItems * 100).toFixed(1) : '0';
+    
+    console.log(`${context}: ${relevantItems}/${totalItems} itens relevantes (${relevanceRate}%) com threshold ${threshold}`);
+    
+    if (relevantItems > 0) {
+      const similarities = filtered.map(item => item.similarity);
+      const minSimilarity = Math.min(...similarities).toFixed(3);
+      const maxSimilarity = Math.max(...similarities).toFixed(3);
+      const avgSimilarity = (similarities.reduce((a, b) => a + b, 0) / similarities.length).toFixed(3);
+      
+      console.log(`Similaridade - min: ${minSimilarity}, max: ${maxSimilarity}, média: ${avgSimilarity}`);
+      
+      // Aviso se muitas vagas foram filtradas
+      if (relevantItems < totalItems * 0.3) {
+        console.warn(`Atenção: Apenas ${relevanceRate}% das vagas passaram no filtro de relevância. Considere ajustar o threshold.`);
+      }
+    } else if (totalItems > 0) {
+      console.warn(`Nenhuma vaga passou no filtro de relevância com threshold ${threshold}. Considere reduzir o threshold.`);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Calcula similaridade coseno entre dois vetores
+   */
+  private calculateCosineSimilarity(vectorA: number[], vectorB: number[]): number {
+    if (vectorA.length !== vectorB.length) {
+      return 0;
+    }
+
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+
+    for (let i = 0; i < vectorA.length; i++) {
+      dotProduct += vectorA[i] * vectorB[i];
+      normA += vectorA[i] * vectorA[i];
+      normB += vectorB[i] * vectorB[i];
+    }
+
+    if (normA === 0 || normB === 0) {
+      return 0;
+    }
+
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 }

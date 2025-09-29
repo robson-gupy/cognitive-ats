@@ -86,6 +86,19 @@ export interface CandidateEvaluationResponse {
   evaluation_details?: Record<string, unknown>;
 }
 
+export interface EmbeddingRequest {
+  text: string;
+  provider?: string;
+  api_key?: string;
+  model?: string;
+}
+
+export interface EmbeddingResponse {
+  embedding: number[];
+  provider: string;
+  model?: string;
+}
+
 // Interface para dados de resposta de erro
 interface ErrorResponseData {
   detail?: string;
@@ -175,6 +188,44 @@ export class AiServiceClient {
           axiosError.response?.data?.detail ||
           (error as any)?.message ||
           'Erro ao avaliar candidato com o AI Service';
+        throw new HttpException(
+          message,
+          axiosError.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      throw new HttpException(
+        'Erro interno do servidor',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async generateEmbedding(
+    request: EmbeddingRequest,
+  ): Promise<EmbeddingResponse> {
+    try {
+      const response = await axios.post(
+        `${this.aiServiceUrl}/ai/embedding`,
+        request,
+        {
+          timeout: 30000, // 30 segundos de timeout
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      return response.data as EmbeddingResponse;
+    } catch (error: unknown) {
+      // Verificar se é um erro do axios
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as {
+          response?: { data?: ErrorResponseData; status?: number };
+        };
+        const message =
+          axiosError.response?.data?.detail ||
+          (error as any)?.message ||
+          'Erro ao gerar embedding com o AI Service';
         throw new HttpException(
           message,
           axiosError.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,

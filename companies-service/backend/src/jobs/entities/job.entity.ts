@@ -106,4 +106,12 @@ export class Job {
 
   @Column({ name: 'requires_address', type: 'boolean', default: false })
   requiresAddress: boolean;
+
+  @Column({ 
+    name: 'search_embedding', 
+    type: 'text', 
+    nullable: true,
+    comment: 'Vetor de embedding para busca semântica combinando title, description e department name'
+  })
+  searchEmbedding: string;
 }

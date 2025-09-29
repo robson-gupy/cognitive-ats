@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -140,5 +141,56 @@ export class JobsController {
   @Get('company/:companyId/published')
   findPublishedJobsByCompany(@Param('companyId') companyId: string) {
     return this.jobsService.findPublishedJobsByCompany(companyId);
+  }
+
+  @Post(':id/update-embedding')
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
+  updateJobEmbedding(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    const user = {
+      id: req.user.sub,
+      companyId: req.user.companyId,
+      company: {
+        id: req.user.companyId,
+        company: req.user.companySubDomain,
+      },
+    } as any;
+    return this.jobsService.updateJobEmbedding(id, user);
+  }
+
+  @Post('update-all-embeddings')
+  @UseGuards(JwtAuthGuard, AdminAuthGuard)
+  updateAllJobEmbeddings(@Request() req: AuthenticatedRequest) {
+    const user = {
+      id: req.user.sub,
+      companyId: req.user.companyId,
+      company: {
+        id: req.user.companyId,
+        company: req.user.companySubDomain,
+      },
+    } as any;
+    return this.jobsService.updateAllJobEmbeddings(user);
+  }
+
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  searchJobsByVector(
+    @Request() req: AuthenticatedRequest,
+    @Query('q') query: string,
+    @Query('limit') limit?: string,
+    @Query('threshold') threshold?: string,
+  ) {
+    const user = {
+      id: req.user.sub,
+      companyId: req.user.companyId,
+      company: {
+        id: req.user.companyId,
+        company: req.user.companySubDomain,
+      },
+    } as any;
+
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    const thresholdNum = threshold ? parseFloat(threshold) : 0.8;
+
+    return this.jobsService.searchJobsByVector(query, user, limitNum, thresholdNum);
   }
 }

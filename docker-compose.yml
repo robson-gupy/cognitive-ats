@@ -1,7 +1,7 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg16
     container_name: cognitive-ats-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
